@@ -226,7 +226,7 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 
 ### Fase 0: Setup Git & Konfigurasi Baseline
 - [x] `chore/00-git-init-and-baseline` : Inisialisasi Git, setup `.gitignore`, initial commit `main`, buat `staging`, dan link remote GitHub.
-- [ ] `chore/01-environment-and-multidomain-config` : Konfigurasi `.env.example`, `.env`, multi-domain routing, dan koneksi MySQL 8.0.
+- [x] `chore/01-environment-and-multidomain-config` : Konfigurasi `.env.example`, `.env`, multi-domain routing, dan koneksi MySQL 8.0.
 
 ### Fase 1: Core Database & Model Layer
 - [ ] `feature/core-01-database-migrations` : Skema 15 tabel migrasi MySQL 8.0 InnoDB (`brands`, `categories`, `products`, `inquiries`, `quotations`, `sales_orders`, `delivery_orders`, `agent_profiles`, `commission_ledgers`, `document_sequences`). *(Rujukan: test-cases/06-integration-and-infrastructure/01-seeder-and-database.md)*

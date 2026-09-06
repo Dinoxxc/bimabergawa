@@ -21,6 +21,7 @@
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan entitas `system_settings` untuk konfigurasi dinamis PPN & parameter operasional ERP |
 | `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan entitas `notifications` untuk arsitektur notifikasi multi-kanal (lonceng ERP & email) |
+| `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan entitas `internal_comments` untuk fitur diskusi & catatan internal transaksi |
 
 ---
 
@@ -68,6 +69,7 @@ erDiagram
     users ||--o{ articles : "authors"
     users ||--o| freelance_sales : "linked agent account"
     users ||--o{ notifications : "receives"
+    users ||--o{ internal_comments : "writes"
 
     commission_tiers ||--o{ freelance_sales : "active tier"
     freelance_sales ||--o{ inquiries : "referred leads"
@@ -76,14 +78,17 @@ erDiagram
     inquiries ||--o{ inquiry_items : "contains"
     inquiries ||--|| inquiry_telemetries : "tracked by"
     inquiries ||--o| quotations : "converts to"
+    inquiries ||--o{ internal_comments : "has notes"
     
     quotations ||--o{ quotation_items : "contains"
     quotations ||--o{ quotation_payment_terms : "milestones schedule"
     quotations ||--o| sales_orders : "converts to"
+    quotations ||--o{ internal_comments : "has discussion"
     
     sales_orders ||--o{ delivery_orders : "partial shipments"
     delivery_orders ||--o{ delivery_order_items : "allocated items"
     sales_orders ||--o| commission_payouts : "yields commission"
+    sales_orders ||--o{ internal_comments : "has discussion"
 
     article_categories ||--o{ articles : "categorizes"
 
@@ -103,6 +108,16 @@ erDiagram
         text data
         timestamp read_at
     }
+
+    internal_comments {
+        bigint id PK
+        bigint user_id FK
+        varchar commentable_type
+        bigint commentable_id
+        text comment
+        varchar type
+        varchar attachment_path
+    }
 ```
 
 ---
@@ -120,4 +135,6 @@ erDiagram
 | **Auto-Reminder Multi-Kanal** | [03-core-services-and-business-logic.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/03-core-services-and-business-logic.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Stale lead visual timer di Kanban & event dispatcher email ke prospek/direksi. |
 | **Pengaturan Pajak PPN Dinamis** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `system_settings` & `ManageSystemSettings` page untuk kontrol tarif PPN mandiri oleh Direksi Finance. |
 | **Notifikasi Multi-Kanal (Lonceng & Email)** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `notifications` & Filament Database Notifications terintegrasi surel SMTP korporat. |
+| **Diskusi & Catatan Transaksi Berkonteks** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `internal_comments` polimorfik terhubung ke Quotation, SO, DO, dan Inquiry tanpa beban WebSocket. |
+
 

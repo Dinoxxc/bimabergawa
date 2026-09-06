@@ -21,6 +21,7 @@
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `system_settings` untuk konfigurasi dinamis PPN, margin, & operasional ERP |
 | `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `notifications` untuk arsitektur notifikasi in-app lonceng ERP & email multi-kanal |
+| `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema tabel `internal_comments` untuk fitur diskusi & catatan koordinasi transaksi berkonteks |
 
 ---
 
@@ -318,6 +319,22 @@
 
 ---
 
+### 2.6 Modul Diskusi & Catatan Internal Dokumen
+
+#### Tabel: `internal_comments`
+| Nama Kolom | Tipe Data | Keterangan & Atribut |
+|:---|:---|:---|
+| `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
+| `user_id` | BIGINT UNSIGNED | Foreign Key ke `users.id` (Penulis Catatan, ON DELETE CASCADE) |
+| `commentable_type` | VARCHAR(255) | Polymorphic Entity (misal: `App\Models\Quotation`, `App\Models\SalesOrder`, `App\Models\Inquiry`, `App\Models\DeliveryOrder`) |
+| `commentable_id` | BIGINT UNSIGNED | ID Entitas Transaksi Bersangkutan |
+| `comment` | TEXT | Isi Catatan Diskusi / Justifikasi Otorisasi / Info Logistik |
+| `type` | ENUM | `general_note`, `approval_justification`, `logistics_update`, `finance_note` (Default: `general_note`) |
+| `attachment_path` | VARCHAR(255) | Nullable, Path Berkas Lampiran Pendukung (Bukti Chat Supplier, PDF Penawaran Prinsipal) |
+| `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
+
+---
+
 ## 3. Strategi Pengindeksan B-Tree Berkinerja Tinggi (Indexing Strategy)
 
 Untuk menjamin performa query katalog instan di Hostinger Premium Web Hosting:
@@ -346,4 +363,8 @@ CREATE INDEX idx_system_settings_group ON system_settings (`group`);
 -- 5. Index Notifikasi In-App ERP
 CREATE INDEX idx_notifications_notifiable ON notifications (notifiable_type, notifiable_id);
 CREATE INDEX idx_notifications_read_at ON notifications (read_at);
+
+-- 6. Index Diskusi & Catatan Internal Dokumen
+CREATE INDEX idx_internal_comments_commentable ON internal_comments (commentable_type, commentable_id);
+CREATE INDEX idx_internal_comments_user ON internal_comments (user_id);
 ```

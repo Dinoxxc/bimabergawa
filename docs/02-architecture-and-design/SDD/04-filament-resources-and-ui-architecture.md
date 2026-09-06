@@ -22,6 +22,7 @@
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan halaman `ManageSystemSettings` (Pengaturan PPN dinamis, margin, & hotline) |
 | `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi Dark/Light Mode Filament Provider, Matriks RBAC Tab Pengaturan Sistem, & Standar Multimoda UI |
 | `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi arsitektur notifikasi multi-kanal (Database In-App Bell & Email Transaksional) |
+| `1.4.3` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan komponen Livewire diskusi internal dokumen transaksi (Internal Comments Timeline) |
 
 ---
 
@@ -242,5 +243,37 @@ public function panel(Panel $panel): Panel
 4. `SalesOrderConfirmedNotification`: Dipicu saat SO telah divalidasi pembayarannya; dikirim ke Tim Logistik untuk menyiapkan Surat Jalan fisik (Database + Mail).
 5. `DeliveryOrderDispatchedNotification`: Dipicu saat armada logistik berangkat dan nomor resi kurir diinput; dikirim ke Sales PIC & Klien (Database + Mail).
 6. `CommissionPayoutNotification`: Dipicu saat slip transfer bank komisi berhasil diunggah staf Finance; dikirim ke Mitra Agen Freelance terkait (Database + Mail).
+
+---
+
+### 2.10 Komponen Diskusi & Catatan Internal Dokumen (Internal Comments Timeline Component)
+
+Untuk mendukung koordinasi tanpa friksi antar staf tanpa membebani server dengan koneksi WebSocket, sistem menerapkan komponen diskusi internal berbasis Livewire 3 (`App\Livewire\InternalCommentsTimeline`) yang disematkan pada setiap halaman tampilan transaksi:
+
+```
++─────────────────────────────────────────────────────────────────────────────+
+|           KOMPONEN DISKUSI & TIMELINE INTERNAL (Livewire 3)                |
++─────────────────────────────────────────────────────────────────────────────+
+ [Model: Quotation / SO / Inquiry / DO] <--- Polymorphic (commentable)
+                 │
+                 ▼
+ [Livewire Component: InternalCommentsTimeline]
+ ├── Daftar Percakapan Berurut Waktu (Chronological Activity Feed)
+ │   ├── Avatar Pengguna & Text Badge Role ([Sales PIC] / [Direksi] / [Logistik])
+ │   ├── Timestamp Relatif ("15 Menit Lalu")
+ │   ├── Konten Catatan / Justifikasi Margin / Instruksi Khusus
+ │   └── Lampiran Pendukung (Brosur, Bukti Chat Prinsipal)
+ └── Form Input Catatan Baru
+     ├── Pilihan Tipe: General Note, Justifikasi Approval, Update Logistik, Catatan Finance
+     ├── Input Teks & Upload Berkas
+     └── Auto-Dispatch Event: Mengirim notifikasi in-app lonceng ke PIC terkait
+```
+
+1. **Penyematan pada Halaman Tampilan Filament:**
+   - Disematkan pada footer atau sidebar kanan modul `ViewInquiry`, `ViewQuotation`, `ViewSalesOrder`, dan `ViewDeliveryOrder`.
+2. **Efisiensi Server:**
+   - Menggunakan query database relasional `internal_comments` terindeks.
+   - Reaktif melalui Livewire component refresh, 100% aman dijalankan di LiteSpeed Shared Hosting 512 MB RAM.
+
 
 

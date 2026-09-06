@@ -21,6 +21,7 @@
 | `1.3.0` | 05 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Pembersihan total seluruh karakter emoji ke Icon formal dan penyelarasan copy B2B |
 | `1.4.0` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi Dark/Light Mode, preferensi personal pengguna, matriks RBAC System Settings, dan standar multimoda UI (Table/Grid/Kanban) |
 | `1.4.1` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX drawer lonceng notifikasi ERP, unread badge, & format email transaksional |
+| `1.4.2` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX widget diskusi dan linimasa catatan internal dokumen transaksi |
 
 ---
 
@@ -348,5 +349,49 @@ Surel resmi dikirim menggunakan driver SMTP korporat (`sales@bimabergawa.com`) d
 | **4. Sales Order Siap Kirim** | SO diverifikasi lunas oleh Finance | Tim Logistik / Gudang | In-App & Email | `[Instruksi Kirim] SO {No SO} siap diproses Surat Jalan` | `[LOGISTIK] Instruksi Penerbitan Surat Jalan Fisik {No SO}` -> Tombol Buat DO |
 | **5. Surat Jalan Diberangkatkan** | Logistik menginput no resi ekspedisi | Sales PIC & Klien | In-App & Email | `[Barang Dikirim] DO {No DO} jalan via {Ekspedisi}` | `[PENGIRIMAN] Surat Jalan {No DO} Diberangkatkan (Resi: {Resi})` -> Tombol Lacak |
 | **6. Pencairan Komisi Agen** | Finance mengunggah slip transfer | Mitra Agen Terkait | In-App & Email | `[Komisi Ditransfer] Dana Rp {Nominal} telah dikirim` | `[KOMISI] Bukti Transfer Komisi Transaksi {No SO}` -> Tombol Unduh Bukti |
+
+---
+
+## 10. Spesifikasi Panel Diskusi & Linimasa Catatan Internal Dokumen (Internal Comments UX)
+
+Untuk memastikan seluruh koordinasi bisnis, justifikasi persetujuan harga, dan instruksi logistik terdokumentasi rapi tanpa kehilangan konteks transaksi, disematkan panel diskusi internal di bagian bawah halaman detail transaksi (*View Quotation, View Sales Order, View Delivery Order, View Inquiry*):
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ LINIMASA CATATAN & KOORDINASI INTERNAL (QUO-202609-0005 - PT. MAJU BERSAMA)                           │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ RIWAYAT PERCAKAPAN BERURUT WAKTU:                                                                      │
+│                                                                                                        │
+│ [Avatar: AF] Ahmad Fauzi  [Sales PIC]                                                   3 Jam Lalu     │
+│ Kategori: [Justifikasi Approval]                                                                       │
+│ "Pak Direktur, mohon approval untuk quote ini ya. Gross margin berada di angka 7.2% (kritis) karena    │
+│ PT. Maju Bersama mengambil volume 500 unit kontaktor Schneider LC1D25M7 untuk proyek pabrik Karawang.   │
+│ Kami sudah negosiasi harga khusus dengan prinsipal Schneider."                                         │
+│ [Lampiran: quotation_prinsipal_schneider_special_price.pdf (1.2 MB)]                                   │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [Avatar: BW] Bambang Wibowo  [Direktur]                                                 2 Jam Lalu     │
+│ Kategori: [Catatan Finance]                                                                            │
+│ "Disetujui. Potensi repeat order pabrik Karawang cukup tinggi. Pastikan termin pembayaran DP 50% CBD    │
+│ (Cash Before Delivery) lunas sebelum DO diterbitkan oleh gudang."                                      │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ FORMULIR TAMBAH CATATAN INTERNAL BARU:                                                                 │
+│ Kategori Catatan : [ Justifikasi Approval v ]                                                          │
+│ Pesan Koordinasi : [ Tulis instruksi, klarifikasi stok, atau justifikasi diskon di sini...           ] │
+│ Lampiran Berkas  : [ Pilih Berkas Pendukung... ] (Format PDF/JPG/PNG, Maksimal 5 MB)                   │
+│                                                                            [ Kirim Catatan Internal ]  │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 10.1 Karakteristik Desain & Keamanan Diskusi Internal
+1. **Kerahasiaan 100% Internal Korporat:**
+   - Seluruh catatan internal pada panel ini **dilarang keras** bocor ke luar. Kolom ini tidak akan pernah dicetak pada salinan dokumen PDF resmi yang dikirim ke klien maupun dapat diakses oleh Mitra Agen Freelance.
+2. **Kategori Pesan Formal:**
+   - `[General Note]`: Catatan umum koordinasi antar tim.
+   - `[Justifikasi Approval]`: Penjelasan resmi sales PIC kepada Direktur mengapa margin tipis atau diskon besar diberikan.
+   - `[Update Logistik]`: Informasi kesiapan stok gudang Rasuna Said / Cikarang dan armada kurir.
+   - `[Catatan Finance]`: Instruksi verifikasi pelunasan invoice atau bukti transfer.
+3. **Pemicu Notifikasi Otomatis:**
+   - Menambahkan catatan berkategori `[Justifikasi Approval]` otomatis mengirimkan lonceng notifikasi dan email eskalasi ke Direktur.
+
 
 

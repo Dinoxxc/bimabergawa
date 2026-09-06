@@ -21,6 +21,7 @@
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan halaman `ManageSystemSettings` (Pengaturan PPN dinamis, margin, & hotline) |
 | `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi Dark/Light Mode Filament Provider, Matriks RBAC Tab Pengaturan Sistem, & Standar Multimoda UI |
+| `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi arsitektur notifikasi multi-kanal (Database In-App Bell & Email Transaksional) |
 
 ---
 
@@ -194,4 +195,52 @@ Halaman khusus di bawah rute `/admin/system-settings` untuk mengelola parameter 
    - **Table View:** Format tabel data standar untuk modul dokumen transaksional (*Quotation*, *Sales Order*, *Surat Jalan*, *Invoice*, *Commission Ledger*).
    - **Grid / Card View:** Format kartu visual untuk Master Katalog Produk (`ProductResource`), menampilkan gambar WebP, brand badge, SKU, dan stok.
    - **Kanban Board View:** Format papan kolom drag-and-drop untuk CRM Inquiries (`InquiryResource`), dilengkapi indikator visual waktu tunda (*Stale Alert*).
+
+---
+
+### 2.9 Arsitektur Notifikasi Multi-Kanal (Database In-App Bell & Email Transaksional)
+
+Sistem mengadopsi arsitektur *Multi-Channel Event-Driven Notification* berbasis Laravel Notifications yang terintegrasi langsung dengan Filament Database Notifications:
+
+```
+[ EVENT BISNIS ERP ]
+         │
+         ▼
+[ NOTIFICATION CLASS: via($notifiable) ]
+         │
+         ├──────────────────────────────────────────┬──────────────────────────────────────────┐
+         ▼                                          ▼                                          ▼
+[ CHANNEL: DATABASE ]                     [ CHANNEL: MAIL (QUEUED) ]                [ AUDIT LOG / ACTIVITY ]
+         │                                          │                                          │
+         ▼                                          ▼                                          ▼
+[ TABEL: notifications ]                  [ QUEUE: php artisan queue:work ]         [ FORENSIK AUDIT KUP ]
+         │                                          │
+         ▼                                          ▼
+[ FILAMENT TOPBAR BELL DRAWER ]           [ SMTP KORPORAT: sales@bimabergawa.com ]
+• Unread Badge Count: [2]                 • Format Formal Kop Surat Rasuna Said
+• Direct Action Link                      • Ringkasan Nilai & SKU Transaksi
+• Polling 30 Detik Interaktif             • Tombol Call-To-Action Aman OTP
+```
+
+#### 1. Konfigurasi Panel Provider Filament (`AdminPanelProvider.php`):
+```php
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->default()
+        ->id('admin')
+        ->path('admin')
+        ->databaseNotifications()
+        ->databaseNotificationsPolling('30s');
+}
+```
+
+#### 2. Enam Kelas Notifikasi Inti (`app/Notifications/`):
+1. `InquiryReceivedNotification`: Dipicu saat ada prospek baru dari formulir RFQ web publik; dikirim ke Sales PIC & Super Admin (Database + Mail).
+2. `InquiryStaleAlertNotification`: Dipicu oleh Cron Scheduled Task saat prospek status `new` melampaui 24 jam belum difollow-up; dikirim ke Sales PIC & Manajer Sales (Database + Mail).
+3. `DirectorApprovalRequiredNotification`: Dipicu saat penawaran bernilai margin kritis (< 8%) atau SO di atas batas nominal; dikirim eksklusif ke Direktur (Database + Mail).
+4. `SalesOrderConfirmedNotification`: Dipicu saat SO telah divalidasi pembayarannya; dikirim ke Tim Logistik untuk menyiapkan Surat Jalan fisik (Database + Mail).
+5. `DeliveryOrderDispatchedNotification`: Dipicu saat armada logistik berangkat dan nomor resi kurir diinput; dikirim ke Sales PIC & Klien (Database + Mail).
+6. `CommissionPayoutNotification`: Dipicu saat slip transfer bank komisi berhasil diunggah staf Finance; dikirim ke Mitra Agen Freelance terkait (Database + Mail).
+
 

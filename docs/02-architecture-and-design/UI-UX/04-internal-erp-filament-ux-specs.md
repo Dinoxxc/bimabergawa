@@ -20,6 +20,7 @@
 | `1.2.0` | 05 Sep 2026 | Principal Design Architect | Disetujui | Desain UX Portal Mandiri Agen Freelance (kartu komisi & unduh slip transfer bank) |
 | `1.3.0` | 05 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Pembersihan total seluruh karakter emoji ke Icon formal dan penyelarasan copy B2B |
 | `1.4.0` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi Dark/Light Mode, preferensi personal pengguna, matriks RBAC System Settings, dan standar multimoda UI (Table/Grid/Kanban) |
+| `1.4.1` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX drawer lonceng notifikasi ERP, unread badge, & format email transaksional |
 
 ---
 
@@ -298,4 +299,54 @@ Untuk mengoptimalkan efisiensi kerja staf internal, penyajian data di dalam pane
 3. **Moda Papan Kolom (*Kanban Board View*):**
    - **Karakteristik:** Papan visual alur kerja interaktif dengan kartu yang dapat digeser antar tahapan alur penjualan (*drag-and-drop cards*), dilengkapi indikator visual waktu tunda (*pulsing badge Stale Alert*).
    - **Penerapan Modul:** Modul CRM Prospek & Permintaan Penawaran (`InquiryResource`).
+
+---
+
+## 9. Spesifikasi Lonceng Notifikasi ERP & Email Transaksional (Notifications UX)
+
+Untuk memastikan kelancaran alur kerja operasional dan kepatuhan SLA layanan B2B, panel ERP dilengkapi sistem notifikasi terpadu yang memadukan panel laci (*slide-over drawer*) pada antarmuka web dan surel transaksional (*transactional email alert*):
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PANEL DRAWER NOTIFIKASI ERP (SLIDE-OVER KANAN)                                             [Tutup (X)] │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ NOTIFIKASI ANDA                                             [Tandai Semua Telah Dibaca] [Bersihkan]    │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [!] BUTUH OTORISASI DIREKTUR                                                         10 Menit Lalu     │
+│ Penawaran QUO-202609-0005 untuk PT. Maju Bersama memiliki Margin Kritis 5.2%.                         │
+│ [Buka Dokumen Penawaran]                                                                               │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [i] INKUIRI BARU MASUK DARI WEB PUBLIK                                               45 Menit Lalu     │
+│ Permintaan RFQ Cart dari CV. Sumber Teknik Mandiri (4 Item Produk Schneider).                          │
+│ [Tinjau Inkuiri di Kanban]                                                                             │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [!] PERINGATAN SLA PROSPEK TERTUNDA                                                  2 Jam Lalu        │
+│ Inkuiri INQ-202609-0012 telah melewati batas waktu respon awal 24 jam! Segera hubungi prospek.        │
+│ [Ambil Tindakan Follow-Up]                                                                             │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [v] BARANG TELAH DIBERANGKATKAN                                                      Kemarin, 16:20    │
+│ Surat Jalan DO-202609-0008 dikirim via Dakota Cargo (Resi: DKT-998822110).                            │
+│ [Lacak Status Pengiriman]                                                                              │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 9.1 Format Standar Email Transaksional Korporat
+Surel resmi dikirim menggunakan driver SMTP korporat (`sales@bimabergawa.com`) dengan susunan tata letak standar ISO A4 responsif:
+1. **Header Surat:** Menampilkan logo resmi PT. Panca Bima Bergawa dan kop alamat kantor pusat Gd. Wirausaha Rasuna Said.
+2. **Badge Klasifikasi:** Label jenis pesan formal (contoh: `[Pemberitahuan Resmi]`, `[Eskalasi Direktur]`, atau `[Konfirmasi Pengiriman]`).
+3. **Badan Informasi:** Rincian data transaksi (Nomor Dokumen, Nama Klien/Prospek, Daftar SKU Barang, Estimasi Nilai).
+4. **Tombol Call-To-Action (CTA):** Tombol aksi tebal monokrom yang langsung mengarahkan staf atau klien ke halaman yang relevan di ERP melalui otentikasi aman OTP.
+5. **Footer Legalitas:** Pernyataan kerahasiaan B2B dan informasi hak cipta PT. Panca Bima Bergawa.
+
+### 9.2 Matriks 6 Skenario Notifikasi Utama
+
+| Skenario Notifikasi | Pemicu (*Trigger*) | Sasaran Penerima | Saluran Media | Teks Ringkas Lonceng ERP | Subjek & Aksi Utama Email |
+| :--- | :--- | :--- | :---: | :--- | :--- |
+| **1. Inkuiri / RFQ Baru** | Submit RFQ Cart Drawer web publik | Sales PIC & Super Admin | In-App & Email | `[Inkuiri Baru] Masuk dari {Nama Klien} ({Jumlah} SKU)` | `[PBB-RFQ] Inkuiri Baru {No Inkuiri} - {Nama Klien}` -> Tombol Tinjau di ERP |
+| **2. Peringatan SLA Stale** | Inkuiri status new $> 24\text{ jam}$ | Sales PIC & Manajer | In-App & Email | `[Peringatan SLA] {No Inkuiri} belum direspon!` | `[URGENT] Peringatan Batas SLA Respon Inkuiri {No Inkuiri}` -> Tombol Follow-Up |
+| **3. Approval Margin Kritis** | Quote margin $< 8.00\%$ atau SO besar | Direktur / Super Admin | In-App & Email | `[Butuh Otorisasi] {No Quote} Margin Kritis {Margin}%` | `[APPROVAL] Permohonan Persetujuan Margin Kritis {No Quote}` -> Tombol Setujui / Tolak |
+| **4. Sales Order Siap Kirim** | SO diverifikasi lunas oleh Finance | Tim Logistik / Gudang | In-App & Email | `[Instruksi Kirim] SO {No SO} siap diproses Surat Jalan` | `[LOGISTIK] Instruksi Penerbitan Surat Jalan Fisik {No SO}` -> Tombol Buat DO |
+| **5. Surat Jalan Diberangkatkan** | Logistik menginput no resi ekspedisi | Sales PIC & Klien | In-App & Email | `[Barang Dikirim] DO {No DO} jalan via {Ekspedisi}` | `[PENGIRIMAN] Surat Jalan {No DO} Diberangkatkan (Resi: {Resi})` -> Tombol Lacak |
+| **6. Pencairan Komisi Agen** | Finance mengunggah slip transfer | Mitra Agen Terkait | In-App & Email | `[Komisi Ditransfer] Dana Rp {Nominal} telah dikirim` | `[KOMISI] Bukti Transfer Komisi Transaksi {No SO}` -> Tombol Unduh Bukti |
+
 

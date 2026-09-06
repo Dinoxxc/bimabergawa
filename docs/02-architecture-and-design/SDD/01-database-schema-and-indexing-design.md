@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.4.0 |
+| **Versi Dokumen** | 1.4.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -20,6 +20,7 @@
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Finalisasi skema tabel `commissions` & `commission_payouts` untuk mitra freelance |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `system_settings` untuk konfigurasi dinamis PPN, margin, & operasional ERP |
+| `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `notifications` untuk arsitektur notifikasi in-app lonceng ERP & email multi-kanal |
 
 ---
 
@@ -302,6 +303,21 @@
 
 ---
 
+### 2.5 Modul Notifikasi Terintegrasi & Peringatan Alur Kerja
+
+#### Tabel: `notifications`
+| Nama Kolom | Tipe Data | Keterangan & Atribut |
+|:---|:---|:---|
+| `id` | CHAR(36) | Primary Key, UUID Versi 4 |
+| `type` | VARCHAR(255) | Nama Kelas Notifikasi (contoh: `App\Notifications\DirectorApprovalRequiredNotification`) |
+| `notifiable_type` | VARCHAR(255) | Polymorphic Entity (Default: `App\Models\User`) |
+| `notifiable_id` | BIGINT UNSIGNED | ID Pengguna Penerima Notifikasi (Polymorphic ID) |
+| `data` | TEXT | Payload JSON Data Notifikasi (judul, ringkasan pesan, icon SVG, tautan aksi dokumen) |
+| `read_at` | TIMESTAMP | Nullable, Waktu notifikasi ditandai telah dibaca oleh pengguna |
+| `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
+
+---
+
 ## 3. Strategi Pengindeksan B-Tree Berkinerja Tinggi (Indexing Strategy)
 
 Untuk menjamin performa query katalog instan di Hostinger Premium Web Hosting:
@@ -326,4 +342,8 @@ CREATE INDEX idx_inquiries_phone ON inquiries (phone_wa);
 CREATE INDEX idx_inquiries_status ON inquiries (status, created_at);
 CREATE INDEX idx_quotations_expires ON quotations (status, expires_at);
 CREATE INDEX idx_system_settings_group ON system_settings (`group`);
+
+-- 5. Index Notifikasi In-App ERP
+CREATE INDEX idx_notifications_notifiable ON notifications (notifiable_type, notifiable_id);
+CREATE INDEX idx_notifications_read_at ON notifications (read_at);
 ```

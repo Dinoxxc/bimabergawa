@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-IDX` |
-| **Versi Dokumen** | 1.4.0 |
+| **Versi Dokumen** | 1.4.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -20,6 +20,7 @@
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Validasi integritas single DB `bimabergawa` & standarisasi dokumen |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan entitas `system_settings` untuk konfigurasi dinamis PPN & parameter operasional ERP |
+| `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan entitas `notifications` untuk arsitektur notifikasi multi-kanal (lonceng ERP & email) |
 
 ---
 
@@ -66,6 +67,7 @@ erDiagram
     users ||--o{ quotations : "creates"
     users ||--o{ articles : "authors"
     users ||--o| freelance_sales : "linked agent account"
+    users ||--o{ notifications : "receives"
 
     commission_tiers ||--o{ freelance_sales : "active tier"
     freelance_sales ||--o{ inquiries : "referred leads"
@@ -92,6 +94,15 @@ erDiagram
         varchar group
         varchar type
     }
+
+    notifications {
+        uuid id PK
+        varchar type
+        varchar notifiable_type
+        bigint notifiable_id
+        text data
+        timestamp read_at
+    }
 ```
 
 ---
@@ -108,3 +119,5 @@ erDiagram
 | **Pencadangan Bulanan** | [03-core-services-and-business-logic.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/03-core-services-and-business-logic.md) | Command `MonthlyDatabaseBackupCommand` mengeksekusi dump `.sql.gz` otomatis tiap tanggal 1. |
 | **Auto-Reminder Multi-Kanal** | [03-core-services-and-business-logic.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/03-core-services-and-business-logic.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Stale lead visual timer di Kanban & event dispatcher email ke prospek/direksi. |
 | **Pengaturan Pajak PPN Dinamis** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `system_settings` & `ManageSystemSettings` page untuk kontrol tarif PPN mandiri oleh Direksi Finance. |
+| **Notifikasi Multi-Kanal (Lonceng & Email)** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `notifications` & Filament Database Notifications terintegrasi surel SMTP korporat. |
+

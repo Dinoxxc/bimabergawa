@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-UIUX-04` |
-| **Versi Dokumen** | 1.4.0 |
+| **Versi Dokumen** | 1.4.3 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -22,6 +22,7 @@
 | `1.4.0` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi Dark/Light Mode, preferensi personal pengguna, matriks RBAC System Settings, dan standar multimoda UI (Table/Grid/Kanban) |
 | `1.4.1` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX drawer lonceng notifikasi ERP, unread badge, & format email transaksional |
 | `1.4.2` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX widget diskusi dan linimasa catatan internal dokumen transaksi |
+| `1.4.3` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX Mention `@User` popover, dual-layer visibility tab (`[Catatan Internal]` vs `[Pesan ke Agen]`), dan isolasi portal agen |
 
 ---
 
@@ -352,46 +353,95 @@ Surel resmi dikirim menggunakan driver SMTP korporat (`sales@bimabergawa.com`) d
 
 ---
 
-## 10. Spesifikasi Panel Diskusi & Linimasa Catatan Internal Dokumen (Internal Comments UX)
+## 10. Spesifikasi Panel Diskusi & Linimasa Catatan Dokumen (Contextual Discussion & Mention UX)
 
-Untuk memastikan seluruh koordinasi bisnis, justifikasi persetujuan harga, dan instruksi logistik terdokumentasi rapi tanpa kehilangan konteks transaksi, disematkan panel diskusi internal di bagian bawah halaman detail transaksi (*View Quotation, View Sales Order, View Delivery Order, View Inquiry*):
+Untuk memastikan seluruh koordinasi bisnis, justifikasi persetujuan harga, instruksi logistik, serta klarifikasi teknis dengan mitra agen freelance terdokumentasi rapi tanpa kehilangan konteks transaksi, disematkan panel diskusi berbasis Livewire 3 di bagian bawah halaman detail transaksi:
+
+### 10.1 Wireframe Panel Staf Internal (View Inquiry, Quotation, SO, DO)
+
+Pada panel staf internal, modul inkuiri dilengkapi **Tab Visibilitas Ganda (Dual-Layer Visibility)** untuk memisahkan obrolan rahasia internal dari pesan yang dapat dibaca oleh mitra agen:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ LINIMASA CATATAN & KOORDINASI INTERNAL (QUO-202609-0005 - PT. MAJU BERSAMA)                           │
+│ LINIMASA DISKUSI & KOORDINASI TRANSAKSI (INQ-202609-0012 - PROYEK RS SILOAM)                           │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ RIWAYAT PERCAKAPAN BERURUT WAKTU:                                                                      │
+│ TAB VISIBILITAS:  [● CATATAN INTERNAL STAF (4)]    [  PESAN KE MITRA AGEN (2) ]                        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ RIWAYAT PERCAKAPAN:                                                                                    │
 │                                                                                                        │
 │ [Avatar: AF] Ahmad Fauzi  [Sales PIC]                                                   3 Jam Lalu     │
-│ Kategori: [Justifikasi Approval]                                                                       │
-│ "Pak Direktur, mohon approval untuk quote ini ya. Gross margin berada di angka 7.2% (kritis) karena    │
-│ PT. Maju Bersama mengambil volume 500 unit kontaktor Schneider LC1D25M7 untuk proyek pabrik Karawang.   │
-│ Kami sudah negosiasi harga khusus dengan prinsipal Schneider."                                         │
-│ [Lampiran: quotation_prinsipal_schneider_special_price.pdf (1.2 MB)]                                   │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Kategori: [Catatan Internal]                                                                           │
+│ "Pak @bambang.wibowo, mohon izin diskon ekstra 2.5% untuk item ACB Masterpact MTZ. Agen freelance     │
+│ Pak Hendra mengabarkan kompetitor menawarkan ABB dengan selisih tipis."                                │
+│ [Lampiran: komparasi_harga_kompetitor.pdf (850 KB)]                                                    │
+│                                                                                                        │
+│ ────────────────────────────────────────────────────────────────────────────────────────────────────── │
 │ [Avatar: BW] Bambang Wibowo  [Direktur]                                                 2 Jam Lalu     │
-│ Kategori: [Catatan Finance]                                                                            │
-│ "Disetujui. Potensi repeat order pabrik Karawang cukup tinggi. Pastikan termin pembayaran DP 50% CBD    │
-│ (Cash Before Delivery) lunas sebelum DO diterbitkan oleh gudang."                                      │
+│ Kategori: [Approval Diskon]                                                                            │
+│ "@ahmad.fauzi Disetujui diskon ekstra 2.5%, margin kita masih terjaga di 16.4%. Jangan lupa informasikan│
+│ ke agen agar segera kunci PO minggu ini."                                                              │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ FORMULIR TAMBAH CATATAN INTERNAL BARU:                                                                 │
-│ Kategori Catatan : [ Justifikasi Approval v ]                                                          │
-│ Pesan Koordinasi : [ Tulis instruksi, klarifikasi stok, atau justifikasi diskon di sini...           ] │
-│ Lampiran Berkas  : [ Pilih Berkas Pendukung... ] (Format PDF/JPG/PNG, Maksimal 5 MB)                   │
+│ FORMULIR INPUT CATATAN BARU:                                                                           │
+│ Tipe Catatan : (●) Catatan Internal Staf      ( ) Pesan ke Mitra Agen                                  │
+│ Kategori     : [ Justifikasi Approval / Diskon v ]                                                     │
+│ Pesan        : [ @b                                                                                  ] │
+│                ┌──────────────────────────────────────────────────┐                                    │
+│                │ AUTOCOMPLETE MENTION:                            │                                    │
+│                │ > @bambang.wibowo  - Bambang Wibowo [Direktur]   │                                    │
+│                │   @budi.santoso    - Budi Santoso [Finance]      │                                    │
+│                │   @bayu.saputra    - Bayu Saputra [Logistik]     │                                    │
+│                └──────────────────────────────────────────────────┘                                    │
+│ Lampiran     : [ Pilih Berkas Pendukung... ] (PDF/JPG/PNG/WebP, Maksimal 5 MB)                         │
 │                                                                            [ Kirim Catatan Internal ]  │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 10.1 Karakteristik Desain & Keamanan Diskusi Internal
-1. **Kerahasiaan 100% Internal Korporat:**
-   - Seluruh catatan internal pada panel ini **dilarang keras** bocor ke luar. Kolom ini tidak akan pernah dicetak pada salinan dokumen PDF resmi yang dikirim ke klien maupun dapat diakses oleh Mitra Agen Freelance.
-2. **Kategori Pesan Formal:**
-   - `[General Note]`: Catatan umum koordinasi antar tim.
-   - `[Justifikasi Approval]`: Penjelasan resmi sales PIC kepada Direktur mengapa margin tipis atau diskon besar diberikan.
-   - `[Update Logistik]`: Informasi kesiapan stok gudang Rasuna Said / Cikarang dan armada kurir.
-   - `[Catatan Finance]`: Instruksi verifikasi pelunasan invoice atau bukti transfer.
-3. **Pemicu Notifikasi Otomatis:**
-   - Menambahkan catatan berkategori `[Justifikasi Approval]` otomatis mengirimkan lonceng notifikasi dan email eskalasi ke Direktur.
+---
+
+### 10.2 Wireframe Tampilan Portal Agen Freelance (`/agent/inquiries/{id}`)
+
+Mitra agen freelance **HANYA** memiliki akses diskusi pada modul Inkuiri miliknya sendiri. Tab catatan internal staf **100% dihilangkan** dari antarmuka agen guna menjamin **0% kebocoran modal HPP dan margin profit**:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ DISKUSI & KLARIFIKASI DENGAN TIM SALES PBB (INQ-202609-0012)                                          │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ PIC SALES ANDA: Ahmad Fauzi (WhatsApp: +62 812-9988-7766)                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ RIWAYAT PESAN DENGAN TIM PBB:                                                                          │
+│                                                                                                        │
+│ [Avatar: AF] Ahmad Fauzi  [Sales PIC PBB]                                               1 Hari Lalu    │
+│ "Halo Pak Hendra, untuk inkuiri Proyek RS Siloam, mohon konfirmasi breaking capacity MCCB yang diminta │
+│ apakah 36kA atau 50kA? Terima kasih."                                                                  │
+│                                                                                                        │
+│ ────────────────────────────────────────────────────────────────────────────────────────────────────── │
+│ [Avatar: HN] Hendra N  [Mitra Agen Freelance]                                           18 Jam Lalu    │
+│ "@ahmad.fauzi Klien konfirmasi butuh spesifikasi 50kA ya Pak Fauzi. Terlampir lembar single line      │
+│ diagram dari konsultan perencana."                                                                     │
+│ [Lampiran: sld_rs_siloam_rev2.pdf (2.4 MB)]                                                            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ FORMULIR BALASAN KE TIM SALES:                                                                         │
+│ Pesan Anda   : [ Ketik pesan klarifikasi teknis atau lampiran dokumen ke PIC Sales di sini...        ] │
+│ Lampiran     : [ Pilih Dokumen / Gambar... ] (Maksimal 5 MB)                                           │
+│                                                                               [ Kirim Pesan ke Sales ] │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 10.3 Aturan Interaksi & Keamanan Fitur Mention & Chat
+
+1. **Mekanisme Mention Popover (`@` Trigger):**
+   - Mengetik simbol `@` pada textarea memicu popover autocomplete berbasis Alpine.js.
+   - Navigasi dropdown mendukung tombol panah keyboard (`Up`/`Down`) dan pemilihan cepat (`Enter` / `Click`).
+   - Teks mention di-highlight dengan latar kontras lembut (contoh: `<span class="bg-zinc-100 text-zinc-900 font-semibold px-1 py-0.5 rounded">@Bambang Wibowo</span>`).
+2. **Otomatisasi Notifikasi Multi-Kanal:**
+   - Setiap pengguna yang di-mention otomatis menerima notifikasi in-app pada lonceng ERP (`[Notif: N]`).
+   - Jika preferensi email pengguna aktif, sistem memicu pengiriman email notifikasi formal berisikan cuplikan pesan dan tombol langsung ke halaman dokumen transaksi.
+3. **Pembatasan Hak Akses Mitra Agen (Strict Isolation):**
+   - **Zero Access ke Quotation/SO/DO:** Mitra agen dilarang keras mengakses modul penawaran, sales order, dan surat jalan. Chat agen **eksklusif hanya ada pada modul Inkuiri**.
+   - **Zero Visibility Catatan Internal:** Nilai kueri difilter ketat `WHERE type = 'agent_visible'` pada portal agen. Catatan HPP atau instruksi direksi tidak akan pernah terkirim ke browser agen.
+   - **Restricted Mention Scope:** Mitra agen hanya diizinkan me-mention **Sales PIC yang ditugaskan** pada proyek tersebut. Autocomplete popover agen tidak akan menampilkan nama Direksi, Finance, atau staf lain.
 
 
 

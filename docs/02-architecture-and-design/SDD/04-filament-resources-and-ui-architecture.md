@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-04` |
-| **Versi Dokumen** | 1.4.0 |
+| **Versi Dokumen** | 1.4.4 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -23,6 +23,7 @@
 | `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi Dark/Light Mode Filament Provider, Matriks RBAC Tab Pengaturan Sistem, & Standar Multimoda UI |
 | `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi arsitektur notifikasi multi-kanal (Database In-App Bell & Email Transaksional) |
 | `1.4.3` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan komponen Livewire diskusi internal dokumen transaksi (Internal Comments Timeline) |
+| `1.4.4` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi fitur Mention `@User`, dispatch notifikasi otomatis, dan pembatasan dual-layer chat agen freelance |
 
 ---
 
@@ -246,34 +247,58 @@ public function panel(Panel $panel): Panel
 
 ---
 
-### 2.10 Komponen Diskusi & Catatan Internal Dokumen (Internal Comments Timeline Component)
+### 2.10 Komponen Diskusi & Catatan Transaksi Berkonteks (Internal Comments & Contextual Discussion Component)
 
-Untuk mendukung koordinasi tanpa friksi antar staf tanpa membebani server dengan koneksi WebSocket, sistem menerapkan komponen diskusi internal berbasis Livewire 3 (`App\Livewire\InternalCommentsTimeline`) yang disematkan pada setiap halaman tampilan transaksi:
+Untuk mendukung koordinasi tanpa friksi antar-staf internal serta komunikasi terarah dengan mitra agen freelance tanpa membebani server dengan koneksi WebSocket persisten, sistem menerapkan komponen diskusi berbasis Livewire 3 (`App\Livewire\InternalCommentsTimeline`) yang disematkan pada setiap halaman tampilan transaksi:
 
 ```
 +─────────────────────────────────────────────────────────────────────────────+
-|           KOMPONEN DISKUSI & TIMELINE INTERNAL (Livewire 3)                |
+|       KOMPONEN DISKUSI & TIMELINE TRANSAKSI BERKONTEKS (Livewire 3)         |
 +─────────────────────────────────────────────────────────────────────────────+
  [Model: Quotation / SO / Inquiry / DO] <--- Polymorphic (commentable)
                  │
                  ▼
  [Livewire Component: InternalCommentsTimeline]
+ ├── Tab Visibilitas Ganda (Dual-Layer Visibility Tabs)
+ │   ├── Tab 1: [Catatan Internal Staf] (type = 'internal') -> Hanya Staf Internal
+ │   └── Tab 2: [Pesan ke Agen / Mitra] (type = 'agent_visible') -> Staf & Agen Freelance
  ├── Daftar Percakapan Berurut Waktu (Chronological Activity Feed)
- │   ├── Avatar Pengguna & Text Badge Role ([Sales PIC] / [Direksi] / [Logistik])
+ │   ├── Avatar Pengguna & Text Badge Role ([Sales PIC] / [Direksi] / [Mitra Agen])
  │   ├── Timestamp Relatif ("15 Menit Lalu")
- │   ├── Konten Catatan / Justifikasi Margin / Instruksi Khusus
- │   └── Lampiran Pendukung (Brosur, Bukti Chat Prinsipal)
+ │   ├── Konten Catatan / Justifikasi Margin / Instruksi Khusus (Support @User Mention)
+ │   └── Lampiran Pendukung (Brosur PDF, Bukti Chat Prinsipal, Gambar WebP)
  └── Form Input Catatan Baru
-     ├── Pilihan Tipe: General Note, Justifikasi Approval, Update Logistik, Catatan Finance
-     ├── Input Teks & Upload Berkas
-     └── Auto-Dispatch Event: Mengirim notifikasi in-app lonceng ke PIC terkait
+     ├── Input Teks dengan Autocomplete Popover @User (Alpine.js)
+     ├── Pilihan Tipe: Catatan Internal vs Pesan ke Agen
+     ├── Upload Berkas Lampiran Pendukung
+     └── Auto-Dispatch Event:
+         ├── Simpan Array mentioned_user_ids (JSON) ke internal_comments
+         ├── Kirim UserMentionedNotification (In-App Bell Drawer + Email)
+         └── Kirim Event Reaktif ke Komponen Penerima
 ```
 
 1. **Penyematan pada Halaman Tampilan Filament:**
-   - Disematkan pada footer atau sidebar kanan modul `ViewInquiry`, `ViewQuotation`, `ViewSalesOrder`, dan `ViewDeliveryOrder`.
-2. **Efisiensi Server:**
-   - Menggunakan query database relasional `internal_comments` terindeks.
-   - Reaktif melalui Livewire component refresh, 100% aman dijalankan di LiteSpeed Shared Hosting 512 MB RAM.
+   - **Internal ERP Panel (`app.bimabergawa.com`):** Disematkan pada footer/sidebar kanan modul `ViewInquiry`, `ViewQuotation`, `ViewSalesOrder`, dan `ViewDeliveryOrder`.
+   - **Agent Portal (`app.bimabergawa.com/agent`):** Disematkan **EKSKLUSIF HANYA** pada halaman `ViewInquiry` milik agen itu sendiri. Agen dilarang keras mengakses modul Quotation, SO, maupun DO.
+
+2. **Fitur Mention Pengguna (`@User`) & Integrasi Notifikasi:**
+   - **Input Popover Autocomplete:** Saat pengguna mengetik `@`, popover Alpine.js menampilkan daftar pengguna aktif yang relevan.
+   - **Parsing & Penyimpanan Data:** Sistem memparsing teks, mengekstrak user ID, dan menyimpannya pada kolom `mentioned_user_ids JSON` (contoh: `[2, 5]`).
+   - **Trigger Notifikasi Instan:** Setiap pengguna yang di-mention otomatis menerima:
+     - Notifikasi in-app pada database notification drawer (`notifications` table).
+     - Notifikasi email formal jika pengaturan notifikasi email pengguna aktif.
+
+3. **Batasan Keamanan & Hak Akses Agen Freelance (Strict Security Boundary):**
+   - **Zero Margin & HPP Leak (Rule 3.3 & Rule 4):** Mitra Agen **DILARANG KERAS** melihat diskusi bertipe `internal` yang memuat perhitungan HPP, margin kotor, diskon prinsipal, atau catatan komersial rahasia.
+   - **Isolasi Catatan pada Inkuiri:**
+     - Staf Internal dapat melihat kedua tab: `[Catatan Internal Staf]` dan `[Pesan ke Agen]`.
+     - Mitra Agen pada portal agen **HANYA** melihat tab `[Pesan ke Tim Sales PBB]` (`type = 'agent_visible'`). Tab `[Catatan Internal Staf]` dihilangkan 100% dari antarmuka agen di level query Eloquent (`WHERE type = 'agent_visible'`).
+   - **Aturan Mention Mitra Agen:**
+     - Mitra Agen **hanya diperbolehkan me-mention Sales PIC yang ditugaskan (*assigned PIC*)** pada inkuiri tersebut. Sistem menolak dan memfilter mention ke Direksi, Finance, atau staf lain di luar hak akses agen.
+
+4. **Efisiensi Server & Kompatibilitas Shared Hosting:**
+   - Menggunakan query database relasional `internal_comments` terindeks polimorfik (`commentable_type`, `commentable_id`).
+   - Pembaruan UI dilakukan secara reaktif melalui polling interval ringan Livewire (cth: `wire:poll.30s` atau event emit) tanpa koneksi daemon WebSocket (Soketi/Node.js) sehingga 100% aman dan stabil pada LiteSpeed Shared Hosting RAM 512 MB.
 
 
 

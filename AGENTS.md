@@ -158,6 +158,7 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
 | **Manajemen Pengguna & Role** | **Penuh** | Dilarang | Dilarang | Dilarang | Dilarang |
 | **Pengaturan Sistem Global** | **Penuh** | Dilarang (HPP) | **Penuh (Komersial)** | Penuh (Gudang) | Dilarang |
 | **Profil & Tema (Dark/Light)** | **Penuh (Mandiri)** | **Penuh (Mandiri)** | **Penuh (Mandiri)** | **Penuh (Mandiri)** | **Penuh (Mandiri)** |
+| **Diskusi / Chat Transaksi** | **Penuh (Internal & Agen)** | Milik Sendiri & Tim | Catatan Finance | Catatan Logistik | Inkuiri Milik Sendiri (`agent_visible` saja) |
 
 ---
 

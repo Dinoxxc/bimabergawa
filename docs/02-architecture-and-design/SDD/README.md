@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-IDX` |
-| **Versi Dokumen** | 1.4.1 |
+| **Versi Dokumen** | 1.4.3 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -22,6 +22,7 @@
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan entitas `system_settings` untuk konfigurasi dinamis PPN & parameter operasional ERP |
 | `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan entitas `notifications` untuk arsitektur notifikasi multi-kanal (lonceng ERP & email) |
 | `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan entitas `internal_comments` untuk fitur diskusi & catatan internal transaksi |
+| `1.4.3` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan kolom `mentioned_user_ids` (JSON) dan isolasi dual-layer chat agen freelance |
 
 ---
 
@@ -116,6 +117,7 @@ erDiagram
         bigint commentable_id
         text comment
         varchar type
+        json mentioned_user_ids
         varchar attachment_path
     }
 ```
@@ -135,6 +137,6 @@ erDiagram
 | **Auto-Reminder Multi-Kanal** | [03-core-services-and-business-logic.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/03-core-services-and-business-logic.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Stale lead visual timer di Kanban & event dispatcher email ke prospek/direksi. |
 | **Pengaturan Pajak PPN Dinamis** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `system_settings` & `ManageSystemSettings` page untuk kontrol tarif PPN mandiri oleh Direksi Finance. |
 | **Notifikasi Multi-Kanal (Lonceng & Email)** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `notifications` & Filament Database Notifications terintegrasi surel SMTP korporat. |
-| **Diskusi & Catatan Transaksi Berkonteks** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `internal_comments` polimorfik terhubung ke Quotation, SO, DO, dan Inquiry tanpa beban WebSocket. |
+| **Diskusi & Catatan Transaksi Berkonteks** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `internal_comments` dengan `@User` mention, notifikasi otomatis, dan dual-layer chat isolasi agen freelance. |
 
 

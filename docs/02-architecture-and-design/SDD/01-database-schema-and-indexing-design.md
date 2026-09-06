@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.4.1 |
+| **Versi Dokumen** | 1.4.3 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -22,6 +22,7 @@
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `system_settings` untuk konfigurasi dinamis PPN, margin, & operasional ERP |
 | `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `notifications` untuk arsitektur notifikasi in-app lonceng ERP & email multi-kanal |
 | `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema tabel `internal_comments` untuk fitur diskusi & catatan koordinasi transaksi berkonteks |
+| `1.4.3` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan kolom `mentioned_user_ids` (JSON) dan dual-layer visibility (`internal`, `agent_visible`, `system`) pada `internal_comments` |
 
 ---
 
@@ -328,8 +329,9 @@
 | `user_id` | BIGINT UNSIGNED | Foreign Key ke `users.id` (Penulis Catatan, ON DELETE CASCADE) |
 | `commentable_type` | VARCHAR(255) | Polymorphic Entity (misal: `App\Models\Quotation`, `App\Models\SalesOrder`, `App\Models\Inquiry`, `App\Models\DeliveryOrder`) |
 | `commentable_id` | BIGINT UNSIGNED | ID Entitas Transaksi Bersangkutan |
-| `comment` | TEXT | Isi Catatan Diskusi / Justifikasi Otorisasi / Info Logistik |
-| `type` | ENUM | `general_note`, `approval_justification`, `logistics_update`, `finance_note` (Default: `general_note`) |
+| `comment` | TEXT | Isi Catatan Diskusi / Justifikasi Otorisasi / Info Logistik / Pesan ke Agen |
+| `type` | VARCHAR(30) | Kategori & Visibilitas: `internal` (hanya staf internal PBB), `agent_visible` (dapat dilihat oleh mitra agen pada inkuiri miliknya & sales pic), `system` (catatan audit/event otomatis sistem) (Default: `internal`) |
+| `mentioned_user_ids` | JSON | Nullable, Array ID pengguna yang di-mention (cth: `[2, 5]`) untuk trigger notifikasi instan & filter kueri |
 | `attachment_path` | VARCHAR(255) | Nullable, Path Berkas Lampiran Pendukung (Bukti Chat Supplier, PDF Penawaran Prinsipal) |
 | `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
 

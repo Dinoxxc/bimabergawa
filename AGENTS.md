@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `AGY-PBB-AGENT-RULEBOOK` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Autonomous Agent & Engineering Operational Guidelines |
 
@@ -38,6 +38,7 @@ Sistem digital PBB beroperasi di bawah arsitektur basis data tunggal (*Single Da
          • Bulk SKU Quick Paste Parser                               • Sales Order & Approval Limit Direksi
          • Direct WhatsApp Telemetri Track                           • Surat Jalan Logistik (Partial Delivery Order)
          • Upload BOQ Proyek (PDF/XLSX Magic Bytes)                  • Portal Agen Freelance & Ledger Komisi (Multi-Tenant)
+                                                                     • Pengaturan Pajak PPN & Komersial Dinamis (system_settings)
 ```
 
 ---
@@ -97,8 +98,10 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
   - `8.00% <= Margin < 15.00%`: Peringatan Margin Tipis (Badge Kuning).
   - `Margin < 8.00%` atau Harga Jual di Bawah HPP: Margin Kritis (Badge Merah Menyala). Sistem mengunci tombol terbit dan mewajibkan eskalasi **Approval Direktur**.
 
-### 3.6 Snapshot Pajak PPN 11% Statis (Kepatuhan UU HPP)
-- Seluruh rekaman transaksi quotation, sales order, dan invoice wajib mencatat persentase PPN saat transaksi dibuat (`vat_rate_applied = 11.00`). Dilarang menghitung PPN dinamis dari konfigurasi global saat membaca data transaksi historis.
+### 3.6 Snapshot Pajak PPN Statis Multi-Tarif Dinamis (Kepatuhan UU HPP & UU KUP)
+- Sistem wajib mendukung penyesuaian tarif PPN nasional multi-periode yang dinamis dan berulang (misal: 11% -> 12% -> 13% -> 11%).
+- Tarif PPN aktif dikelola secara mandiri oleh Super Admin / Direksi Finance melalui tabel `system_settings` di panel ERP (`app.bimabergawa.com`) tanpa ketergantungan pada perubahan teknis file `.env`.
+- Setiap rekaman transaksi quotation, sales order, dan invoice wajib mencatat persentase PPN saat transaksi diterbitkan (`vat_rate_applied = $activeVatRate`). Dilarang keras menghitung ulang PPN transaksi historis dari konfigurasi global saat membaca data masa lalu guna menjamin kepatuhan audit pajak 10 tahun UU KUP.
 
 ### 3.7 Penomoran Dokumen Bebas Race Condition (Atomic Concurrency Lock)
 - Penomoran dokumen transaksi wajib melalui `DocumentNumberService` menggunakan transaksi database atomik (`SELECT ... FOR UPDATE`) dengan auto-retry 3x saat terjadi deadlock MySQL. Standar format resmi:
@@ -259,13 +262,13 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 - [x] `chore/01-environment-and-multidomain-config` : Konfigurasi `.env.example`, `.env`, multi-domain routing, dan koneksi MySQL 8.0.
 
 ### Fase 1: Core Database & Model Layer
-- [ ] `feature/core-01-database-migrations` : Skema 15 tabel migrasi MySQL 8.0 InnoDB (`brands`, `categories`, `products`, `inquiries`, `quotations`, `sales_orders`, `delivery_orders`, `agent_profiles`, `commission_ledgers`, `document_sequences`). *(Rujukan: test-cases/06-integration-and-infrastructure/01-seeder-and-database.md)*
+- [ ] `feature/core-01-database-migrations` : Skema tabel migrasi MySQL 8.0 InnoDB (`brands`, `categories`, `products`, `inquiries`, `quotations`, `sales_orders`, `delivery_orders`, `freelance_sales`, `commission_payouts`, `document_sequences`, `article_categories`, `articles`, `system_settings`). *(Rujukan: test-cases/06-integration-and-infrastructure/01-database-seeders-and-migration-rollback.md)*
 - [ ] `feature/core-02-eloquent-models-and-scopes` : 10+ Eloquent Models, relasi, enkripsi PDP `$casts = ['encrypted']`, dan Global Scope `AgentTenantScope`. *(Rujukan: test-cases/05-security-and-non-functional/01-data-privacy-and-encryption.md)*
-- [ ] `feature/core-03-seeders-and-factories` : Seeder 5 Spatie Roles & Permissions, 4 Prinsipal Global (Schneider, Philips, ABB, Legrand), kategori, dan sample SKU. *(Rujukan: test-cases/06-integration-and-infrastructure/01-seeder-and-database.md)*
+- [ ] `feature/core-03-seeders-and-factories` : Seeder 5 Spatie Roles & Permissions, 4 Prinsipal Global (Schneider, Philips, ABB, Legrand), kategori, sample SKU, dan default system settings. *(Rujukan: test-cases/06-integration-and-infrastructure/01-seeder-and-database.md)*
 
 ### Fase 2: Core Service Layer (Logika Bisnis Terisolasi)
 - [ ] `feature/core-04-service-document-number` : `DocumentNumberService` Atomic Lock `SELECT ... FOR UPDATE` + 3x retry saat deadlock (`INQ`, `QUO`, `SO`, `DO`, `COM`). *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
-- [ ] `feature/core-05-service-quotation-margin` : `QuotationCalculationService` Live Margin HPP Guard formula + snapshot PPN 11% statis. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
+- [ ] `feature/core-05-service-quotation-margin` : `PricingAndMarginCalculatorService` Live Margin HPP Guard formula + snapshot PPN dinamis via `SystemSettingService`. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
 - [ ] `feature/core-06-service-sku-parser` : `SkuParserService` Regex textarea RFQ parser & `BulkSkuNormalizationService`. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md)*
 - [ ] `feature/core-07-service-secure-upload` : `SecureFileUploadService` biner kernel `finfo` magic bytes & UUID v4 storage privat. *(Rujukan: test-cases/05-security-and-non-functional/03-file-upload-security.md)*
 - [ ] `feature/core-08-service-fulfillment-and-commission` : `DeliveryOrderFulfillmentService` pelacakan `remaining_qty` & `CommissionPayoutService` ledger mutasi komisi. *(Rujukan: test-cases/02-internal-erp-crm/04-delivery-order.md)*
@@ -285,6 +288,7 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 - [ ] `feature/erp-05-delivery-orders-logistics` : Modul logistik Surat Jalan (DO), validasi pengiriman parsial, dan update status SO ke `completed`. *(Rujukan: test-cases/02-internal-erp-crm/04-delivery-order.md)*
 - [ ] `feature/erp-06-agent-commission-portal` : Panel Agen `/agent`, registrasi agen, inkuiri terisolasi (`AgentTenantScope`), buku besar komisi & form pencairan. *(Rujukan: test-cases/03-agent-commission-portal/)*
 - [ ] `feature/erp-07-excel-import-dompdf-export` : Import katalog Excel chunking 100 baris (RAM 512 MB), ekspor PDF standar ISO A4 kop Rasuna Said. *(Rujukan: test-cases/04-catalog-and-inventory-management/)*
+- [ ] `feature/erp-08-system-settings-management` : Halaman Filament `ManageSystemSettings` untuk pengaturan tarif PPN aktif dinamis, ambang batas margin approval, nomor hotline WA, dan profil kantor. *(Rujukan: docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
 
 ### Fase 5: Testing, QA Verification, & CI/CD
 - [ ] `test/01-pest-unit-and-feature-tests` : Eksekusi suite Pest (Unit Service, Feature Auth/Form, Architecture Test strict typing). *(Rujukan: test-cases/05-security-and-non-functional/)*

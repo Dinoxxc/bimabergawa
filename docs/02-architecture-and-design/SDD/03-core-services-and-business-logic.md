@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Backend Lead | Ditinjau | Penambahan `LiveMarginCalculator` & generator PDF Delivery Order tanpa harga |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Validasi watermarking dinamis DomPDF (`DRAFT` vs `OFFICIAL`) |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
+| `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Perhitungan dinamis tarif PPN multi-periode via `SystemSetting` (anti-hardcoded 11%) |
 
 ---
 
@@ -99,8 +100,16 @@ use InvalidArgumentException;
 
 class PricingAndMarginCalculatorService
 {
-    public static function calculate(array $items, float $discountAmount = 0.0, float $commissionRate = 0.0): array
-    {
+    /**
+     * Hitung nilai finansial komersial penawaran harga dengan PPN dinamis multi-periode.
+     * Jika $vatRate bernilai null, sistem otomatis mengambil tarif aktif via SystemSettingService / config.
+     */
+    public static function calculate(
+        array $items,
+        float $discountAmount = 0.0,
+        float $commissionRate = 0.0,
+        ?float $vatRate = null
+    ): array {
         $subtotal = 0.0;
         $totalCost = 0.0;
 
@@ -114,7 +123,10 @@ class PricingAndMarginCalculatorService
         }
 
         $dpp = max(0.0, $subtotal - $discountAmount);
-        $taxAmount = round($dpp * 0.11, 2); // PPN 11% UU HPP
+
+        // Ambil tarif PPN aktif (dinamis: 11%, 12%, 13%, dll. via setting ERP atau fallback env)
+        $effectiveVatRate = $vatRate ?? (float) SystemSettingService::get('tax_vat_rate', (float) env('STATIC_VAT_RATE', 11.00));
+        $taxAmount = round($dpp * ($effectiveVatRate / 100), 2);
         $grandTotal = $dpp + $taxAmount;
 
         // Gross Profit Margin %
@@ -129,6 +141,7 @@ class PricingAndMarginCalculatorService
             'subtotal' => $subtotal,
             'discount_amount' => $discountAmount,
             'dpp' => $dpp,
+            'vat_rate_applied' => $effectiveVatRate,
             'tax_amount' => $taxAmount,
             'grand_total' => $grandTotal,
             'total_cost' => $totalCost,
@@ -363,6 +376,56 @@ class OtpThrottlingService
         }
 
         RateLimiter::hit($throttleKey, 600); // Kunci selama 10 menit (600 detik)
+    }
+}
+```
+
+---
+
+## 8. `SystemSettingService` (Manajemen Konfigurasi Dinamis & Cache Layer)
+
+Menyediakan akses cepat terhadap konfigurasi dinamis sistem (seperti tarif PPN aktif, ambang margin, hotline WhatsApp, dan profil kantor) dengan lapisan cache database otomatis:
+
+```php
+namespace App\Services;
+
+use App\Models\SystemSetting;
+use Illuminate\Support\Facades\Cache;
+
+class SystemSettingService
+{
+    private const CACHE_TTL_SECONDS = 86400; // 24 jam (di-flush otomatis saat diupdate)
+
+    public static function get(string $key, mixed $default = null): mixed
+    {
+        return Cache::remember("system_setting:{$key}", self::CACHE_TTL_SECONDS, function () use ($key, $default) {
+            $setting = SystemSetting::where('key', $key)->first();
+            if (! $setting) {
+                return $default;
+            }
+
+            return match ($setting->type) {
+                'number' => is_numeric($setting->value) ? (float) $setting->value : $default,
+                'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
+                'json' => json_decode($setting->value, true) ?? $default,
+                default => $setting->value,
+            };
+        });
+    }
+
+    public static function set(string $key, mixed $value, string $group = 'general', string $type = 'string', ?string $description = null): void
+    {
+        SystemSetting::updateOrCreate(
+            ['key' => $key],
+            [
+                'value' => is_array($value) ? json_encode($value) : (string) $value,
+                'group' => $group,
+                'type' => $type,
+                'description' => $description,
+            ]
+        );
+
+        Cache::forget("system_setting:{$key}");
     }
 }
 ```

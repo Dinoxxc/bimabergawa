@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-SEC-04` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Security/QA Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Legal & Regulatory Auditor | Ditinjau | Penyelarasan pasal UU PDP No. 27/2022 & retensi transaksi UU KUP |
 | `1.2.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Penambahan uji masking log sensitif & otomasi pembersihan log 90 hari |
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi 16 skenario uji mendalam & standardisasi status Not Executed |
+| `1.4.0` | 06 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi skenario uji `TC-SEC-PDP-010` untuk fluktuasi multi-siklus PPN via setting ERP & audit log |
 
 ---
 
@@ -53,7 +54,7 @@
 | **`TC-SEC-PDP-007`** | Audit Trail | Pencatatan Perubahan Hak Akses / Role Spatie RBAC | Super Admin memberikan role `sales-pic` ke staf | Simpan role user | `activity_log` mencatat perubahan hak otorisasi: User target, Role yang ditambahkan, dan Admin pemberi wewenang. | Not Executed |
 | **`TC-SEC-PDP-008`** | Retensi Log | Eksekusi Terjadwal Pembersihan Log Usia > 90 Hari | Tabel `activity_log` memuat log berusia 95 hari | Jalankan perintah `php artisan activitylog:clean --days=90` | Log berusia > 90 hari terhapus secara otomatis, log 90 hari terakhir tetap terjaga utuh, ukuran tabel MySQL tetap ramping. | Not Executed |
 | **`TC-SEC-PDP-009`** | Retensi Pajak | Kekekalan Data Transaksi Finansial Sesuai UU KUP (10 Tahun) | Transaksi PO/Faktur telah terbit | Coba lakukan hard delete pada transaksi berstatus `paid` | Sistem melarang penghapusan data fisik transaksi (*No Hard Deletion on Invoices*), data wajib dipertahankan untuk kebutuhan audit pajak 10 tahun. | Not Executed |
-| **`TC-SEC-PDP-010`** | Retensi Pajak | Keterikatan Tarif Snapshot PPN Statis (`vat_rate_applied`) | Transaksi diterbitkan saat PPN 11% | Ubah konfigurasi PPN nasional di sistem menjadi 12% | Nilai transaksi historis tetap menggunakan `vat_rate_applied = 11.00`, Grand Total historis tidak berubah sama sekali. | Not Executed |
+| **`TC-SEC-PDP-010`** | Retensi Pajak | Keterikatan Tarif Snapshot PPN Statis Multi-Siklus (`vat_rate_applied`) | Transaksi diterbitkan lintas era tarif (11% -> 12% -> 13% -> 11%) | Ubah konfigurasi PPN dinamis via panel ERP / `system_settings` | Seluruh transaksi historis mengunci tarif PPN masing-masing saat terbit, Grand Total historis tidak terdistorsi, dan histori perubahan tarif tercatat di `activity_log`. | Not Executed |
 | **`TC-SEC-PDP-011`** | Hak Subjek | Hak Penolakan Pemrosesan Data Prospek (*Opt-Out / Soft-Delete*) | Klien B2B meminta penghapusan kontak | Admin mengeksekusi *Soft Delete* pada record kontak | Kontak disembunyikan dari daftar aktif (`deleted_at != null`), data transaksi historis lampau tetap dipertahankan untuk arsip akuntansi. | Not Executed |
 | **`TC-SEC-PDP-012`** | Keamanan | Perlindungan Integritas Tabel Audit Log dari Modifikasi | Pengguna mencoba mengedit / menghapus baris di `activity_log` | Akses controller / model `Activity` | Model `Activity` berstatus *Append-Only* (tidak menyediakan fitur edit / delete manual melalui panel UI). | Not Executed |
 | **`TC-SEC-PDP-013`** | Insiden PDP | Protokol Pencabutan Sesi Darurat saat Terjadi Pelanggaran Keamanan | Terjadi indikasi kebocoran kredensial | Eksekusi perintah darurat: `php artisan pbb:revoke-all-sessions` | Seluruh sesi aktif di tabel `sessions` dikosongkan seketika, seluruh pengguna dipaksa login ulang via Passwordless OTP baru. | Not Executed |
@@ -80,12 +81,21 @@
    - Baris log bertanggal 100 hari yang lalu terhapus permanen dari MySQL.
    - Seluruh log yang berusia <= 90 hari tetap utuh.
 
-### 3.2 Prosedur Uji TC-SEC-PDP-010 (Verifikasi Snapshot PPN Statis)
+### 3.2 Prosedur Uji TC-SEC-PDP-010 (Verifikasi Snapshot PPN Statis Multi-Siklus)
 
-1. **Langkah 1:** Buat Quotation baru dengan Subtotal Rp 10.000.000 saat tarif PPN sistem diset `11.00%`.
-2. **Langkah 2:** Grand Total tersimpan: `Rp 11.100.000` (PPN = Rp 1.100.000, `vat_rate_applied = 11.00`).
-3. **Langkah 3:** Ubah parameter tarif PPN sistem pada `config/pbb.php` menjadi `12.00%`.
-4. **Langkah 4:** Buka kembali Quotation lama dan unduh PDF resminya.
-5. **Verifikasi Teknis:**
-   - PDF Quotation lama tetap menampilkan PPN 11% (Rp 1.100.000) dan Grand Total Rp 11.100.000.
-   - Angka transaksi historis tidak terpengaruh oleh perubahan tarif masa depan.
+1. **Langkah 1 (Era 11%):** Buka panel ERP, pastikan setting `tax_vat_rate = 11.00`. Buat Quotation #1 (Subtotal Rp 10.000.000).
+   - Grand Total tersimpan: `Rp 11.100.000` (PPN Rp 1.100.000, `vat_rate_applied = 11.00`).
+2. **Langkah 2 (Era 12%):** Buka menu `ManageSystemSettings` di ERP, ubah tarif PPN menjadi `12.00%`, simpan form.
+   - Buat Quotation #2 (Subtotal Rp 10.000.000).
+   - Grand Total tersimpan: `Rp 11.200.000` (PPN Rp 1.200.000, `vat_rate_applied = 12.00`).
+3. **Langkah 3 (Era 13%):** Ubah tarif PPN di panel ERP menjadi `13.00%`.
+   - Buat Quotation #3 (Subtotal Rp 10.000.000).
+   - Grand Total tersimpan: `Rp 11.300.000` (PPN Rp 1.300.000, `vat_rate_applied = 13.00`).
+4. **Langkah 4 (Era 11% Kembali):** Ubah tarif PPN di panel ERP kembali menjadi `11.00%`.
+   - Buat Quotation #4 (Subtotal Rp 10.000.000).
+   - Grand Total tersimpan: `Rp 11.100.000` (PPN Rp 1.100.000, `vat_rate_applied = 11.00`).
+5. **Verifikasi Teknis & Kepatuhan Audit:**
+   - Buka kembali dan unduh PDF resmi untuk Quotation #1, #2, #3, dan #4.
+   - Quotation #1 tetap 11%, Quotation #2 tetap 12%, Quotation #3 tetap 13%, dan Quotation #4 tetap 11%.
+   - Tidak ada mutasi atau perubahan angka pada transaksi historis lampau.
+   - Tabel `activity_log` memverifikasi rekaman perubahan setting `tax_vat_rate` dari 11 -> 12 -> 13 -> 11 oleh user Super Admin secara berurutan.

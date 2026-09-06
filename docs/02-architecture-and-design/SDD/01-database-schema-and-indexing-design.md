@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Senior DBA | Ditinjau | Penambahan tabel `quotation_payment_terms` & kolom pelacakan ekspedisi `delivery_orders` |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Finalisasi skema tabel `commissions` & `commission_payouts` untuk mitra freelance |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
+| `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `system_settings` untuk konfigurasi dinamis PPN, margin, & operasional ERP |
 
 ---
 
@@ -285,6 +286,22 @@
 
 ---
 
+### 2.4 Modul Pengaturan Sistem & Konfigurasi Global
+
+#### Tabel: `system_settings`
+| Nama Kolom | Tipe Data | Keterangan & Atribut |
+|:---|:---|:---|
+| `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
+| `key` | VARCHAR(100) | Unique, Kunci identifikasi setting (contoh: `tax_vat_rate`, `whatsapp_hotline`, `critical_margin_threshold`) |
+| `value` | LONGTEXT | Nullable, Nilai konfigurasi aktif (tersimpan dalam string/JSON) |
+| `group` | VARCHAR(50) | Default: `general`, Kategori: `tax`, `commercial`, `contact`, `company`, `general` (Indexed) |
+| `type` | VARCHAR(20) | Default: `string`, Tipe data primitif: `number`, `string`, `boolean`, `text`, `json` |
+| `description` | VARCHAR(255) | Nullable, Deskripsi peruntukan pengaturan di panel admin ERP |
+| `is_public` | BOOLEAN | Default: false, Bernilai true jika aman dikonsumsi frontend publik |
+| `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
+
+---
+
 ## 3. Strategi Pengindeksan B-Tree Berkinerja Tinggi (Indexing Strategy)
 
 Untuk menjamin performa query katalog instan di Hostinger Premium Web Hosting:
@@ -296,15 +313,17 @@ CREATE INDEX idx_products_catalog_search ON products (is_published, brand_id, ca
 -- 2. Index Pencarian Nomor Part Number
 CREATE INDEX idx_products_model ON products (model_number);
 
--- 3. Unique Index Transaksional
+-- 3. Unique Index Transaksional & Konfigurasi
 CREATE UNIQUE INDEX uq_inquiries_number ON inquiries (inquiry_number);
 CREATE UNIQUE INDEX uq_quotations_number ON quotations (quotation_number);
 CREATE UNIQUE INDEX uq_sales_orders_number ON sales_orders (order_number);
 CREATE UNIQUE INDEX uq_delivery_orders_number ON delivery_orders (delivery_number);
 CREATE UNIQUE INDEX uq_freelance_referral ON freelance_sales (referral_code);
+CREATE UNIQUE INDEX uq_system_settings_key ON system_settings (`key`);
 
 -- 4. Index Telemetri & Pelacakan Prospek
 CREATE INDEX idx_inquiries_phone ON inquiries (phone_wa);
 CREATE INDEX idx_inquiries_status ON inquiries (status, created_at);
 CREATE INDEX idx_quotations_expires ON quotations (status, expires_at);
+CREATE INDEX idx_system_settings_group ON system_settings (`group`);
 ```

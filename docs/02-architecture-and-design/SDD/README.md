@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-IDX` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Lead Backend Developer | Ditinjau | Penambahan service `LiveMarginCalculator` & skema tabel termin `quotation_payment_terms` |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Validasi integritas single DB `bimabergawa` & standarisasi dokumen |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
+| `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan entitas `system_settings` untuk konfigurasi dinamis PPN & parameter operasional ERP |
 
 ---
 
@@ -83,6 +84,14 @@ erDiagram
     sales_orders ||--o| commission_payouts : "yields commission"
 
     article_categories ||--o{ articles : "categorizes"
+
+    system_settings {
+        bigint id PK
+        varchar key UK
+        longtext value
+        varchar group
+        varchar type
+    }
 ```
 
 ---
@@ -98,3 +107,4 @@ erDiagram
 | **Tiering Komisi Agen** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `commission_tiers` & `commission_payouts` dengan lampiran slip transfer bank. |
 | **Pencadangan Bulanan** | [03-core-services-and-business-logic.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/03-core-services-and-business-logic.md) | Command `MonthlyDatabaseBackupCommand` mengeksekusi dump `.sql.gz` otomatis tiap tanggal 1. |
 | **Auto-Reminder Multi-Kanal** | [03-core-services-and-business-logic.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/03-core-services-and-business-logic.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Stale lead visual timer di Kanban & event dispatcher email ke prospek/direksi. |
+| **Pengaturan Pajak PPN Dinamis** | [01-database-schema-and-indexing-design.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md) | Tabel `system_settings` & `ManageSystemSettings` page untuk kontrol tarif PPN mandiri oleh Direksi Finance. |

@@ -1,0 +1,265 @@
+# AGENTS.md - Operational Rulebook & Architectural Memory Anchor
+## Proyek: B2B Multi-Brand Product Showcase & Internal Commercial ERP
+
+| Parameter Proyek | Keterangan Formal |
+| :--- | :--- |
+| **Nama Proyek** | B2B Multi-Brand Product Showcase & Internal Commercial ERP |
+| **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
+| **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
+| **Nomor Dokumen** | `AGY-PBB-AGENT-RULEBOOK` |
+| **Versi Dokumen** | 1.3.0 |
+| **Tanggal Efektif** | September 2026 |
+| **Klasifikasi Akses** | Autonomous Agent & Engineering Operational Guidelines |
+
+---
+
+## 1. Identitas Korporat, Konteks Bisnis, & Ruang Lingkup Sistem
+
+PT. Panca Bima Bergawa (PBB) adalah entitas distributor resmi B2B (*Business-to-Business*) terkemuka di Indonesia untuk produk elektrikal, mekanikal, dan otomasi industri. PBB memegang kemitraan resmi dengan prinsipal global papan atas:
+- **Schneider Electric** (Distribusi tenaga listrik, MCB, MCCB, ACB, kontaktor, inverter Altivar, sensor telemecanique, dan relay otomasi).
+- **Philips Lighting / Signify** (Pencahayaan industri komersial, *high-bay LED*, lampu sorot stadion/proyek, *downlight architectural*, dan armatur tahan ledakan).
+- **ABB** (Sakelar pemutus beban, isolator switch, motor starter, miniature circuit breaker, dan sistem proteksi kelistrikan industri berat).
+- **Legrand** (Sistem pengkabelan terstruktur, kabel tray, stop kontak industri komersial, box panel industri, dan modul otomasi gedung).
+
+### 1.1 Topologi Sistem Multi-Domain (Single Database Multi-Domain Architecture)
+
+Sistem digital PBB beroperasi di bawah arsitektur basis data tunggal (*Single Database Multi-Domain*) yang memisahkan secara ketat antara ranah etalase publik dan ranah operasional internal:
+
+```
+                                  [BASIS DATA TERPUSAT: MYSQL 8.0 INNODB]
+                                                     │
+                       ┌─────────────────────────────┴─────────────────────────────┐
+                       ▼                                                           ▼
+         [DOMAIN PUBLIK: bimabergawa.com]                            [SUBDOMAIN ERP: app.bimabergawa.com]
+         ────────────────────────────────                            ────────────────────────────────────
+         • Company Profile Resmi Rasuna Said                         • Otentikasi Passwordless Email OTP (300s)
+         • Katalog Produk Multi-Brand (Zero-Price)                   • CRM Inquiries & Kanban SLA Stale Alert
+         • RFQ Cart Drawer (Alpine.js Store)                         • Quotation Builder + Live Margin HPP Guard
+         • Bulk SKU Quick Paste Parser                               • Sales Order & Approval Limit Direksi
+         • Direct WhatsApp Telemetri Track                           • Surat Jalan Logistik (Partial Delivery Order)
+         • Upload BOQ Proyek (PDF/XLSX Magic Bytes)                  • Portal Agen Freelance & Ledger Komisi (Multi-Tenant)
+```
+
+---
+
+## 2. Core Tech Stack & Target Infrastruktur
+
+| Lapisan Sistem | Teknologi / Framework | Versi Spesifik | Catatan Konfigurasi, Optimasi, & Batasan |
+| :--- | :--- | :---: | :--- |
+| **Bahasa Pemrograman** | PHP (CLI & FPM) | `8.3.x` | `declare(strict_types=1);`, OPcache JIT aktif, memory limit 512 MB |
+| **Backend Framework** | Laravel Framework | `11.x` | Minimalist Skeleton, Service Layer Pattern, FormRequest mandatory |
+| **Panel Administrasi** | Filament Admin | `3.x` | Livewire 3, Tailwind CSS, Heroicons SVG, Spatie Permission |
+| **Basis Data Relasional** | MySQL Server | `8.0.x` | Engine InnoDB, Default Collation `utf8mb4_unicode_ci`, Strict SQL Mode |
+| **Frontend Reaktif** | Blade Views + Alpine.js | `3.x` | Alpine Store, LocalStorage Persistence, Event Dispatching |
+| **CSS & Design Tokens** | Tailwind CSS | `3.4.x` | Palet Monokrom Minimalis (Slate/Zinc), Typography Outfit + Inter |
+| **Optimasi Gambar** | Intervention Image | `3.x` | Driver GD, Konversi WebP 82%, Max 1600px width/height, EXIF stripped |
+| **Ekspor Dokumen** | DomPDF | `2.x` | PDF Standar ISO A4, Bebas Emoji, Kop Rasuna Said, Font Liberation Sans |
+| **Target Web Server** | LiteSpeed Web Server | Enterprise | Shared Hosting Hostinger, Batas RAM 512 MB, LiteSpeed Cache |
+| **Pengujian Otomatis** | Pest PHP / PHPUnit | `3.x` / `11.x` | Unit Tests, Feature Tests, & Architecture Test Suite |
+
+---
+
+## 3. Sepuluh Batasan Mutlak & Aturan Arsitektur (Hard Constraints)
+
+Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontribusi pada repositori ini **DILARANG KERAS** melanggar 10 aturan mutlak berikut:
+
+### 3.1 Larangan Penggunaan Karakter Emoji (Zero Emoji Constraint)
+- **0% Emoji Unicode:** Dilarang keras menggunakan karakter emoji Unicode (seperti tanda centang hijau, roket, api, jempol, dll.) pada seluruh kode Blade, PHP, controller, mailer, log, komentar kode, dokumen markdown, commit message, maupun tampilan UI antarmuka pengguna.
+- **Standar Ikon Grafis:** Wajib 100% menggunakan SVG Icons resmi:
+  - Web Publik: Blade Lucide Icons (`<x-lucide-... />`)
+  - Panel ERP: Filament Heroicons (`heroicon-o-...` untuk navigasi tabel, `heroicon-m-...` untuk tombol mini)
+  - Teks Status: Gunakan text badge formal (contoh: `[Passed]`, `[Pending]`, `[Approved]`, `[Warning]`, `[Not Executed]`).
+
+### 3.2 Desain Anti-AI Manifesto (Monochrome Minimalist Standard)
+- Dilarang keras menggunakan gaya desain AI klise:
+  - Latar belakang gradien neon ungu-biru (*purple/blue neon glow*).
+  - Bayangan tebal bercahaya (*glow shadow*).
+  - Animasi mengambang (*floating elements*) non-fungsional yang mengalihkan perhatian.
+  - Teks pemasaran AI generik robotik (seperti *"Kesimpulan"*, *"Masa Depan Digital"*, atau *"Solusi Terdepan"*).
+- Wajib menerapkan palet warna **Monokrom Minimalis B2B Formal** (Netral Slate/Zinc):
+  - Background Utama: `#ffffff` | Background Kartu: `#fafafa` / `#f4f4f5`
+  - Border Garis: `#e4e4e7` | Dark Border / Fokus: `#27272a`
+  - Teks Heading: `#09090b` | Teks Body: `#18181b` | Teks Muted: `#71717a`
+  - Aksen Interaktif / Tombol CTA: `#18181b` (Hover: `#27272a`)
+- Tipografi Wajib: **Outfit** untuk Heading/Judul dan **Inter** untuk Teks Bodi/Tabel.
+
+### 3.3 Penegakan Kebijakan Tanpa Harga pada Web Publik (Zero-Price Policy)
+- Pada web publik (`bimabergawa.com`), **DILARANG KERAS** menampilkan angka harga (Rp 0, harga nominal, diskon rupiah, coret harga, maupun angka modal HPP).
+- Seluruh kartu katalog dan detail SKU hanya menampilkan spesifikasi teknis, ketersediaan stok/status indent, dan tombol aksi `Minta Penawaran / Tambah ke RFQ` serta `Tanya via WhatsApp`.
+
+### 3.4 Otentikasi Tanpa Sandi (Passwordless Email OTP)
+- Panel ERP `app.bimabergawa.com` tidak menggunakan mekanisme login kata sandi statis biasa.
+- Otentikasi wajib menggunakan OTP 6-digit CSPRNG (`random_int(100000, 999999)`), di-hash SHA-256 pada cache backend dengan masa aktif tepat **300 detik (5 menit)**, tombol kirim ulang terkunci *cooldown 60 detik*, dan batasan percobaan verifikasi *throttle 3 kali per 10 menit*.
+
+### 3.5 Live Margin HPP Guard pada Quotation Builder
+- Setiap pembuatan penawaran harga wajib menghitung dan mengevaluasi margin kotor secara seketika (*real-time reactive*): `((Harga Jual - Base HPP) / Harga Jual) * 100%`:
+  - `Margin >= 15.00%`: Status Aman (Badge Hijau).
+  - `8.00% <= Margin < 15.00%`: Peringatan Margin Tipis (Badge Kuning).
+  - `Margin < 8.00%` atau Harga Jual di Bawah HPP: Margin Kritis (Badge Merah Menyala). Sistem mengunci tombol terbit dan mewajibkan eskalasi **Approval Direktur**.
+
+### 3.6 Snapshot Pajak PPN 11% Statis (Kepatuhan UU HPP)
+- Seluruh rekaman transaksi quotation, sales order, dan invoice wajib mencatat persentase PPN saat transaksi dibuat (`vat_rate_applied = 11.00`). Dilarang menghitung PPN dinamis dari konfigurasi global saat membaca data transaksi historis.
+
+### 3.7 Penomoran Dokumen Bebas Race Condition (Atomic Concurrency Lock)
+- Penomoran dokumen transaksi wajib melalui `DocumentNumberService` menggunakan transaksi database atomik (`SELECT ... FOR UPDATE`) dengan auto-retry 3x saat terjadi deadlock MySQL. Standar format resmi:
+  - Inkuiri: `INQ-YYYYMM-XXXX` (Contoh: `INQ-202609-0001`)
+  - Penawaran: `QUO-YYYYMM-XXXX` (Revisi: `QUO-YYYYMM-XXXX-R1`)
+  - Sales Order: `SO-YYYYMM-XXXX`
+  - Surat Jalan: `DO-YYYYMM-XXXX`
+  - Faktur Komisi: `COM-YYYYMM-XXXX`
+
+### 3.8 Enkripsi Data Pribadi Sensitif At-Rest (UU PDP No. 27/2022)
+- Kolom NIK KTP (`nik_ktp`), NPWP (`npwp_number`), dan nomor rekening perbankan (`bank_account_number`) pada model `AgentProfile` wajib dienkripsi pada level basis data menggunakan Eloquent `$casts = ['encrypted']` (kunci enkripsi `APP_KEY`).
+
+### 3.9 Isolasi Data Multi-Tenant Agen Freelance (Anti-IDOR)
+- Mitra Agen Freelance hanya boleh mengakses data inkuiri dan buku besar komisi miliknya sendiri.
+- Model `Inquiry` wajib menerapkan Global Scope `AgentTenantScope` untuk membatasi kueri otomatis (`WHERE agent_id = auth()->id()`).
+- Endpoint pencairan komisi wajib memverifikasi kepemilikan record agen secara eksplisit sebelum melakukan mutasi saldo.
+
+### 3.10 Efisiensi Memori Shared Hosting (Batas RAM 512 MB)
+- Import massal katalog Excel wajib menggunakan chunking 100 baris (`WithChunkReading`).
+- Dilarang memuat seluruh koleksi produk ke memori (`Product::all()` dilarang; wajib gunakan `Product::cursor()` atau `chunk(100)`).
+- File upload dibatasi maksimal 5 MB dengan pembersihan buffer memori secara berkala saat pemrosesan gambar WebP.
+
+---
+
+## 4. Matriks 5 Peran Spatie RBAC & Hak Akses
+
+| Modul / Tindakan Sistem | Super Admin | Sales PIC | Finance | Logistik | Mitra Agen |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Kelola Inquiries / CRM** | Penuh | Milik Sendiri & Tim | Lihat Saja | Dilarang | Milik Sendiri (Terisolasi) |
+| **Buat / Revisi Quotation** | Penuh | Buat & Revisi | Lihat Saja | Dilarang | Dilarang |
+| **Lihat Base HPP & Margin** | Ya | Ya | Ya | **Dilarang** | **Dilarang (0% Bocor)** |
+| **Approval SO Margin Kritis** | **Wajib Direktur** | Dilarang | Dilarang | Dilarang | Dilarang |
+| **Penerbitan Surat Jalan (DO)** | Penuh | Lihat Saja | Lihat Saja | **Penuh (Fisik Saja)** | Dilarang |
+| **Verifikasi Invoice & Bayar** | Penuh | Dilarang | **Penuh** | Dilarang | Dilarang |
+| **Pencairan Komisi Agen** | Approval Akhir | Dilarang | Verifikasi Struk | Dilarang | Ajukan Mandiri |
+| **Import Massal Katalog Excel** | Penuh | Penuh | Dilarang | Dilarang | Dilarang |
+| **Manajemen Pengguna & Role** | **Penuh** | Dilarang | Dilarang | Dilarang | Dilarang |
+
+---
+
+## 5. Peta Arsitektur Repositori & Rujukan Berkas
+
+```
+e:\Project\bimabergawa/
+├── AGENTS.md                                          # [Dokumen Ini] Operational Context & Memory Anchor
+├── README.md                                          # Panduan Induk Repositori & Developer Onboarding
+├── .agents/
+│   └── rules/                                         # Aturan Modular Agent
+│       ├── laravel-filament-standards.md              # Standar Arsitektur Laravel 11 & Filament 3
+│       ├── anti-ai-design-system.md                   # Standar Desain Monokrom Minimalis & Anti-AI
+│       ├── database-and-business-logic.md             # Skema Database, Sequence Lock, & Logika Bisnis
+│       └── security-and-compliance.md                 # Standar Keamanan, Enkripsi PDP, & Anti-IDOR
+├── docs/                                              # Dokumentasi Lengkap Proyek (61 Berkas Markdown, v1.3.0)
+│   ├── README.md                                      # Master Index Dokumentasi
+│   ├── 01-requirements/                               # BRD (01-05), PRD (01-05), SRS (01-05)
+│   ├── 02-architecture-and-design/                    # SAD (01-05), SDD (01-05), UI-UX (01-04)
+│   ├── 03-integration-and-deployment/                 # API-Routing (01-04), CICD (01-04), Migration (01-04)
+│   └── 04-quality-and-security/                       # QA-Testing (01-04), Security-Compliance (01-04)
+├── test-cases/                                        # Test Case Suite Lengkap (23 Berkas, 374+ Skenario)
+│   ├── README.md                                      # Master Index Test Case & Traceability
+│   ├── 01-public-website/                             # Test Case Web Publik (01-04, 63 Skenario)
+│   ├── 02-internal-erp-crm/                           # Test Case Internal ERP (01-05, 81 Skenario)
+│   ├── 03-agent-commission-portal/                    # Test Case Portal Agen (01-03, 48 Skenario)
+│   ├── 04-catalog-and-inventory-management/           # Test Case Manajemen Katalog (01-03, 48 Skenario)
+│   ├── 05-security-and-non-functional/                # Test Case Keamanan & NFR (01-04, 64 Skenario)
+│   └── 06-integration-and-infrastructure/             # Test Case Seeder, Cron, & CI/CD (01-03, 48 Skenario)
+├── app/
+│   ├── Filament/                                      # Panel ERP (Resources) & Panel Agen (Agent)
+│   ├── Http/Controllers/                              # Public Web & Redirection Controllers
+│   ├── Http/Requests/                                 # Form Request Validation Classes
+│   ├── Models/                                        # Eloquent Models, Scopes, & Casts
+│   └── Services/                                      # Business Logic & Core Service Layer
+│       ├── DocumentNumberService.php                  # Atomic Sequence Numbering
+│       ├── QuotationCalculationService.php            # Live Margin & Snapshot PPN
+│       ├── ProductImageProcessingService.php          # WebP Conversion & EXIF Stripping
+│       ├── SkuParserService.php                       # Bulk SKU Regex Parser
+│       ├── CommissionPayoutService.php                # Agent Commission Ledger & Payouts
+│       ├── BulkSkuNormalizationService.php            # SKU Normalization & Cleaning
+│       ├── DeliveryOrderFulfillmentService.php        # Partial DO & Remaining Qty Tracking
+│       └── SecureFileUploadService.php                # MIME Magic Bytes & Private Storage
+├── routes/
+│   ├── web.php                                        # Rute Domain Publik (bimabergawa.com)
+│   └── erp.php                                        # Rute Subdomain Internal (app.bimabergawa.com)
+└── tests/                                             # Automated Test Suite (Pest / PHPUnit)
+```
+
+---
+
+## 6. Standar Penulisan Kode & Panduan Eksekusi (Engineering Guidelines)
+
+1. **Strict Typing:** Seluruh berkas PHP wajib diawali `declare(strict_types=1);` dengan *type hint* eksplisit pada seluruh parameter dan *return types*.
+2. **Service Layer Pattern:** Controller dan Filament Page dilarang memuat kalkulasi bisnis langsung. Delegasikan seluruh logika ke `App\Services\...`.
+3. **Form Request Validation:** Seluruh validasi input formulir wajib menggunakan kelas mandiri pada `App\Http\Requests\...`.
+4. **Inspeksi Magic Bytes:** Validasi unggahan berkas wajib menggunakan `Illuminate\Validation\Rules\File` dan verifikasi biner kernel `finfo`.
+5. **Kebersihan Format Kode:** Jalankan `./vendor/bin/pint` sebelum melakukan commit untuk memastikan format standar PSR-12.
+6. **Perintah Terminal Eksekusi:**
+   - Dilarang mengajukan perintah `cd` beruntun pada shell; jalankan perintah dengan working directory eksplisit atau menggunakan parameter `--prefix` / `-C`.
+   - Jalankan test suite: `php artisan test` atau `./vendor/bin/pest`.
+   - Jalankan migrasi & seeding: `php artisan migrate:fresh --seed`.
+
+---
+
+## 7. Standar Git Branching & Conventional Taxonomy
+
+Seluruh agen dan pengembang wajib mematuhi arsitektur branching Git Flow berikut:
+
+### 7.1 Aturan Dasar Branching
+1. **Branch `main` (Production):** Terkunci, hanya menerima merge dari branch `release/*` atau `hotfix/*`. Dilarang melakukan commit langsung ke `main`.
+2. **Branch `staging` (Sandbox & Pre-Production):** Tempat penggabungan (*integration*) seluruh sub-bagian fitur yang telah selesai diuji.
+3. **Branch Pengerjaan (Working Branches):** Wajib dicabangkan dari `staging` (kecuali `hotfix/*` dari `main`), dan menggunakan prefix resmi:
+   - `chore/*` : Konfigurasi repositori, lingkungan, CI/CD, linter, dan skrip deploy.
+   - `feature/core-*` : Migrasi database, model relasional, dan service layer inti.
+   - `feature/web-*` : Pengembangan antarmuka dan fitur domain publik `bimabergawa.com`.
+   - `feature/erp-*` : Pengembangan modul operasional subdomain internal `app.bimabergawa.com`.
+   - `bugfix/*` : Perbaikan bug yang ditemukan selama integrasi di `staging`.
+   - `hotfix/*` : Perbaikan darurat langsung dari `main` untuk isu produksi.
+   - `test/*` : Penulisan berkas pengujian otomatis (Pest PHP).
+   - `release/*` : Persiapan rilis versi stabil menuju `main`.
+
+---
+
+## 8. Master Development Checklist & Traceability Matrix
+
+Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbarui status checklist (`[ ]` belum dimulai, `[/]` sedang dikerjakan, `[x]` selesai dan ter-merge ke staging) secara berkala:
+
+### Fase 0: Setup Git & Konfigurasi Baseline
+- [ ] `chore/00-git-init-and-baseline` : Inisialisasi Git, setup `.gitignore`, initial commit `main`, buat `staging`, dan link remote GitHub.
+- [ ] `chore/01-environment-and-multidomain-config` : Konfigurasi `.env.example`, `.env`, multi-domain routing, dan koneksi MySQL 8.0.
+
+### Fase 1: Core Database & Model Layer
+- [ ] `feature/core-01-database-migrations` : Skema 15 tabel migrasi MySQL 8.0 InnoDB (`brands`, `categories`, `products`, `inquiries`, `quotations`, `sales_orders`, `delivery_orders`, `agent_profiles`, `commission_ledgers`, `document_sequences`). *(Rujukan: test-cases/06-integration-and-infrastructure/01-seeder-and-database.md)*
+- [ ] `feature/core-02-eloquent-models-and-scopes` : 10+ Eloquent Models, relasi, enkripsi PDP `$casts = ['encrypted']`, dan Global Scope `AgentTenantScope`. *(Rujukan: test-cases/05-security-and-non-functional/01-data-privacy-and-encryption.md)*
+- [ ] `feature/core-03-seeders-and-factories` : Seeder 5 Spatie Roles & Permissions, 4 Prinsipal Global (Schneider, Philips, ABB, Legrand), kategori, dan sample SKU. *(Rujukan: test-cases/06-integration-and-infrastructure/01-seeder-and-database.md)*
+
+### Fase 2: Core Service Layer (Logika Bisnis Terisolasi)
+- [ ] `feature/core-04-service-document-number` : `DocumentNumberService` Atomic Lock `SELECT ... FOR UPDATE` + 3x retry saat deadlock (`INQ`, `QUO`, `SO`, `DO`, `COM`). *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
+- [ ] `feature/core-05-service-quotation-margin` : `QuotationCalculationService` Live Margin HPP Guard formula + snapshot PPN 11% statis. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
+- [ ] `feature/core-06-service-sku-parser` : `SkuParserService` Regex textarea RFQ parser & `BulkSkuNormalizationService`. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md)*
+- [ ] `feature/core-07-service-secure-upload` : `SecureFileUploadService` biner kernel `finfo` magic bytes & UUID v4 storage privat. *(Rujukan: test-cases/05-security-and-non-functional/03-file-upload-security.md)*
+- [ ] `feature/core-08-service-fulfillment-and-commission` : `DeliveryOrderFulfillmentService` pelacakan `remaining_qty` & `CommissionPayoutService` ledger mutasi komisi. *(Rujukan: test-cases/02-internal-erp-crm/04-delivery-order.md)*
+
+### Fase 3: Domain Publik (`bimabergawa.com`)
+- [ ] `feature/web-01-design-system-and-layout` : Master Layout Blade & Tailwind Design Tokens (Monokrom Minimalis), Font Outfit + Inter, Blade Lucide Icons, 0% emoji. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*
+- [ ] `feature/web-02-catalog-showcase-zero-price` : Showroom produk multi-brand, filter kategori, pencarian SKU, penegakan Zero-Price Policy (0% nominal rupiah). *(Rujukan: test-cases/01-public-website/02-product-catalog.md)*
+- [ ] `feature/web-03-rfq-cart-drawer` : Alpine.js RFQ Store, drawer sliding reaktif, localStorage persistence, quick-paste textarea integration. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md)*
+- [ ] `feature/web-04-inquiry-boq-submission` : Form request validation submit inkuiri publik, upload berkas BOQ privat (maks 5 MB), WhatsApp telemetri track. *(Rujukan: test-cases/01-public-website/04-inquiry-and-boq.md)*
+- [ ] `feature/web-05-company-profile-pages` : Profil resmi kantor Gd. Wirausaha Rasuna Said, sertifikasi kemitraan resmi, kontak, dan SEO meta. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*
+
+### Fase 4: Subdomain Internal ERP (`app.bimabergawa.com`)
+- [ ] `feature/erp-01-passwordless-otp-auth` : Otentikasi Passwordless Email OTP (CSPRNG 6-digit, 300s TTL, SHA-256 cache, 60s cooldown, 3-attempt throttle). *(Rujukan: test-cases/02-internal-erp-crm/01-inquiries-crm.md)*
+- [ ] `feature/erp-02-crm-inquiries-kanban` : Filament Inquiry Resource, Kanban SLA Stale Alert (>24h warning, >48h critical), assignment PIC. *(Rujukan: test-cases/02-internal-erp-crm/01-inquiries-crm.md)*
+- [ ] `feature/erp-03-quotation-builder-margin-guard` : Filament Quotation Builder, kalkulasi reactive Live Margin HPP Guard, tombol eskalasi Approval Direktur. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
+- [ ] `feature/erp-04-sales-orders-management` : Konversi Quotation ke Sales Order, validasi approval limit Direksi $\ge$ Rp 100 Juta. *(Rujukan: test-cases/02-internal-erp-crm/03-sales-order.md)*
+- [ ] `feature/erp-05-delivery-orders-logistics` : Modul logistik Surat Jalan (DO), validasi pengiriman parsial, dan update status SO ke `completed`. *(Rujukan: test-cases/02-internal-erp-crm/04-delivery-order.md)*
+- [ ] `feature/erp-06-agent-commission-portal` : Panel Agen `/agent`, registrasi agen, inkuiri terisolasi (`AgentTenantScope`), buku besar komisi & form pencairan. *(Rujukan: test-cases/03-agent-commission-portal/)*
+- [ ] `feature/erp-07-excel-import-dompdf-export` : Import katalog Excel chunking 100 baris (RAM 512 MB), ekspor PDF standar ISO A4 kop Rasuna Said. *(Rujukan: test-cases/04-catalog-and-inventory-management/)*
+
+### Fase 5: Testing, QA Verification, & CI/CD
+- [ ] `test/01-pest-unit-and-feature-tests` : Eksekusi suite Pest (Unit Service, Feature Auth/Form, Architecture Test strict typing). *(Rujukan: test-cases/05-security-and-non-functional/)*
+- [ ] `chore/02-cicd-github-actions` : Workflow GitHub Actions (Laravel Pint, PHPStan static analysis, Pest test run). *(Rujukan: test-cases/06-integration-and-infrastructure/03-cicd-and-deployment.md)*
+- [ ] `chore/03-deployment-scripts` : Skrip `deploy.sh` & `rollback.sh` optimasi LiteSpeed shared hosting. *(Rujukan: docs/03-integration-and-deployment/CICD-Deployment/)*
+
+### Fase 6: Final Staging Release & Go-Live
+- [ ] `release/v1.0.0` : Feature freeze di `staging`, final smoke testing, merge ke `main` dan `staging`, Git Tag `v1.0.0`, dan deployment produksi.

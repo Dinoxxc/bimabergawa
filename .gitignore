@@ -22,3 +22,5 @@ yarn-error.log
 database/database.sqlite
 .DS_Store
 Thumbs.db
+/scratch
+

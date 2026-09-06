@@ -59,9 +59,9 @@ Sistem digital PBB beroperasi di bawah arsitektur basis data tunggal (*Single Da
 
 ---
 
-## 3. Sebelas Batasan Mutlak & Aturan Arsitektur (Hard Constraints)
+## 3. Dua Belas Batasan Mutlak & Aturan Arsitektur (Hard Constraints)
 
-Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontribusi pada repositori ini **DILARANG KERAS** melanggar 11 aturan mutlak berikut:
+Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontribusi pada repositori ini **DILARANG KERAS** melanggar 12 aturan mutlak berikut:
 
 ### 3.1 Larangan Penggunaan Karakter Emoji (Zero Emoji Constraint)
 - **0% Emoji Unicode:** Dilarang keras menggunakan karakter emoji Unicode (seperti tanda centang hijau, roket, api, jempol, dll.) pada seluruh kode Blade, PHP, controller, mailer, log, komentar kode, dokumen markdown, commit message, maupun tampilan UI antarmuka pengguna.
@@ -128,6 +128,15 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
   2. *Usulan Perubahan Baru:* Detail modifikasi yang diminta pengguna.
   3. *Dampak Arsitektur & Bisnis:* Konsekuensi terhadap skema database, integritas relasi, logika margin/SLA, atau kepatuhan hukum.
 - **Prinsip Sinkronisasi Mutlak (Documentation-First):** Apapun perubahan yang telah dikonfirmasi dan disetujui pengguna **WAJIB DIDOKUMENTASIKAN TERLEBIH DAHULU** ke berkas dokumentasi terkait pada `docs/` (lengkap dengan pembaruan tabel *Riwayat Revisi Dokumen*), skenario `test-cases/`, dan checklist `AGENTS.md`. Dilarang keras melakukan perubahan kode tersembunyi (*silent code changes*) yang tidak sinkron dengan dokumentasi resmi proyek.
+
+### 3.12 Protokol Konfirmasi Push, Merge, & Siklus Hidup Branch Bersih (Clean Branch Lifecycle)
+- **Larangan Push/Merge Otomatis:** AI Agent dilarang keras melakukan `git push` atau `git merge` ke `staging` maupun `main` tanpa persetujuan eksplisit dari pengguna.
+- **Laporan Rinci Wajib Sebelum Push:** Sebelum meminta konfirmasi push dan merge, AI Agent wajib menyajikan laporan rinci yang memuat:
+  1. *Penambahan:* Berkas atau fungsi baru yang ditambahkan.
+  2. *Perbaikan:* Bug, error, atau anomali yang diperbaiki.
+  3. *Perubahan:* Modifikasi pada konfigurasi, kode, atau skema eksisting.
+  4. *Hasil Verifikasi / Testing:* Bukti uji coba/linting lokal yang membuktikan kode berfungsi 100%.
+- **Penghapusan Working Branch Pasca-Merge:** Setelah pengguna memberikan konfirmasi untuk push dan merge ke `staging`, working branch yang bersangkutan wajib segera dihapus baik di lokal (`git branch -d <nama_branch>`) maupun di remote jika ada (`git push origin --delete <nama_branch>`), guna menjaga repositori selalu bersih dan terbebas dari *stale branches*.
 
 ---
 
@@ -226,6 +235,18 @@ Seluruh agen dan pengembang wajib mematuhi arsitektur branching Git Flow berikut
    - `hotfix/*` : Perbaikan darurat langsung dari `main` untuk isu produksi.
    - `test/*` : Penulisan berkas pengujian otomatis (Pest PHP).
    - `release/*` : Persiapan rilis versi stabil menuju `main`.
+
+### 7.2 Protokol Konfirmasi Push, Merge, & Penghapusan Working Branch
+Setiap kali pengerjaan pada working branch selesai, ikuti prosedur ketat berikut:
+1. **Penyelesaian Lokal & Pengujian:** Kerjakan fitur pada working branch, jalankan verifikasi lokal hingga lulus 100%.
+2. **Pengajuan Laporan ke Pengguna:** Tampilkan laporan terstruktur: apa yang **ditambahkan**, **diperbaiki**, atau **diubah** beserta bukti hasil pengujian, lalu minta konfirmasi pengguna secara eksplisit sebelum melakukan push/merge.
+3. **Eksekusi Pasca-Konfirmasi Pengguna:**
+   - Pindah ke branch `staging`: `git checkout staging`.
+   - Lakukan merge: `git merge <nama_branch>`.
+   - Push branch `staging` ke remote: `git push origin staging`.
+   - Hapus working branch lokal: `git branch -d <nama_branch>`.
+   - Hapus working branch remote jika pernah di-push: `git push origin --delete <nama_branch>`.
+   - Perbarui checklist status pada `AGENTS.md` menjadi `[x]`.
 
 ---
 

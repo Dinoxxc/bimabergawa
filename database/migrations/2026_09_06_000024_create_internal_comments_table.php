@@ -18,7 +18,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->morphs('commentable', 'idx_internal_comments_commentable');
             $table->text('comment');
-            $table->string('type', 30)->default('general_note'); // general_note, approval_justification, logistics_update, finance_note
+            $table->string('type', 30)->default('internal'); // internal, agent_visible, system
+            $table->json('mentioned_user_ids')->nullable();
             $table->string('attachment_path', 255)->nullable();
             $table->timestamps();
 

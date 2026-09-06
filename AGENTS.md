@@ -59,9 +59,9 @@ Sistem digital PBB beroperasi di bawah arsitektur basis data tunggal (*Single Da
 
 ---
 
-## 3. Sepuluh Batasan Mutlak & Aturan Arsitektur (Hard Constraints)
+## 3. Sebelas Batasan Mutlak & Aturan Arsitektur (Hard Constraints)
 
-Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontribusi pada repositori ini **DILARANG KERAS** melanggar 10 aturan mutlak berikut:
+Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontribusi pada repositori ini **DILARANG KERAS** melanggar 11 aturan mutlak berikut:
 
 ### 3.1 Larangan Penggunaan Karakter Emoji (Zero Emoji Constraint)
 - **0% Emoji Unicode:** Dilarang keras menggunakan karakter emoji Unicode (seperti tanda centang hijau, roket, api, jempol, dll.) pada seluruh kode Blade, PHP, controller, mailer, log, komentar kode, dokumen markdown, commit message, maupun tampilan UI antarmuka pengguna.
@@ -120,6 +120,14 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
 - Import massal katalog Excel wajib menggunakan chunking 100 baris (`WithChunkReading`).
 - Dilarang memuat seluruh koleksi produk ke memori (`Product::all()` dilarang; wajib gunakan `Product::cursor()` atau `chunk(100)`).
 - File upload dibatasi maksimal 5 MB dengan pembersihan buffer memori secara berkala saat pemrosesan gambar WebP.
+
+### 3.11 Protokol Konfirmasi Deviasi & Sinkronisasi Dokumentasi (Change Management & Documentation-First)
+- **Konfirmasi Deviasi Wajib:** Jika terdapat instruksi, arahan, atau kebutuhan baru dari pengguna yang berbeda, bertentangan, atau memodifikasi apa yang telah tertulis dalam berkas spesifikasi `docs/`, `test-cases/`, atau rencana arsitektur awal, AI Agent **WAJIB SECARA EKSPLISIT** memberitahukan kepada pengguna mengenai perbedaan tersebut dan meminta konfirmasi formal sebelum mengeksekusi perubahan.
+- **Transparansi Perbedaan (Dampak Deviasi):** Pemberitahuan deviasi wajib memuat:
+  1. *Kondisi Dokumen Eksisting:* Spesifikasi yang saat ini tertulis pada `docs/`.
+  2. *Usulan Perubahan Baru:* Detail modifikasi yang diminta pengguna.
+  3. *Dampak Arsitektur & Bisnis:* Konsekuensi terhadap skema database, integritas relasi, logika margin/SLA, atau kepatuhan hukum.
+- **Prinsip Sinkronisasi Mutlak (Documentation-First):** Apapun perubahan yang telah dikonfirmasi dan disetujui pengguna **WAJIB DIDOKUMENTASIKAN TERLEBIH DAHULU** ke berkas dokumentasi terkait pada `docs/` (lengkap dengan pembaruan tabel *Riwayat Revisi Dokumen*), skenario `test-cases/`, dan checklist `AGENTS.md`. Dilarang keras melakukan perubahan kode tersembunyi (*silent code changes*) yang tidak sinkron dengan dokumentasi resmi proyek.
 
 ---
 
@@ -198,6 +206,7 @@ e:\Project\bimabergawa/
    - Dilarang mengajukan perintah `cd` beruntun pada shell; jalankan perintah dengan working directory eksplisit atau menggunakan parameter `--prefix` / `-C`.
    - Jalankan test suite: `php artisan test` atau `./vendor/bin/pest`.
    - Jalankan migrasi & seeding: `php artisan migrate:fresh --seed`.
+7. **Protokol Deviasi & Validasi Rencana:** Selalu validasi instruksi pengguna terhadap blueprint `docs/`. Jika ada perbedaan, hentikan tindakan sementara, laporkan deviasi untuk konfirmasi pengguna, dan sinkronisasikan seluruh dokumentasi terkait sebelum mulai mengedit kode.
 
 ---
 

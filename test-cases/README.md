@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-IDX` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Test Automation Engineer | Ditinjau | Penambahan matriks ketertelusuran dokumen acuan (Traceability) |
 | `1.2.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan skenario konkurensi race condition & isolasi tenant |
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Restrukturisasi modular 5 domain pengujian berstandar Zero Emoji |
+| `1.4.0` | 06 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan skenario uji notifikasi drawer, diskusi transaksi linimasa, autocomplete mention `@User`, dan chat isolasi multi-tenant agen |
 
 ---
 
@@ -90,12 +91,12 @@ test-cases/
 | `DOC-PBB-TC-PUB-03` | RFQ Cart & Form Inkuiri | `DOC-PBB-PRD-02`, `DOC-PBB-SRS-03`, `DOC-PBB-SDD-05` | `App\Http\Controllers\PublicInquiryController`, `App\Services\SkuParserService` |
 | `DOC-PBB-TC-PUB-04` | Direct WhatsApp Inkuiri | `DOC-PBB-PRD-02`, `DOC-PBB-SRS-02`, `DOC-PBB-API-01` | `App\Http\Controllers\WhatsAppRedirectController` |
 | `DOC-PBB-TC-ERP-01` | Otentikasi & Passwordless OTP | `DOC-PBB-SRS-04`, `DOC-PBB-SDD-03`, `DOC-PBB-SEC-01` | `App\Services\OtpAuthenticationService` |
-| `DOC-PBB-TC-ERP-02` | CRM Inquiries & Kanban SLA | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-04` | `App\Filament\Resources\InquiryResource` |
+| `DOC-PBB-TC-ERP-02` | CRM Inquiries, Linimasa & SLA | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-01`, `DOC-PBB-SDD-04` | `App\Filament\Resources\InquiryResource`, `App\Livewire\InternalCommentsTimeline` |
 | `DOC-PBB-TC-ERP-03` | Quotation & Live Margin HPP | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-03` | `App\Services\QuotationCalculationService`, `App\Services\PdfExportService` |
 | `DOC-PBB-TC-ERP-04` | Sales Order & Approval Limit | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-03` | `App\Filament\Resources\SalesOrderResource`, `App\Services\DocumentNumberService` |
 | `DOC-PBB-TC-ERP-05` | Delivery Order & Partial DO | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-03` | `App\Filament\Resources\DeliveryOrderResource` |
 | `DOC-PBB-TC-AGN-01` | Registrasi & Profil Agen | `DOC-PBB-PRD-01`, `DOC-PBB-SRS-04`, `DOC-PBB-SEC-04` | `App\Models\AgentProfile`, `App\Services\SecureFileUploadService` |
-| `DOC-PBB-TC-AGN-02` | Inkuiri Agen & Isolasi Tenant | `DOC-PBB-SRS-04`, `DOC-PBB-SAD-03`, `DOC-PBB-SEC-01` | `App\Models\Scopes\AgentTenantScope`, `App\Filament\Agent\Resources\AgentInquiryResource` |
+| `DOC-PBB-TC-AGN-02` | Inkuiri, Chat Agen & Isolasi | `DOC-PBB-SRS-04`, `DOC-PBB-SAD-03`, `DOC-PBB-SDD-01`, `DOC-PBB-SDD-04` | `App\Models\Scopes\AgentTenantScope`, `App\Filament\Agent\Resources\AgentInquiryResource`, `App\Livewire\InternalCommentsTimeline` |
 | `DOC-PBB-TC-AGN-03` | Kalkulasi & Pencairan Komisi | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-03` | `App\Services\CommissionPayoutService`, `App\Models\CommissionLedger` |
 | `DOC-PBB-TC-CAT-01` | Taksonomi Brand & Kategori | `DOC-PBB-SRS-02`, `DOC-PBB-SDD-04`, `DOC-PBB-MIG-02` | `App\Filament\Resources\BrandResource`, `App\Filament\Resources\CategoryResource` |
 | `DOC-PBB-TC-CAT-02` | Master Produk & Pipeline WebP | `DOC-PBB-SRS-02`, `DOC-PBB-SDD-03`, `DOC-PBB-SEC-03` | `App\Services\ProductImageProcessingService`, `App\Filament\Resources\ProductResource` |

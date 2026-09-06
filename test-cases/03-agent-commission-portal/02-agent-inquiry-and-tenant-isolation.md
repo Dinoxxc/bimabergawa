@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-AGN-02` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Multi-Tenant Architect | Ditinjau | Penambahan uji isolasi data tenant (AgentTenantScope) & mitigasi IDOR |
 | `1.2.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan visibilitas status komersial tanpa membocorkan margin HPP |
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi 16 skenario uji mendalam & standardisasi status Not Executed |
+| `1.4.0` | 06 Sep 2026 | Principal QA Architect | Disetujui | Penambahan uji chat inkuiri agen freelance, isolasi zero HPP leak dari catatan internal staf, dan pembatasan mention |
 
 ---
 
@@ -28,13 +29,17 @@
   - `DOC-PBB-PRD-01` (Spesifikasi Kebutuhan Portal Agen & Privasi Klien Agen)
   - `DOC-PBB-SRS-04` (Kebutuhan Fungsional FR-AGENT-02 & FR-AGENT-03)
   - `DOC-PBB-SAD-03` (Arsitektur Isolasi Data Multi-Tenant Agen)
+  - `DOC-PBB-SDD-01` (Skema Tabel `internal_comments` Kolom `type` & `mentioned_user_ids`)
+  - `DOC-PBB-SDD-04` (Komponen Livewire Internal Comments Timeline & Pembatasan Chat Agen)
+  - `DOC-PBB-UIUX-04` (UX Linimasa Percakapan Portal Agen & Larangan Tab Catatan Internal)
   - `DOC-PBB-SEC-01` (Kebijakan Otorisasi RBAC & Pencegahan Kebocoran Data Antar Agen)
-- **Modul Sistem:** Modul Inkuiri Agen & Isolasi Data Multi-Tenant
+- **Modul Sistem:** Modul Inkuiri Agen, Obrolan Koordinasi, & Isolasi Data Multi-Tenant
 - **Target Kelas / Model / Service:**
   - `App\Models\Scopes\AgentTenantScope`
   - `App\Filament\Agent\Resources\AgentInquiryResource`
-  - `App\Models\Inquiry`, `App\Models\InquiryItem`
-- **Target Method:** `apply()`, `createInquiry()`, `trackStatus()`, `authorizeView()`
+  - `App\Livewire\InternalCommentsTimeline`
+  - `App\Models\Inquiry`, `App\Models\InquiryItem`, `App\Models\InternalComment`
+- **Target Method:** `apply()`, `createInquiry()`, `trackStatus()`, `authorizeView()`, `postComment()`, `filterCommentsForAgent()`
 
 ---
 
@@ -58,6 +63,10 @@
 | **`TC-AGN-INQ-014`** | Audit | Pencatatan Aktivitas Input Inkuiri Agen pada Log | Agen menerbitkan inkuiri baru | Periksa tabel `activity_log` | Tercatat: `causer_id` (User ID Agen), Event (`agent_inquiry_created`), Nomor Registrasi, dan Waktu presisi. | Not Executed |
 | **`TC-AGN-INQ-015`** | Ekspor | Unduh Rekap Ringkas Inkuiri Saya (*Export Summary*) | Agen memiliki 20 riwayat inkuiri | Klik tombol "Ekspor Rekap Inkuiri (PDF/CSV)" | Sistem mengekspor ringkasan inkuiri milik agen tersebut (Nama Klien, Tanggal, Status) tanpa membocorkan data pihak ketiga. | Not Executed |
 | **`TC-AGN-INQ-016`** | UX Mobile | Pengoperasian Portal Inkuiri Agen pada Layar Smartphone | Agen mengakses via smartphone | Input inkuiri saat bertemu klien di lapangan | Form responsif, input SKU mudah dipilih via dropdown autosearch, upload foto BOQ langsung dari kamera HP berjalan lancar. | Not Executed |
+| **`TC-AGN-INQ-017`** | Komunikasi | Pengiriman Pesan Klarifikasi Teknis oleh Mitra Agen via Obrolan Inkuiri | Inkuiri agen aktif, halaman detail dibuka agen | Kirim pesan koordinasi teknis dan lampirkan file SLD | Komentar tersimpan di `internal_comments` dengan `type = 'agent_visible'` dan `user_id = auth()->id()`. Notifikasi instan terkirim ke Sales PIC yang ditugaskan. | Not Executed |
+| **`TC-AGN-INQ-018`** | Keamanan | Isolasi Total Catatan Rahasia Internal Staf dari Tampilan Agen | Staf internal membuat catatan `type = 'internal'` (memuat HPP & margin) pada inkuiri agen | Agen membuka halaman detail inkuiri miliknya | Catatan `internal` 100% difilter oleh kueri (`WHERE type = 'agent_visible'`), DOM agen tidak memuat teks HPP atau tab internal (Zero Leak). | Not Executed |
+| **`TC-AGN-INQ-019`** | Keamanan | Pembatasan Mention Agen Eksklusif ke Sales PIC yang Ditugaskan | Agen mengetik `@` pada form balasan inkuiri | Inspeksi dropdown autocomplete mention | Popover hanya menampilkan nama Sales PIC yang di-assign untuk inkuiri tersebut. Nama Direktur, Finance, atau staf lain difilter keluar dari daftar. | Not Executed |
+| **`TC-AGN-INQ-020`** | Keamanan | Pemblokiran Total Akses Agen ke Linimasa Dokumen Komersial Lain | Agen memiliki akun aktif | Agen mencoba akses URL diskusi Quotation/SO/DO via request langsung | Aplikasi memblokir akses dengan HTTP 403 Forbidden / 404 Not Found. Diskusi Quotation, SO, dan DO eksklusif hanya untuk staf internal PBB. | Not Executed |
 
 ---
 

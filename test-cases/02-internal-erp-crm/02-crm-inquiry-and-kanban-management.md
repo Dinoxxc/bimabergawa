@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-ERP-02` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Test Automation Engineer | Ditinjau | Penambahan uji Kanban drag-and-drop & SLA aging stale badge |
 | `1.2.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan audit log Spatie & penugasan PIC sales |
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi 16 skenario uji mendalam & standardisasi status Not Executed |
+| `1.4.0` | 06 Sep 2026 | Principal QA Architect | Disetujui | Penambahan uji notifikasi lonceng in-app drawer, linimasa diskusi internal, autocomplete mention `@User`, dan visibilitas ganda |
 
 ---
 
@@ -27,15 +28,17 @@
 - **Dokumen Acuan Spesifikasi:**
   - `DOC-PBB-PRD-03` (Spesifikasi CRM Inquiries, Kanban Board, & State Machine)
   - `DOC-PBB-SRS-04` (Kebutuhan Fungsional FR-ERP-04 s.d. FR-ERP-07)
-  - `DOC-PBB-SDD-04` (Filament CRM Resources & Kanban Action Handlers)
-  - `DOC-PBB-UIUX-04` (UX Kanban Board, Stale SLA Alert Badges, & Modal Penugasan PIC)
-- **Modul Sistem:** Modul Manajemen Prospek & CRM Inquiries
+  - `DOC-PBB-SDD-01` (Skema Basis Data Tabel `notifications` & `internal_comments`)
+  - `DOC-PBB-SDD-04` (Filament CRM Resources, Livewire Internal Comments Timeline, & Mention Popover)
+  - `DOC-PBB-UIUX-04` (UX Kanban Board, Stale SLA Badges, Notification Drawer, & Contextual Discussion UX)
+- **Modul Sistem:** Modul Manajemen Prospek, CRM Inquiries, & Koordinasi Internal
 - **Target Kelas / Controller / Service:**
   - `App\Filament\Resources\InquiryResource`
   - `App\Filament\Resources\InquiryResource\Pages\ListInquiriesKanban`
+  - `App\Livewire\InternalCommentsTimeline`
   - `App\Services\InquiryAssignmentService`
-  - `App\Models\Inquiry`
-- **Target Method:** `changeStatus()`, `assignSalesPic()`, `calculateSlaAging()`, `recordActivity()`
+  - `App\Models\Inquiry`, `App\Models\InternalComment`, `App\Models\Notification`
+- **Target Method:** `changeStatus()`, `assignSalesPic()`, `calculateSlaAging()`, `recordActivity()`, `postComment()`, `dispatchMentionNotifications()`
 
 ---
 
@@ -59,6 +62,10 @@
 | **`TC-ERP-CRM-014`** | Keamanan | Pencatatan Jejak Audit Mutasi Status (*Spatie ActivityLog*) | Status inkuiri diubah dari `contacted` ke `quoted` | Periksa tabel `activity_log` | Tercatat 1 baris log memuat: `causer_id` (User ID), `subject_id` (Inquiry ID), nilai lama `contacted`, dan nilai baru `quoted`. | Not Executed |
 | **`TC-ERP-CRM-015`** | Batas Nilai | Penanganan Inkuiri dengan Jumlah Item SKU Sangat Besar (> 100 SKU) | Inkuiri hasil bulk paste dengan 100 baris item | Buka halaman detail inkuiri | Tabel rincian item termuat dengan paginasi lancar tanpa memicu memory limit PHP (512 MB). | Not Executed |
 | **`TC-ERP-CRM-016`** | Konkurensi | Penanganan Pembaruan Status Serentak oleh 2 Pengguna | Sales dan Admin membuka inkuiri sama | Kedua pengguna mengubah status secara bersamaan | Sistem menggunakan *optimistic locking* (`updated_at` check) sehingga pembaruan kedua meminta konfirmasi data terbaru. | Not Executed |
+| **`TC-ERP-CRM-017`** | Notifikasi | Lonceng Notifikasi In-App ERP Drawer & Unread Counter | User memiliki notifikasi baru di tabel `notifications` | Buka panel ERP, periksa topbar icon lonceng | Icon lonceng menampilkan badge merah `[Notif: N]`. Klik lonceng membuka slide-over drawer memuat daftar notifikasi. Klik notifikasi menandai `read_at = NOW()` dan mengarahkan ke dokumen. | Not Executed |
+| **`TC-ERP-CRM-018`** | Kolaborasi | Penambahan Catatan Koordinasi Berkonteks via Linimasa Livewire | Halaman View Inquiry dibuka oleh Staf | Isi teks catatan pada form linimasa dan lampirkan file PDF | Record tersimpan di tabel `internal_comments` polimorfik (`commentable_type = Inquiry`, `commentable_id = ?`), komponen Livewire refresh menampilkan avatar, role, dan timestamp relatif. | Not Executed |
+| **`TC-ERP-CRM-019`** | Kolaborasi | Autocomplete Mention Pengguna (`@User`) & Pemicu Notifikasi | Staf mengetik `@` pada textarea linimasa catatan | Ketik `@bambang` -> pilih user -> kirim catatan | Sistem menyimpan array `mentioned_user_ids` (JSON) pada `internal_comments`, membuat notifikasi di tabel `notifications` untuk user bersangkutan, dan mengirimkan surel formal secara instan. | Not Executed |
+| **`TC-ERP-CRM-020`** | Visibilitas | Penegakan Visibilitas Ganda: Catatan Staf vs Pesan Agen | Staf membuka inkuiri yang diajukan agen freelance | Pilih tipe: `internal` untuk rahasia HPP, atau `agent_visible` untuk agen | Catatan `internal` hanya terlihat di panel internal PBB; catatan `agent_visible` muncul di portal agen freelance dan panel internal secara sinkron. | Not Executed |
 
 ---
 

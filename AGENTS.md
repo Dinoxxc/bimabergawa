@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `AGY-PBB-AGENT-RULEBOOK` |
-| **Versi Dokumen** | 1.4.0 |
+| **Versi Dokumen** | 1.4.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Autonomous Agent & Engineering Operational Guidelines |
 
@@ -131,6 +131,7 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
   2. *Usulan Perubahan Baru:* Detail modifikasi yang diminta pengguna.
   3. *Dampak Arsitektur & Bisnis:* Konsekuensi terhadap skema database, integritas relasi, logika margin/SLA, atau kepatuhan hukum.
 - **Prinsip Sinkronisasi Mutlak (Documentation-First):** Apapun perubahan yang telah dikonfirmasi dan disetujui pengguna **WAJIB DIDOKUMENTASIKAN TERLEBIH DAHULU** ke berkas dokumentasi terkait pada `docs/` (lengkap dengan pembaruan tabel *Riwayat Revisi Dokumen*), skenario `test-cases/`, dan checklist `AGENTS.md`. Dilarang keras melakukan perubahan kode tersembunyi (*silent code changes*) yang tidak sinkron dengan dokumentasi resmi proyek.
+- **Penyelarasan Test Case Bersamaan (Mandatory Test Case Co-Evolution):** Setiap kali terdapat penyesuaian, revisi, atau penambahan kebutuhan fitur pada berkas dokumentasi spesifikasi (`docs/`), AI Agent **WAJIB SECARA PROAKTIF MEMERIKSA DAN MENYELARASKAN** apakah berkas skenario pengujian (`test-cases/`) terkait membutuhkan pembaruan atau penambahan skenario baru. Dilarang menyelesaikan pembaruan dokumentasi tanpa memverifikasi dan menyinkronkan test suite terkait, guna menjamin ketertelusuran persyaratan (*Requirement Traceability Matrix*) selalu berada pada kondisi 100% konsisten.
 
 ### 3.12 Protokol Konfirmasi Push, Merge, & Siklus Hidup Branch Bersih (Clean Branch Lifecycle)
 - **Larangan Push/Merge Otomatis:** AI Agent dilarang keras melakukan `git push` atau `git merge` ke `staging` maupun `main` tanpa persetujuan eksplisit dari pengguna.

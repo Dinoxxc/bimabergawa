@@ -26,7 +26,7 @@ return new class extends Migration
                 'shipped',
                 'partially_fulfilled',
                 'completed',
-                'cancelled'
+                'cancelled',
             ])->default('processing')->index();
             $table->decimal('vat_rate_applied', 5, 2)->default(11.00); // Snapshot PPN transaksi
             $table->decimal('total_amount', 15, 2)->default(0.00);

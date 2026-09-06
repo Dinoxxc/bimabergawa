@@ -225,7 +225,7 @@ Seluruh agen dan pengembang wajib mematuhi arsitektur branching Git Flow berikut
 Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbarui status checklist (`[ ]` belum dimulai, `[/]` sedang dikerjakan, `[x]` selesai dan ter-merge ke staging) secara berkala:
 
 ### Fase 0: Setup Git & Konfigurasi Baseline
-- [ ] `chore/00-git-init-and-baseline` : Inisialisasi Git, setup `.gitignore`, initial commit `main`, buat `staging`, dan link remote GitHub.
+- [x] `chore/00-git-init-and-baseline` : Inisialisasi Git, setup `.gitignore`, initial commit `main`, buat `staging`, dan link remote GitHub.
 - [ ] `chore/01-environment-and-multidomain-config` : Konfigurasi `.env.example`, `.env`, multi-domain routing, dan koneksi MySQL 8.0.
 
 ### Fase 1: Core Database & Model Layer

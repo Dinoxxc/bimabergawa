@@ -156,6 +156,8 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
 | **Pencairan Komisi Agen** | Approval Akhir | Dilarang | Verifikasi Struk | Dilarang | Ajukan Mandiri |
 | **Import Massal Katalog Excel** | Penuh | Penuh | Dilarang | Dilarang | Dilarang |
 | **Manajemen Pengguna & Role** | **Penuh** | Dilarang | Dilarang | Dilarang | Dilarang |
+| **Pengaturan Sistem Global** | **Penuh** | Dilarang (HPP) | **Penuh (Komersial)** | Penuh (Gudang) | Dilarang |
+| **Profil & Tema (Dark/Light)** | **Penuh (Mandiri)** | **Penuh (Mandiri)** | **Penuh (Mandiri)** | **Penuh (Mandiri)** | **Penuh (Mandiri)** |
 
 ---
 

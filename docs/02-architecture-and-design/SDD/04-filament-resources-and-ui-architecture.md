@@ -20,6 +20,7 @@
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Desain repeater form multi-termin milestone & modal klaim lead cepat |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan halaman `ManageSystemSettings` (Pengaturan PPN dinamis, margin, & hotline) |
+| `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi Dark/Light Mode Filament Provider, Matriks RBAC Tab Pengaturan Sistem, & Standar Multimoda UI |
 
 ---
 
@@ -130,22 +131,67 @@ Panel internal ERP dibangun di atas **Filament Admin v3/v5** yang memanfaatkan r
 
 ---
 
-### 2.6 `ManageSystemSettings` (Pengaturan Pajak, Komersial & Operasional)
+### 2.6 `ManageSystemSettings` (Pengaturan Terpusat Berbasis Tab & Matriks RBAC)
 
-Halaman khusus otorisasi `super-admin` dan Direksi Finance untuk mengelola parameter operasional dan perpajakan secara dinamis melalui antarmuka web ERP tanpa memerlukan akses teknis ke server:
+Halaman khusus di bawah rute `/admin/system-settings` untuk mengelola parameter operasional, komersial, perpajakan, dan identitas perusahaan secara dinamis melalui antarmuka web ERP tanpa memerlukan akses teknis ke server:
 
-#### Schema Formulir Pengaturan:
-1. **Grup Perpajakan & Keuangan (*Tax & Finance Settings*):**
-   - `tax_vat_rate`: Input numerik persentase tarif PPN aktif saat ini (contoh: `11.00`, `12.00`, `13.00`). Menjadi acuan seketika (*real-time source of truth*) bagi pembuatan transaksi baru.
-   - Perubahan nilai PPN otomatis dicatat dalam `activity_log` forensik (User pelaksana, waktu, nilai lama, nilai baru).
-2. **Grup Batas Margin & Otorisasi (*Commercial Margin Guard*):**
+#### Schema Formulir Berbasis Tab & Hak Akses (Spatie RBAC):
+1. **Tab 1: Umum & Identitas Perusahaan (`group: general`):**
+   - `company_name`: Nama resmi entitas (`PT. Panca Bima Bergawa`).
+   - `company_address`: Alamat kantor pusat Rasuna Said untuk kop surat cetak PDF.
+   - `company_logo_path`, `company_favicon_path`: Logo resmi perusahaan.
+   - `default_timezone`: `Asia/Jakarta`, `date_format`: `d/m/Y`.
+   - *Otorisasi:* Super Admin `[Penuh]`, Staf Internal `[Lihat Saja]`, Mitra Agen `[Dilarang]`.
+2. **Tab 2: Pajak & Komersial (`group: commercial_tax`):**
+   - `tax_vat_rate`: Tarif PPN aktif saat ini (contoh: `11.00`, `12.00`). Menjadi sumber kebenaran seketika (*real-time snapshot*) bagi quotation baru.
    - `critical_margin_threshold`: Ambang batas margin kritis (Default: `8.00%`).
    - `warning_margin_threshold`: Ambang batas margin tipis (Default: `15.00%`).
-   - `director_approval_limit`: Batas nilai nominal transaksi Sales Order yang mewajibkan otorisasi Direktur (Default: `Rp 100.000.000`).
-3. **Grup Kontak & Hotline Publik (*Contact & Company Info*):**
-   - `whatsapp_hotline`: Nomor WhatsApp resmi yang menerima telemetri RFQ dan klik katalog publik.
-   - `company_address`: Alamat kantor resmi (Gd. Wirausaha Rasuna Said) untuk kop surat dan footer web publik.
-   - `company_email`: Email kontak penawaran resmi.
-4. **Mekanisme Penyimpanan & Cache:**
-   - Formulir menyimpan data langsung ke tabel `system_settings` via `SystemSettingService`.
-   - Melakukan *invalidation* otomatis pada tag cache Redis / Database Cache sehingga seluruh node web server LiteSpeed langsung membaca nilai terbaru secara instan.
+   - `director_approval_limit`: Batas nominal transaksi Sales Order yang mewajibkan otorisasi Direktur (Default: `Rp 50.000.000`).
+   - `company_bank_accounts`: JSON array nomor rekening korporat resmi untuk instruksi pembayaran.
+   - *Otorisasi:* Super Admin & Finance `[Penuh]`, Sales/Logistik/Agen `[Dilarang - Rahasia HPP]`.
+3. **Tab 3: Operasional Logistik (`group: logistics`):**
+   - `default_warehouse_origin`: Gudang asal pengiriman standar.
+   - `authorized_couriers`: Daftar ekspedisi resmi (Dakota Cargo, Baraka, Kurir Internal).
+   - `delivery_order_notes_template`: Template catatan serah terima fisik barang.
+   - *Otorisasi:* Super Admin & Logistik `[Penuh]`, Role lain `[Lihat Saja]`.
+4. **Tab 4: CRM & Penjualan (`group: crm_sales`):**
+   - `inquiry_stale_hours`: Ambang jam batas lead sebelum memicu peringatan Stale (Default: `24 jam`).
+   - `whatsapp_quotation_template`: Format pesan penawaran via WhatsApp resmi.
+   - *Otorisasi:* Super Admin & Sales PIC `[Penuh]`, Role lain `[Lihat Saja]`.
+5. **Tab 5: Skema Komisi Kemitraan (`group: commission_tiers`):**
+   - Konfigurasi ambang omset dan persentase komisi per tier agen, serta batas minimum pencairan komisi.
+   - *Otorisasi:* Super Admin & Finance `[Penuh]`, Agen `[Dilarang - Diatur Pusat]`.
+6. **Tab 6: Sistem & Maintenance (`group: system_maintenance`):**
+   - `maintenance_mode_public`: Sakelar pemeliharaan web publik `bimabergawa.com`.
+   - Kredensial SMTP OTP & API Key Gateway telemetri.
+   - *Otorisasi:* Super Admin `[Penuh Eksklusif]`.
+
+#### Mekanisme Penyimpanan & Cache Invalidation:
+- Formulir menyimpan data langsung ke tabel `system_settings` via `SystemSettingService`.
+- Melakukan *invalidation* otomatis pada tag cache Redis / Database Cache sehingga seluruh transaksi baru langsung mengacu pada konfigurasi terkini.
+
+---
+
+### 2.7 Profil Pengguna & Pengalih Tema Tampilan (`AdminPanelProvider.php` & `/admin/profile`)
+
+1. **Dukungan Dark Mode & Light Mode:**
+   - Diimplementasikan pada `AdminPanelProvider` menggunakan deklarasi `->darkMode(true)`.
+   - Menggunakan sakelar tema (*Theme Switcher*) native Filament yang terintegrasi dengan kelas `dark` pada Tailwind CSS.
+   - Disimpan pada `localStorage` peramban untuk responsivitas instan tanpa jeda kueri basis data.
+2. **Halaman Profil Mandiri (`/admin/profile`):**
+   - Dapat diakses oleh seluruh pengguna (Super Admin, Sales, Finance, Logistik, Mitra Agen).
+   - Mengelola: Nama lengkap, nomor telepon/WhatsApp, unggah avatar profil, dan riwayat sesi perangkat aktif.
+   - Perubahan alamat email wajib melalui verifikasi OTP 6-digit (masa aktif 300 detik).
+
+---
+
+### 2.8 Standar Multimoda Tampilan UI & Pagination Mandiri
+
+1. **Pagination Mandiri Per Tabel:**
+   - Setiap komponen tabel Filament memiliki kontrol pagination independen di bagian footer tabel (`[10 | 25 | 50 | 100]` baris per halaman).
+   - Menggunakan query database berindeks `LIMIT` dan `OFFSET` untuk menjaga efisiensi batas memori 512 MB shared hosting.
+2. **Tiga Moda Tampilan Antarmuka:**
+   - **Table View:** Format tabel data standar untuk modul dokumen transaksional (*Quotation*, *Sales Order*, *Surat Jalan*, *Invoice*, *Commission Ledger*).
+   - **Grid / Card View:** Format kartu visual untuk Master Katalog Produk (`ProductResource`), menampilkan gambar WebP, brand badge, SKU, dan stok.
+   - **Kanban Board View:** Format papan kolom drag-and-drop untuk CRM Inquiries (`InquiryResource`), dilengkapi indikator visual waktu tunda (*Stale Alert*).
+

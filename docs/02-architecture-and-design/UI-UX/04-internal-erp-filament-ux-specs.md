@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-UIUX-04` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Commercial Systems Lead | Ditinjau | Penambahan UX kalkulator Live Gross Margin HPP & form pengiriman Surat Jalan parsial |
 | `1.2.0` | 05 Sep 2026 | Principal Design Architect | Disetujui | Desain UX Portal Mandiri Agen Freelance (kartu komisi & unduh slip transfer bank) |
 | `1.3.0` | 05 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Pembersihan total seluruh karakter emoji ke Icon formal dan penyelarasan copy B2B |
+| `1.4.0` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi Dark/Light Mode, preferensi personal pengguna, matriks RBAC System Settings, dan standar multimoda UI (Table/Grid/Kanban) |
 
 ---
 
@@ -28,7 +29,7 @@ Panel ERP diakses melalui `app.domain.com` dengan otentikasi aman (*Passwordless
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ [LOGO PBB ERP]  PT. PANCA BIMA BERGAWA             [Cari: Ctrl+K]  [Notifikasi: 2]  [Akun: Sales PIC]  │
+│ [LOGO PBB ERP]  PT. PANCA BIMA BERGAWA   [Cari: Ctrl+K]  [Theme: Light/Dark]  [Notif: 2]  [Akun: Sales]│
 ├───────────────────────┬────────────────────────────────────────────────────────────────────────────────┤
 │ MENU UTAMA:           │ KONTEN UTAMA MODUL ERP                                                         │
 │                       │                                                                                │
@@ -176,3 +177,125 @@ Dirancang dengan *Eloquent Tenant Scope* terisolasi agar agen luar hanya melihat
 ```
 
 - **Akses Berkas Bukti Transfer:** Agen dapat mengunduh salinan slip transfer bank resmi (`bukti_transfer.jpg/pdf`) begitu staf Finance menyelesaikan pencairan komisi.
+
+---
+
+## 6. Preferensi Personal Pengguna & Pengalih Tema Tampilan (Theme Switcher & Profile)
+
+Setiap pengguna ERP internal dan mitra portal mandiri memiliki akses ke halaman **Profil & Preferensi Pribadi** (`/admin/profile` atau melalui dropdown menu akun pada header panel). Pengaturan ini bersifat independen per individu dan tidak mempengaruhi konfigurasi pengguna lain maupun sistem perusahaan.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PENGATURAN PROFIL PENGGANA & PREFERENSI TAMPILAN                                   [Simpan Perubahan] │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ PREFERENSI TEMA ANTARMUKA:                                                                             │
+│ Mode Tampilan: [ ( ) Terang (Light)    ( ) Gelap (Dark)    (*) Otomatis Ikuti Sistem OS ]              │
+│ Catatan: Beralih ke Dark Mode direkomendasikan untuk mengurangi kelelahan mata saat bekerja malam hari.│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ INFORMASI AKUN & IDENTITAS:                                                                            │
+│ Nama Lengkap           : [ Ahmad Fauzi, S.T.                                  ]                        │
+│ Alamat Email Resmi     : [ ahmad.fauzi@bimabergawa.com                        ] [Ubah Email - Butuh OTP]│
+│ Nomor Telepon / WA     : [ 081288990011                                       ]                        │
+│ Foto Profil (Avatar)   : [ Unggah Foto Baru... ] (Maksimal 2 MB, Format WebP/JPG/PNG)                  │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ SESI LOGIN AKTIF & KEAMANAN:                                                                           │
+│ • Perangkat Saat Ini   : Chrome on Windows 11 (IP: 182.253.xx.xx) - [Sesi Aktif]                       │
+│ • Terakhir Masuk       : 06 September 2026, 08:30 WIB (Otentikasi OTP Berhasil)                       │
+│ [ Keluar dari Seluruh Perangkat Lain ]                                                                 │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 6.1 Karakteristik Teknis Theme Switcher
+- **Pustaka Bawaan Filament 3:** Memanfaatkan fitur `->darkMode(true)` pada Filament Panel Provider.
+- **Penyimpanan Status:** Disimpan pada peramban lokal (`localStorage.theme = 'light' | 'dark' | 'system'`) untuk transisi tema instan tanpa jeda rendering server (*zero flash of unstyled content*).
+- **Akses Cepat Header:** Selain di halaman profil, sakelar tema juga tersedia sebagai tombol cepat satu klik pada *topbar* header ERP di samping menu pencarian global (`Ctrl+K`).
+
+---
+
+## 7. Pengaturan Sistem Terpusat & Matriks Hak Akses Berbasis Peran (System Settings Hub)
+
+Menu **Pengaturan Sistem** (`/admin/system-settings`) merupakan pusat kendali operasional, komersial, perpajakan, dan identitas korporat PT. Panca Bima Bergawa. Seluruh nilai disimpan dalam tabel `system_settings` dan dilindungi oleh otorisasi Spatie RBAC berbasis tab:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PUSAT PENGATURAN SISTEM PERUSAHAAN (PT. PANCA BIMA BERGAWA)                         [Simpan Parameter] │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ TAB NAVIGASI PENGATURAN:                                                                               │
+│ [ Umum & Identitas ] [ Pajak & Margin ] [ Logistik & Gudang ] [ CRM & Sales ] [ Komisi ] [ Maintenance ]│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ KONTEN TAB: PAJAK & KOMERSIAL (Akses Terbatas: Super Admin & Direksi Finance)                          │
+│                                                                                                        │
+│ TARIF PAJAK PERTAMBAHAN NILAI (PPN):                                                                   │
+│ Tarif PPN Aktif Saat Ini : [ 11.00 ] % (Mendukung pembaruan dinamis multi-periode UU HPP)             │
+│ Keterangan Legal         : Menjadi snapshot otomatis (vat_rate_applied) pada setiap penerbitan quote.  │
+│                                                                                                        │
+│ PERLINDUNGAN MARGIN KOTOR (LIVE MARGIN HPP GUARD):                                                     │
+│ Ambang Margin Kritis     : [ 8.00  ] % (Margin < 8% mengunci penerbitan dan wajib Approval Direktur)  │
+│ Ambang Margin Tipis      : [ 15.00 ] % (Margin 8.00% - 14.99% memicu badge kuning peringatan tipis)    │
+│ Batas Approval Nilai SO  : Rp [ 50.000.000 ] (Sales Order bernilai di atas batas ini wajib persetujuan)│
+│                                                                                                        │
+│ KETENTUAN TRANSAKSI:                                                                                   │
+│ Masa Berlaku Penawaran   : [ 14 ] Hari Kalender                                                        │
+│ Rekening Bank Resmi PT   : [ BCA: 001-234-5678 a.n. PT Panca Bima Bergawa, Mandiri: 124-00-998877 ]   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.1 Matriks Hak Akses Tab Pengaturan Sistem (Spatie RBAC)
+
+| Kategori Tab Pengaturan | Parameter Kunci yang Dikelola | Super Admin | Finance | Sales PIC | Logistik | Mitra Agen |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **1. Umum & Identitas (`general`)** | Nama PT, Alamat Rasuna Said, Logo Kop PDF, Favicon, Format Tanggal, Timezone. | **[Penuh]** | [Lihat Saja] | [Lihat Saja] | [Lihat Saja] | [Dilarang] |
+| **2. Pajak & Margin (`commercial_tax`)** | Tarif PPN Dinamis (11%/12%), Batas Margin Kritis (<8%) & Tipis (8-15%), Rekening Bank PT. | **[Penuh]** | **[Penuh]** | **[Dilarang]** | [Dilarang] | [Dilarang] |
+| **3. Logistik & Gudang (`logistics`)** | Default Gudang Asal, Rekanan Ekspedisi Resmi (Dakota, Baraka, Kurir PT), Format Syarat DO. | **[Penuh]** | [Lihat Saja] | [Lihat Saja] | **[Penuh]** | [Dilarang] |
+| **4. CRM & Sales (`crm_sales`)** | Ambang Jam Stale Leads (24 Jam), Template Pesan WhatsApp Penawaran Resmi. | **[Penuh]** | [Lihat Saja] | **[Penuh]** | [Dilarang] | [Dilarang] |
+| **5. Komisi Kemitraan (`commission_tiers`)** | Ambang Batas Omset & Bonus Tier Agen, Batas Minimum Penarikan Saldo (Rp 500rb). | **[Penuh]** | **[Penuh]** | [Lihat Saja] | [Dilarang] | [Dilarang] |
+| **6. Sistem & Maintenance (`maintenance`)** | Sakelar Pemeliharaan Web Publik, Kredensial SMTP OTP, WhatsApp Gateway API Key. | **[Penuh]** | [Dilarang] | [Dilarang] | [Dilarang] | [Dilarang] |
+
+- **Keterangan Status Akses:**
+  - `[Penuh]`: Pengguna dapat melihat dan mengubah (*read and write*) parameter pengaturan.
+  - `[Lihat Saja]`: Pengguna dapat membaca nilai parameter tetapi tombol simpan dan form input terkunci (*read-only*).
+  - `[Dilarang]`: Tab atau menu disembunyikan sepenuhnya dari antarmuka pengguna (*hidden & forbidden*).
+
+---
+
+## 8. Standar Interaktivitas Tampilan Multimoda & Pagination (Multi-View & Pagination)
+
+Untuk mengoptimalkan efisiensi kerja staf internal, penyajian data di dalam panel ERP tidak dibatasi pada satu format kaku, melainkan menggunakan tiga moda tampilan yang disesuaikan dengan karakteristik informasi:
+
+### 8.1 Standar Pagination Tabel Interaktif Mandiri
+- **Kontrol Lokal Per Halaman:** Kontrol pagination melekat langsung pada bagian bawah setiap tabel data secara interaktif, bukan diatur terpusat di pengaturan sistem.
+- **Pilihan Jumlah Baris:** Pengguna dapat memilih jumlah baris per halaman secara fleksibel sesuai ukuran monitor kerja:
+  - `[ 10 Baris ]` : Ideal untuk layar laptop portabel 13-14 inci.
+  - `[ 25 Baris ]` : Standar default ergonomis kerja harian.
+  - `[ 50 Baris ]` : Rekomendasi untuk audit cepat transaksi massal.
+  - `[ 100 Baris ]` : Pilihan maksimal untuk rekonsiliasi data bulanan.
+- **Efisiensi Kueri SQL:** Pagination wajib menggunakan kueri basis data `LIMIT` dan `OFFSET` yang terindeks (dilarang memuat seluruh koleksi ke memori aplikasi).
+
+### 8.2 Tiga Moda Tampilan Antarmuka ERP (Multi-View Standards)
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ MODUL KATALOG PRODUK MASTER                           [ Mode Tampilan: (*) Grid/Card   ( ) Tabel Data ]│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ TAMPILAN GRID / KARTU PRODUK (GRID/CARD VIEW):                                                         │
+│ ┌───────────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐             │
+│ │ [Foto WebP: Kontaktor]    │ │ [Foto WebP: MCB 3 Phase]  │ │ [Foto WebP: High-Bay LED] │             │
+│ │ BRAND: SCHNEIDER ELECTRIC │ │ BRAND: ABB                │ │ BRAND: PHILIPS LIGHTING   │             │
+│ │ SKU: LC1D25M7             │ │ SKU: S203-C16             │ │ SKU: BY698P-LED200        │             │
+│ │ TeSys D Contactor 25A 220V│ │ MCB 3P 16A 6kA Curve C    │ │ GreenPerform Highbay 150W │             │
+│ │ Stok: [Ready: 45 Unit]    │ │ Stok: [Ready: 120 Unit]   │ │ Stok: [Indent: 2-3 Minggu]│             │
+│ │ HPP : Rp 480.000 (Internal│ │ HPP : Rp 310.000 (Internal│ │ HPP : Rp 1.450.000 (Intern│             │
+│ └───────────────────────────┘ └───────────────────────────┘ └───────────────────────────┘             │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **Moda Tabel Data (*Table View*):**
+   - **Karakteristik:** Tampilan baris dan kolom padat informasi, mendukung sorting kolom, filter multi-kriteria, dan batch action.
+   - **Penerapan Modul:** Modul transaksional finansial (*Quotations*, *Sales Orders*, *Surat Jalan / Delivery Orders*, *Invoicing*, dan *Commission Ledger*).
+2. **Moda Grid / Kartu (*Grid/Card View*):**
+   - **Karakteristik:** Tampilan visual kartu berbasis galeri dengan foto produk WebP terkompresi, lencana brand (*brand badge*), nomor SKU tebal, status ketersediaan (*Ready/Indent*), dan parameter ringkas.
+   - **Penerapan Modul:** Modul Master Katalog Produk (`ProductResource`), memudahkan Sales mengenali fisik produk secara visual saat berkonsultasi dengan prinsipal atau klien.
+3. **Moda Papan Kolom (*Kanban Board View*):**
+   - **Karakteristik:** Papan visual alur kerja interaktif dengan kartu yang dapat digeser antar tahapan alur penjualan (*drag-and-drop cards*), dilengkapi indikator visual waktu tunda (*pulsing badge Stale Alert*).
+   - **Penerapan Modul:** Modul CRM Prospek & Permintaan Penawaran (`InquiryResource`).
+

@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Multi-Domain Routing Domains
+    |--------------------------------------------------------------------------
+    |
+    | Domains used to scope public showroom and internal commercial ERP.
+    |
+    */
+
+    'public_domain' => env('APP_DOMAIN_PUBLIC', 'bimabergawa.com'),
+
+    'erp_domain' => env('APP_DOMAIN_ERP', 'app.bimabergawa.com'),
+
 ];

@@ -44,7 +44,7 @@ class SalesOrder extends Model
 
     public function quotation(): BelongsTo
     {
-        return $this->belongsTo(Quotation::class);
+        return $this->belongsTo(Quotation::class)->withTrashed();
     }
 
     public function approver(): BelongsTo

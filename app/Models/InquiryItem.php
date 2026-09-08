@@ -27,7 +27,7 @@ class InquiryItem extends Model
 
     public function inquiry(): BelongsTo
     {
-        return $this->belongsTo(Inquiry::class);
+        return $this->belongsTo(Inquiry::class)->withTrashed();
     }
 
     public function product(): BelongsTo

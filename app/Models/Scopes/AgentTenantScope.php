@@ -16,9 +16,21 @@ class AgentTenantScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        if (auth()->check() && (auth()->user()->hasRole('freelance_sales') || auth()->user()->freelance_sales_id !== null)) {
-            $freelanceSalesId = auth()->user()->freelance_sales_id
-                ?? FreelanceSales::where('user_id', auth()->id())->value('id');
+        if (! auth()->check()) {
+            return;
+        }
+
+        $user = auth()->user();
+
+        // Staf internal memiliki akses penuh tanpa pembatasan tenant
+        if ($user->hasRole('super_admin') || $user->hasRole('sales_pic') || $user->hasRole('finance') || $user->hasRole('logistics')) {
+            return;
+        }
+
+        // Penegakan isolasi tenant untuk mitra agen freelance
+        if ($user->hasRole('freelance_sales') || $user->freelance_sales_id !== null) {
+            $freelanceSalesId = $user->freelance_sales_id
+                ?? FreelanceSales::where('user_id', $user->id)->value('id');
 
             if ($freelanceSalesId) {
                 $builder->where($model->getTable().'.freelance_sales_id', $freelanceSalesId);

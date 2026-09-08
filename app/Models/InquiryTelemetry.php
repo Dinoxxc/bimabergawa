@@ -24,6 +24,6 @@ class InquiryTelemetry extends Model
 
     public function inquiry(): BelongsTo
     {
-        return $this->belongsTo(Inquiry::class);
+        return $this->belongsTo(Inquiry::class)->withTrashed();
     }
 }

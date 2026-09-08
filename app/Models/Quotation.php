@@ -72,7 +72,7 @@ class Quotation extends Model
 
     public function inquiry(): BelongsTo
     {
-        return $this->belongsTo(Inquiry::class);
+        return $this->belongsTo(Inquiry::class)->withTrashed();
     }
 
     public function user(): BelongsTo
@@ -82,7 +82,7 @@ class Quotation extends Model
 
     public function freelanceSales(): BelongsTo
     {
-        return $this->belongsTo(FreelanceSales::class);
+        return $this->belongsTo(FreelanceSales::class)->withTrashed();
     }
 
     public function approver(): BelongsTo
@@ -124,5 +124,34 @@ class Quotation extends Model
     {
         return $query->whereIn('status', ['sent', 'approved'])
             ->whereDate('expires_at', '=', now()->addDays($days)->toDateString());
+    }
+
+    public function isMarginCritical(): bool
+    {
+        return (float) $this->gross_profit_margin < 8.00;
+    }
+
+    public function isMarginWarning(): bool
+    {
+        $margin = (float) $this->gross_profit_margin;
+
+        return $margin >= 8.00 && $margin < 15.00;
+    }
+
+    public function isMarginSafe(): bool
+    {
+        return (float) $this->gross_profit_margin >= 15.00;
+    }
+
+    public function getMarginStatusAttribute(): string
+    {
+        if ($this->isMarginCritical()) {
+            return 'critical';
+        }
+        if ($this->isMarginWarning()) {
+            return 'warning';
+        }
+
+        return 'safe';
     }
 }

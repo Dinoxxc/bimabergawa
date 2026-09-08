@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Models;
 
+use App\Models\CommissionPayout;
 use App\Models\CommissionTier;
 use App\Models\FreelanceSales;
 use App\Models\Inquiry;
@@ -255,5 +256,143 @@ class AgentTenantScopeTest extends TestCase
         $this->assertEquals(2, $freshInquiry->quotation->revision_number);
         $this->assertEquals(9000000.00, (float) $freshInquiry->quotation->subtotal);
         $this->assertCount(3, $freshInquiry->quotations);
+    }
+
+    /**
+     * TC-ERP-INV-016: Isolasi Data Pencairan Komisi Mitra Agen (Anti-IDOR)
+     */
+    public function test_commission_payout_is_isolated_by_agent_tenant_scope(): void
+    {
+        $tier = CommissionTier::create([
+            'name' => 'Gold Tier Payout',
+            'min_monthly_margin' => 10000000.00,
+            'commission_rate' => 10.00,
+        ]);
+
+        $agentA = FreelanceSales::create([
+            'commission_tier_id' => $tier->id,
+            'name' => 'Agen A Payout',
+            'referral_code' => 'REF-PAY-A-'.time(),
+
+            'nik' => '3171010101010001',
+            'npwp_number' => '01.234.567.8-011.000',
+            'bank_name' => 'BCA',
+            'bank_account_number' => '1234567890',
+            'bank_account_name' => 'Agen A Payout',
+            'status' => 'approved',
+        ]);
+
+        $agentB = FreelanceSales::create([
+            'commission_tier_id' => $tier->id,
+            'name' => 'Agen B Payout',
+            'referral_code' => 'REF-PAY-B-'.time(),
+
+            'nik' => '3171010101010002',
+            'npwp_number' => '01.234.567.8-012.000',
+            'bank_name' => 'Mandiri',
+            'bank_account_number' => '0987654321',
+            'bank_account_name' => 'Agen B Payout',
+            'status' => 'approved',
+        ]);
+
+        $userA = User::create([
+            'name' => 'User Agent A Payout',
+            'email' => 'agent_payout_a_'.time().'@example.com',
+            'freelance_sales_id' => $agentA->id,
+        ]);
+
+        $userB = User::create([
+            'name' => 'User Agent B Payout',
+            'email' => 'agent_payout_b_'.time().'@example.com',
+            'freelance_sales_id' => $agentB->id,
+        ]);
+
+        CommissionPayout::create([
+            'payout_number' => 'PAY-A-'.time(),
+            'freelance_sales_id' => $agentA->id,
+            'amount' => 5000000.00,
+            'type' => 'requested',
+            'status' => 'pending_payment',
+        ]);
+
+        CommissionPayout::create([
+            'payout_number' => 'PAY-B-'.time(),
+            'freelance_sales_id' => $agentB->id,
+            'amount' => 7500000.00,
+            'type' => 'requested',
+            'status' => 'pending_payment',
+        ]);
+
+        // Login as User A: must ONLY see Payout A
+        $this->actingAs($userA);
+        $payoutsA = CommissionPayout::all();
+        $this->assertCount(1, $payoutsA);
+        $this->assertEquals($agentA->id, $payoutsA->first()->freelance_sales_id);
+
+        // Login as User B: must ONLY see Payout B
+        $this->actingAs($userB);
+        $payoutsB = CommissionPayout::all();
+        $this->assertCount(1, $payoutsB);
+        $this->assertEquals($agentB->id, $payoutsB->first()->freelance_sales_id);
+    }
+
+    /**
+     * TC-ERP-INV-020: Bypass Eksplisit Otoritas Staf Internal pada AgentTenantScope
+     */
+    public function test_internal_staff_bypasses_agent_tenant_scope_even_with_freelance_id(): void
+    {
+        $roleSuperAdmin = Role::firstOrCreate(['name' => 'super_admin']);
+
+        $tier = CommissionTier::create([
+            'name' => 'Silver Staff Test',
+            'min_monthly_margin' => 5000000.00,
+            'commission_rate' => 5.00,
+        ]);
+
+        $agent = FreelanceSales::create([
+            'commission_tier_id' => $tier->id,
+            'name' => 'Agent Linked To Admin',
+            'referral_code' => 'REF-LINKED-'.time(),
+
+            'nik' => '3171010101010003',
+            'npwp_number' => '01.234.567.8-013.000',
+            'bank_name' => 'BNI',
+            'bank_account_number' => '1122334455',
+            'bank_account_name' => 'Agent Admin',
+            'status' => 'approved',
+        ]);
+
+        // Super Admin who happens to have a freelance_sales_id for testing
+        $adminUser = User::create([
+            'name' => 'Super Admin Linked',
+            'email' => 'admin_linked_'.time().'@example.com',
+            'freelance_sales_id' => $agent->id,
+        ]);
+        $adminUser->assignRole($roleSuperAdmin);
+
+        // Create 2 Inquiries: 1 with agent, 1 public direct
+        Inquiry::create([
+            'inquiry_number' => 'INQ-ADMIN-1-'.time(),
+            'freelance_sales_id' => $agent->id,
+            'customer_name' => 'Customer Agent',
+            'company_name' => 'Company Agent',
+            'phone_wa' => '08123456789',
+            'status' => 'new',
+        ]);
+
+        Inquiry::create([
+            'inquiry_number' => 'INQ-ADMIN-2-'.time(),
+            'freelance_sales_id' => null,
+            'customer_name' => 'Customer Public Direct',
+            'company_name' => 'Company Public Direct',
+            'phone_wa' => '08987654321',
+            'status' => 'new',
+        ]);
+
+        // Login as Super Admin: must see BOTH inquiries (bypass tenant scope)
+        $this->actingAs($adminUser);
+        $allInquiries = Inquiry::all();
+        $this->assertGreaterThanOrEqual(2, $allInquiries->count());
+        $this->assertTrue($allInquiries->contains('customer_name', 'Customer Public Direct'));
     }
 }

@@ -28,6 +28,15 @@ class InternalComment extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope('agent_comment_visibility', function (Builder $builder) {
+            if (auth()->check() && auth()->user()->hasRole('freelance_sales')) {
+                $builder->where('type', 'agent_visible');
+            }
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

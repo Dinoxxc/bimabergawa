@@ -117,4 +117,58 @@ class ProductSoftDeleteSlugTest extends TestCase
         $this->assertNotEquals($originalSlug, $product->slug);
         $this->assertStringStartsWith($originalSlug.'-', $product->slug);
     }
+
+    /**
+     * TC-ERP-INV-018: Mitigasi Tabrakan Deterministik Slug Restoring via Candidate While Loop
+     */
+    public function test_restoring_product_handles_multiple_sequential_slug_collisions(): void
+    {
+        $brand = Brand::create([
+            'name' => 'Schneider Multi Collide',
+            'slug' => 'schneider-multi-'.time(),
+        ]);
+
+        $category = Category::create([
+            'name' => 'Contactor Multi',
+            'slug' => 'contactor-multi-'.time(),
+        ]);
+
+        $baseSlug = 'schneider-actassi-'.time();
+
+        // 1. Create Product A with baseSlug, then delete it
+        $productA = Product::create([
+            'brand_id' => $brand->id,
+            'category_id' => $category->id,
+            'name' => 'Product A Original',
+            'slug' => $baseSlug,
+            'model_number' => 'ACT-01',
+            'cost_price' => 50000.00,
+        ]);
+        $productA->delete();
+
+        // 2. Create Product B with baseSlug (takes original)
+        $productB = Product::create([
+            'brand_id' => $brand->id,
+            'category_id' => $category->id,
+            'name' => 'Product B Claims Original',
+            'slug' => $baseSlug,
+            'model_number' => 'ACT-02',
+            'cost_price' => 55000.00,
+        ]);
+
+        // 3. Create Product C with baseSlug-2 (takes second suffix)
+        $productC = Product::create([
+            'brand_id' => $brand->id,
+            'category_id' => $category->id,
+            'name' => 'Product C Claims Suffix 2',
+            'slug' => "{$baseSlug}-2",
+            'model_number' => 'ACT-03',
+            'cost_price' => 60000.00,
+        ]);
+
+        // 4. Restore Product A: candidate while loop must skip -2 and claim -3
+        $productA->restore();
+        $this->assertNull($productA->deleted_at);
+        $this->assertEquals("{$baseSlug}-3", $productA->slug);
+    }
 }

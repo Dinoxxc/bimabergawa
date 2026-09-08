@@ -14,8 +14,12 @@ class ProductObserver
     public function deleting(Product $product): void
     {
         if (! $product->isForceDeleting()) {
-            $product->slug = $product->slug.'-deleted-'.time();
-            $product->saveQuietly();
+            // Hindari duplikasi sufiks jika telah bertanda -deleted-
+            if (! preg_match('/-deleted-\d+$/', $product->slug)) {
+                $base = substr($product->slug, 0, 220);
+                $product->slug = $base.'-deleted-'.time();
+                $product->saveQuietly();
+            }
         }
     }
 
@@ -27,8 +31,13 @@ class ProductObserver
         // Bersihkan sufiks -deleted-{timestamp}
         $cleanSlug = (string) preg_replace('/-deleted-\d+$/', '', $product->slug);
 
-        // Jika slug original telah dipakai produk aktif lain, berikan sufiks angka unik
-        $count = Product::where('slug', $cleanSlug)->where('id', '!=', $product->id)->count();
-        $product->slug = $count > 0 ? "{$cleanSlug}-".($count + 1) : $cleanSlug;
+        // Loop deterministik: cari kandidat slug unik tanpa risiko benturan MySQL Unique Key
+        $candidate = $cleanSlug;
+        $counter = 1;
+        while (Product::withTrashed()->where('slug', $candidate)->where('id', '!=', $product->id)->exists()) {
+            $counter++;
+            $candidate = "{$cleanSlug}-{$counter}";
+        }
+        $product->slug = $candidate;
     }
 }

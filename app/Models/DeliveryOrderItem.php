@@ -26,7 +26,7 @@ class DeliveryOrderItem extends Model
 
     public function deliveryOrder(): BelongsTo
     {
-        return $this->belongsTo(DeliveryOrder::class);
+        return $this->belongsTo(DeliveryOrder::class)->withTrashed();
     }
 
     public function product(): BelongsTo

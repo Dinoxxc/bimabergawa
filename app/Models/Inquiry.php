@@ -53,7 +53,7 @@ class Inquiry extends Model
 
     public function freelanceSales(): BelongsTo
     {
-        return $this->belongsTo(FreelanceSales::class);
+        return $this->belongsTo(FreelanceSales::class)->withTrashed();
     }
 
     public function items(): HasMany

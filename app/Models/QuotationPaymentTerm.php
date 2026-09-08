@@ -29,7 +29,7 @@ class QuotationPaymentTerm extends Model
 
     public function quotation(): BelongsTo
     {
-        return $this->belongsTo(Quotation::class);
+        return $this->belongsTo(Quotation::class)->withTrashed();
     }
 
     public function invoices(): HasMany

@@ -52,7 +52,7 @@ class Product extends Model
 
     public function successor(): BelongsTo
     {
-        return $this->belongsTo(Product::class, 'successor_product_id');
+        return $this->belongsTo(Product::class, 'successor_product_id')->withTrashed();
     }
 
     public function predecessors(): HasMany

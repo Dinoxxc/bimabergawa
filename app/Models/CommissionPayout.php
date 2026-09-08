@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Scopes\AgentTenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -30,14 +31,19 @@ class CommissionPayout extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AgentTenantScope);
+    }
+
     public function freelanceSales(): BelongsTo
     {
-        return $this->belongsTo(FreelanceSales::class);
+        return $this->belongsTo(FreelanceSales::class)->withTrashed();
     }
 
     public function salesOrder(): BelongsTo
     {
-        return $this->belongsTo(SalesOrder::class);
+        return $this->belongsTo(SalesOrder::class)->withTrashed();
     }
 
     public function comments(): MorphMany

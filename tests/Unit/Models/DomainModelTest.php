@@ -79,4 +79,28 @@ class DomainModelTest extends TestCase
             $this->assertNotEmpty($instance->getFillable());
         }
     }
+
+    /**
+     * Test Quotation margin helper methods per Rule 3.5
+     */
+    public function test_quotation_margin_helper_methods_evaluate_tiers_correctly(): void
+    {
+        $quoCritical = new Quotation(['gross_profit_margin' => '5.50']);
+        $this->assertTrue($quoCritical->isMarginCritical());
+        $this->assertFalse($quoCritical->isMarginWarning());
+        $this->assertFalse($quoCritical->isMarginSafe());
+        $this->assertEquals('critical', $quoCritical->margin_status);
+
+        $quoWarning = new Quotation(['gross_profit_margin' => '12.00']);
+        $this->assertFalse($quoWarning->isMarginCritical());
+        $this->assertTrue($quoWarning->isMarginWarning());
+        $this->assertFalse($quoWarning->isMarginSafe());
+        $this->assertEquals('warning', $quoWarning->margin_status);
+
+        $quoSafe = new Quotation(['gross_profit_margin' => '20.00']);
+        $this->assertFalse($quoSafe->isMarginCritical());
+        $this->assertFalse($quoSafe->isMarginWarning());
+        $this->assertTrue($quoSafe->isMarginSafe());
+        $this->assertEquals('safe', $quoSafe->margin_status);
+    }
 }

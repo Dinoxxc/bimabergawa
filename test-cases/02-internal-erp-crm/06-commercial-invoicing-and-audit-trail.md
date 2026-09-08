@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-ERP-06` |
-| **Versi Dokumen** | 1.1.0 |
+| **Versi Dokumen** | 1.2.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -17,6 +17,7 @@
 | :---: | :---: | :--- | :---: | :--- |
 | `1.0.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Skenario pengujian faktur komersial (`INV-YYYYMM-XXXX`), tempo kredit, verifikasi bukti bayar, soft deletes, dan immutable activity log |
 | `1.1.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario pembayaran parsial `paid_amount` (TC-ERP-INV-011) dan mitigasi benturan slug soft delete (TC-ERP-INV-012) |
+| `1.2.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario relasi produk discontinue withTrashed (TC-ERP-INV-013), resolusi inkuiri latestOfMany (TC-ERP-INV-014), dan siklus hidup restoring slug (TC-ERP-INV-015) |
 
 ---
 
@@ -45,6 +46,11 @@
 | **`TC-ERP-INV-008`** | Validasi | Unggah Berkas PO Resmi Pelanggan pada Sales Order | Sales Order baru dibuat dari penawaran deal | Sales PIC mengunggah berkas scan PO pelanggan (`customer_po_file_path`) | Sistem memvalidasi ekstensi PDF/JPG/PNG/WebP maksimal 5 MB, menyimpan file secara aman, dan mengizinkan Direksi meninjau fisik PO sebelum menyetujui pesanan. | Not Executed |
 | **`TC-ERP-INV-009`** | Fungsional | Catatan Evaluasi & Instruksi Direktur pada Penawaran Margin Kritis | Penawaran memiliki gross margin < 8% | Direktur menyetujui atau menolak penawaran dengan mengisi catatan instruksi | Nilai `director_notes` tersimpan pada database dan tertampil pada panel Sales PIC sebagai dasar negosiasi atau penyesuaian diskon. | Not Executed |
 | **`TC-ERP-INV-010`** | Multikurensi | Konsistensi Kode Mata Uang Transaksi (`currency`) | Penawaran atau pesanan menggunakan mata uang USD | Sales membuat penawaran dengan memilih currency 'USD' | Kolom `currency` tersimpan 'USD', simbol mata uang pada preview dan cetak PDF menampilkan '$', dan kalkulasi matematis subtotal tetap akurat 2 desimal. | Not Executed |
+| **`TC-ERP-INV-011`** | Finansial | Pelacakan Cicilan Bertahap (`paid_amount`) & Accessor Sisa Tagihan | Klien membayar termin uang muka 30% dari total tagihan | Finance memverifikasi bayar Rp 3.000.000 pada invoice Rp 10.000.000 | Nilai `paid_amount` bertambah, status menjadi `partially_paid`, dan accessor `remaining_balance` otomatis bernilai Rp 7.000.000. Saat lunas, sisa tagihan tepat 0.00. | Not Executed |
+| **`TC-ERP-INV-012`** | Database | Mitigasi Benturan Indeks Unik saat Soft Delete Produk | Produk lama dihapus sementara dari katalog | Admin menghapus produk dengan slug `schneider-mcb-16a` | `ProductObserver` mengubah slug lama menjadi `schneider-mcb-16a-deleted-{timestamp}`, sehingga slug asli bebas digunakan kembali oleh produk baru tanpa error duplicate key MySQL. | Not Executed |
+| **`TC-ERP-INV-013`** | Integritas | Relasi Item Transaksi Historis terhadap Produk Discontinue (`withTrashed`) | Produk telah di-soft-delete karena discontinued oleh prinsipal | Buka invoice, penawaran, atau surat jalan lama (3 tahun lalu) yang memuat SKU tersebut | Relasi `$item->product` tetap berhasil me-load instance produk aslinya tanpa error null object (`belongsTo(Product::class)->withTrashed()`). | Not Executed |
+| **`TC-ERP-INV-014`** | Bisnis | Resolusi Inkuiri Multi-Revisi Penawaran via `latestOfMany()` | Inkuiri memiliki 3 revisi penawaran (QUO, QUO-R1, QUO-R2) | Panggil relasi `$inquiry->quotation` pada Kanban CRM | Sistem selalu mengembalikan record penawaran revisi termutakhir (QUO-R2), bukan penawaran draft lama yang telah usang. | Not Executed |
+| **`TC-ERP-INV-015`** | Siklus Hidup | Pemulihan Produk (*Product Restoring*) dan Normalisasi Slug Bebas Benturan | Produk di tong sampah dipulihkan (*Restore*) oleh Admin | Klik tombol "Pulihkan Produk" pada panel admin | `ProductObserver::restoring` membersihkan akhiran `-deleted-{timestamp}` dan secara otomatis memeriksa ketersediaan slug; jika bentrok, menambahkan angka urut `-2` tanpa error constraint. | Not Executed |
 
 ---
 

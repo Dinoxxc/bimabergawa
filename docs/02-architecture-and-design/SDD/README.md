@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-IDX` |
-| **Versi Dokumen** | 1.6.0 |
+| **Versi Dokumen** | 1.6.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -24,6 +24,7 @@
 | `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan entitas `internal_comments` untuk fitur diskusi & catatan internal transaksi |
 | `1.4.3` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan kolom `mentioned_user_ids` (JSON) dan isolasi dual-layer chat agen freelance |
 | `1.6.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan SDD-02 v1.6.0 untuk spesifikasi komprehensif 27 Model Eloquent, AgentTenantScope, ProductObserver, dan enforceMorphMap |
+| `1.6.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan relasi withTrashed() pada child item transaksi historis, Inquiry latestOfMany(), dan lifecycle hook restoring() pada ProductObserver |
 
 ---
 

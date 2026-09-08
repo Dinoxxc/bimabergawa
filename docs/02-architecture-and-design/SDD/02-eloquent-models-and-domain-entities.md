@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.6.0 |
+| **Versi Dokumen** | 1.6.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -22,6 +22,7 @@
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan trait `SoftDeletes` pada entitas master/transaksi, atribut `currency`, `customer_po_file_path`, `director_notes`, serta Model `Invoice`, `InvoiceItem`, dan `ActivityLog` |
 | `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan atribut `paid_amount`, accessor `remaining_balance` pada Model `Invoice`, serta panduan Enforce Morph Map |
 | `1.6.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Ekspansi komprehensif seluruh 27 Model Eloquent domain, kelas `AgentTenantScope`, `ProductObserver` untuk soft-deletes unique slug, dan konfigurasi `Relation::enforceMorphMap()` |
+| `1.6.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan relasi withTrashed() pada child item transaksi historis, Inquiry latestOfMany(), dan lifecycle hook restoring() pada ProductObserver |
 
 ---
 
@@ -211,7 +212,7 @@ class ProductSpecification extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 }
 
@@ -292,7 +293,7 @@ class Inquiry extends Model
 
     public function quotation(): HasOne
     {
-        return $this->hasOne(Quotation::class);
+        return $this->hasOne(Quotation::class)->latestOfMany();
     }
 
     public function quotations(): HasMany
@@ -518,7 +519,7 @@ class QuotationItem extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 }
 ```
@@ -666,7 +667,7 @@ class DeliveryOrderItem extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 }
 ```
@@ -766,7 +767,7 @@ class InvoiceItem extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 }
 ```
@@ -1253,6 +1254,16 @@ class ProductObserver
             $product->slug = $product->slug . '-deleted-' . time();
             $product->saveQuietly();
         }
+    }
+
+    public function restoring(Product $product): void
+    {
+        // Bersihkan sufiks -deleted-{timestamp}
+        $cleanSlug = preg_replace('/-deleted-\d+$/', '', $product->slug);
+
+        // Jika slug original telah dipakai produk aktif lain, berikan sufiks angka unik
+        $count = Product::where('slug', $cleanSlug)->where('id', '!=', $product->id)->count();
+        $product->slug = $count > 0 ? "{$cleanSlug}-" . ($count + 1) : $cleanSlug;
     }
 }
 ```

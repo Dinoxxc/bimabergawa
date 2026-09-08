@@ -227,6 +227,7 @@ e:\Project\bimabergawa/
 8. **Enforce Morph Map Polimorfik:** Wajib mendaftarkan alias pendek pada `Relation::enforceMorphMap()` di `AppServiceProvider` untuk mereduksi konsumsi memori index RAM hingga 75% di server shared hosting 512 MB.
 9. **Isolasi Berkas Privat (UU PDP No. 27/2022):** Seluruh dokumen identitas agen (KTP), slip transfer bank, dan berkas fisik Purchase Order klien wajib disimpan di disk `private` (`storage/app/private/`) dan hanya diakses via Temporary Signed URL.
 10. **Resolusi Slug Soft Deletes:** Tangani benturan indeks unik MySQL saat entitas di-soft delete dengan memperbarui slug lama secara otomatis via Observer sebelum record ditandai terhapus.
+11. **SOP Tata Kelola Evolusi Fitur Pasca-Rilis:** Wajib mematuhi protokol `DOC-PBB-DEP-03` Bagian 4: penambahan fitur wajib melalui migrasi aditif non-destruktif (`nullable foreign keys`), modifikasi alur bisnis diprioritaskan via `system_settings`, dan penonaktifan fitur menggunakan feature flags / RBAC tanpa merusak data audit historis.
 
 ---
 

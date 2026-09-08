@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-ERP-06` |
-| **Versi Dokumen** | 1.2.0 |
+| **Versi Dokumen** | 1.3.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -18,6 +18,7 @@
 | `1.0.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Skenario pengujian faktur komersial (`INV-YYYYMM-XXXX`), tempo kredit, verifikasi bukti bayar, soft deletes, dan immutable activity log |
 | `1.1.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario pembayaran parsial `paid_amount` (TC-ERP-INV-011) dan mitigasi benturan slug soft delete (TC-ERP-INV-012) |
 | `1.2.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario relasi produk discontinue withTrashed (TC-ERP-INV-013), resolusi inkuiri latestOfMany (TC-ERP-INV-014), dan siklus hidup restoring slug (TC-ERP-INV-015) |
+| `1.3.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 5 skenario mitigasi celah: isolasi CommissionPayout (TC-ERP-INV-016), perlindungan catatan internal (TC-ERP-INV-017), loop deterministik restoring slug (TC-ERP-INV-018), full-chain withTrashed transaksi induk (TC-ERP-INV-019), dan bypass staf internal AgentTenantScope (TC-ERP-INV-020) |
 
 ---
 
@@ -51,6 +52,11 @@
 | **`TC-ERP-INV-013`** | Integritas | Relasi Item Transaksi Historis terhadap Produk Discontinue (`withTrashed`) | Produk telah di-soft-delete karena discontinued oleh prinsipal | Buka invoice, penawaran, atau surat jalan lama (3 tahun lalu) yang memuat SKU tersebut | Relasi `$item->product` tetap berhasil me-load instance produk aslinya tanpa error null object (`belongsTo(Product::class)->withTrashed()`). | Not Executed |
 | **`TC-ERP-INV-014`** | Bisnis | Resolusi Inkuiri Multi-Revisi Penawaran via `latestOfMany()` | Inkuiri memiliki 3 revisi penawaran (QUO, QUO-R1, QUO-R2) | Panggil relasi `$inquiry->quotation` pada Kanban CRM | Sistem selalu mengembalikan record penawaran revisi termutakhir (QUO-R2), bukan penawaran draft lama yang telah usang. | Not Executed |
 | **`TC-ERP-INV-015`** | Siklus Hidup | Pemulihan Produk (*Product Restoring*) dan Normalisasi Slug Bebas Benturan | Produk di tong sampah dipulihkan (*Restore*) oleh Admin | Klik tombol "Pulihkan Produk" pada panel admin | `ProductObserver::restoring` membersihkan akhiran `-deleted-{timestamp}` dan secara otomatis memeriksa ketersediaan slug; jika bentrok, menambahkan angka urut `-2` tanpa error constraint. | Not Executed |
+| **`TC-ERP-INV-016`** | Keamanan | Isolasi Data Pencairan Komisi Mitra Agen (Anti-IDOR) | Agen B mencoba memuat pencairan komisi milik Agen A | Agen B mengakses kueri `CommissionPayout` atau endpoint `/agent/payouts` | `AgentTenantScope` membatasi kueri secara otomatis (`WHERE freelance_sales_id = auth()->agent_id`). Rekord milik agen lain tidak pernah tertampil (0% IDOR). | Not Executed |
+| **`TC-ERP-INV-017`** | Privasi | Perlindungan Catatan Internal Staf & Modal HPP dari Akses Mitra Agen | Transaksi inkuiri memiliki catatan internal staf (memuat HPP) dan catatan publik agen | Mitra agen memanggil relasi `$inquiry->comments` atau tabel diskusi di portal agen | Global Scope `agent_comment_visibility` otomatis memfilter kueri `WHERE type = 'agent_visible'`. Catatan HPP internal tersembunyi 100% tanpa celah kebocoran. | Not Executed |
+| **`TC-ERP-INV-018`** | Siklus Hidup | Mitigasi Tabrakan Deterministik Slug Restoring via Candidate While Loop | Produk A dihapus, Produk B mengambil slug original, dan Produk C mengambil slug `-2` | Pulihkan (*Restore*) Produk A | `ProductObserver::restoring` menjalankan loop pengecekan kandidat slug berulang hingga menemukan kandidat bebas (`-3`), mencegah benturan duplicate key error MySQL. | Not Executed |
+| **`TC-ERP-INV-019`** | Integritas | Akses Rantai Induk Transaksi Historis yang Di-Soft-Delete (Full-Chain withTrashed) | Sales Order atau Quotation induk telah di-soft delete / diarsipkan | Buka faktur ([Invoice](file:///e:/Project/bimabergawa/app/Models/Invoice.php)) atau surat jalan ([DeliveryOrder](file:///e:/Project/bimabergawa/app/Models/DeliveryOrder.php)) lama | Seluruh relasi induk (`$invoice->salesOrder`, `$deliveryOrder->salesOrder`, `$salesOrder->quotation`, `$inquiry->freelanceSales`) tetap me-load objek aslinya tanpa error null reference. | Not Executed |
+| **`TC-ERP-INV-020`** | Otoritas | Bypass Eksplisit Otoritas Staf Internal pada `AgentTenantScope` | Staf internal (Super Admin / Finance) memiliki akun dengan `freelance_sales_id` untuk testing | Staf internal login dan membuka menu Inquiries atau Quotations | Sistem mendeteksi role internal dan membypass tenant scope secara total, sehingga staf tetap dapat melihat seluruh data korporat perusahaan tanpa terkunci. | Not Executed |
 
 ---
 

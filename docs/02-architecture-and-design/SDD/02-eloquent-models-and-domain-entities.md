@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.6.1 |
+| **Versi Dokumen** | 1.7.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -23,6 +23,7 @@
 | `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan atribut `paid_amount`, accessor `remaining_balance` pada Model `Invoice`, serta panduan Enforce Morph Map |
 | `1.6.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Ekspansi komprehensif seluruh 27 Model Eloquent domain, kelas `AgentTenantScope`, `ProductObserver` untuk soft-deletes unique slug, dan konfigurasi `Relation::enforceMorphMap()` |
 | `1.6.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan relasi withTrashed() pada child item transaksi historis, Inquiry latestOfMany(), dan lifecycle hook restoring() pada ProductObserver |
+| `1.7.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan mitigasi 5 celah arsitektur: loop deterministik restoring slug, AgentTenantScope bypass internal & scoping CommissionPayout, global scope agent_comment_visibility pada InternalComment, full-chain withTrashed() transaksi historis, dan helper margin status Quotation |
 
 ---
 
@@ -35,7 +36,9 @@ Seluruh model domain ditempatkan di direktori `app/Models/`, mewarisi `Illuminat
 - **Integritas Relasi:** Menggunakan type-hinting resmi (`BelongsTo`, `HasMany`, `HasOne`, `MorphTo`, `MorphMany`).
 - **Proteksi Data Fisik (SoftDeletes):** Model master dan transaksi penting (`Product`, `Inquiry`, `Quotation`, `SalesOrder`, `DeliveryOrder`, `FreelanceSales`, `Invoice`) menerapkan trait `SoftDeletes` untuk menjamin kepatuhan audit retensi 10 tahun UU KUP.
 - **Enkripsi At-Rest (UU PDP No. 27/2022):** Model `FreelanceSales` mengenkripsi kolom identitas (`nik`, `npwp_number`, `bank_account_number`) menggunakan kunci simetris `APP_KEY`.
-- **Isolasi Tenant Otomatis:** Model `Inquiry` dan `Quotation` mengimplementasikan Global Scope `AgentTenantScope` untuk isolasi data agen freelance anti-IDOR.
+- **Isolasi Tenant Otomatis & Anti-IDOR:** Model `Inquiry`, `Quotation`, dan `CommissionPayout` mengimplementasikan Global Scope `AgentTenantScope` dengan perlindungan bypass eksplisit untuk seluruh peran staf internal (`super_admin`, `sales_pic`, `finance`, `logistics`).
+- **Perlindungan Catatan Internal:** Model `InternalComment` menerapkan Global Scope `agent_comment_visibility` otomatis sehingga akun agen freelance tidak dapat membaca catatan internal, modal HPP, atau instruksi direksi.
+- **Integritas Rantai Transaksi Historis (Full-Chain withTrashed):** Seluruh relasi `BelongsTo` yang mengarah pada entitas SoftDeletable (`Product`, `Inquiry`, `Quotation`, `SalesOrder`, `DeliveryOrder`, `Invoice`, `FreelanceSales`) wajib menyertakan `->withTrashed()` guna menjamin kelangsungan audit 10 tahun UU KUP dan penerbitan dokumen historis.
 
 ---
 
@@ -82,7 +85,7 @@ class Product extends Model
 
     public function successor(): BelongsTo
     {
-        return $this->belongsTo(Product::class, 'successor_product_id');
+        return $this->belongsTo(Product::class, 'successor_product_id')->withTrashed();
     }
 
     public function predecessors(): HasMany
@@ -230,7 +233,7 @@ class ProductImage extends Model
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 }
 ```
@@ -278,7 +281,7 @@ class Inquiry extends Model
 
     public function freelanceSales(): BelongsTo
     {
-        return $this->belongsTo(FreelanceSales::class);
+        return $this->belongsTo(FreelanceSales::class)->withTrashed();
     }
 
     public function items(): HasMany
@@ -334,12 +337,12 @@ class InquiryItem extends Model
 
     public function inquiry(): BelongsTo
     {
-        return $this->belongsTo(Inquiry::class);
+        return $this->belongsTo(Inquiry::class)->withTrashed();
     }
 
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 }
 
@@ -353,7 +356,7 @@ class InquiryTelemetry extends Model
 
     public function inquiry(): BelongsTo
     {
-        return $this->belongsTo(Inquiry::class);
+        return $this->belongsTo(Inquiry::class)->withTrashed();
     }
 }
 ```
@@ -412,7 +415,7 @@ class Quotation extends Model
 
     public function inquiry(): BelongsTo
     {
-        return $this->belongsTo(Inquiry::class);
+        return $this->belongsTo(Inquiry::class)->withTrashed();
     }
 
     public function user(): BelongsTo
@@ -422,7 +425,7 @@ class Quotation extends Model
 
     public function freelanceSales(): BelongsTo
     {
-        return $this->belongsTo(FreelanceSales::class);
+        return $this->belongsTo(FreelanceSales::class)->withTrashed();
     }
 
     public function approver(): BelongsTo
@@ -484,7 +487,7 @@ class QuotationPaymentTerm extends Model
 
     public function quotation(): BelongsTo
     {
-        return $this->belongsTo(Quotation::class);
+        return $this->belongsTo(Quotation::class)->withTrashed();
     }
 
     public function invoices(): HasMany
@@ -514,7 +517,7 @@ class QuotationItem extends Model
 
     public function quotation(): BelongsTo
     {
-        return $this->belongsTo(Quotation::class);
+        return $this->belongsTo(Quotation::class)->withTrashed();
     }
 
     public function product(): BelongsTo
@@ -560,7 +563,7 @@ class SalesOrder extends Model
 
     public function quotation(): BelongsTo
     {
-        return $this->belongsTo(Quotation::class);
+        return $this->belongsTo(Quotation::class)->withTrashed();
     }
 
     public function approver(): BelongsTo
@@ -627,7 +630,7 @@ class DeliveryOrder extends Model
 
     public function salesOrder(): BelongsTo
     {
-        return $this->belongsTo(SalesOrder::class);
+        return $this->belongsTo(SalesOrder::class)->withTrashed();
     }
 
     public function items(): HasMany
@@ -662,7 +665,7 @@ class DeliveryOrderItem extends Model
 
     public function deliveryOrder(): BelongsTo
     {
-        return $this->belongsTo(DeliveryOrder::class);
+        return $this->belongsTo(DeliveryOrder::class)->withTrashed();
     }
 
     public function product(): BelongsTo
@@ -715,12 +718,12 @@ class Invoice extends Model
 
     public function salesOrder(): BelongsTo
     {
-        return $this->belongsTo(SalesOrder::class);
+        return $this->belongsTo(SalesOrder::class)->withTrashed();
     }
 
     public function quotation(): BelongsTo
     {
-        return $this->belongsTo(Quotation::class);
+        return $this->belongsTo(Quotation::class)->withTrashed();
     }
 
     public function paymentTerm(): BelongsTo
@@ -762,7 +765,7 @@ class InvoiceItem extends Model
 
     public function invoice(): BelongsTo
     {
-        return $this->belongsTo(Invoice::class);
+        return $this->belongsTo(Invoice::class)->withTrashed();
     }
 
     public function product(): BelongsTo
@@ -878,7 +881,7 @@ class CommissionPayout extends Model
 
     public function freelanceSales(): BelongsTo
     {
-        return $this->belongsTo(FreelanceSales::class);
+        return $this->belongsTo(FreelanceSales::class)->withTrashed();
     }
 
     public function salesOrder(): BelongsTo
@@ -1220,9 +1223,21 @@ class AgentTenantScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
     {
-        if (auth()->check() && (auth()->user()->hasRole('freelance_sales') || auth()->user()->freelance_sales_id !== null)) {
-            $freelanceSalesId = auth()->user()->freelance_sales_id
-                ?? FreelanceSales::where('user_id', auth()->id())->value('id');
+        if (! auth()->check()) {
+            return;
+        }
+
+        $user = auth()->user();
+
+        // Staf internal (super_admin, sales_pic, finance, logistics) memiliki akses penuh tanpa pembatasan tenant
+        if ($user->hasRole('super_admin') || $user->hasRole('sales_pic') || $user->hasRole('finance') || $user->hasRole('logistics')) {
+            return;
+        }
+
+        // Penegakan isolasi tenant untuk mitra agen freelance
+        if ($user->hasRole('freelance_sales') || $user->freelance_sales_id !== null) {
+            $freelanceSalesId = $user->freelance_sales_id
+                ?? FreelanceSales::where('user_id', $user->id)->value('id');
 
             if ($freelanceSalesId) {
                 $builder->where($model->getTable() . '.freelance_sales_id', $freelanceSalesId);
@@ -1250,20 +1265,29 @@ class ProductObserver
 {
     public function deleting(Product $product): void
     {
-        if (!$product->isForceDeleting()) {
-            $product->slug = $product->slug . '-deleted-' . time();
-            $product->saveQuietly();
+        if (! $product->isForceDeleting()) {
+            // Hindari duplikasi sufiks jika telah bertanda -deleted-
+            if (! preg_match('/-deleted-\d+$/', $product->slug)) {
+                $base = substr($product->slug, 0, 220);
+                $product->slug = $base . '-deleted-' . time();
+                $product->saveQuietly();
+            }
         }
     }
 
     public function restoring(Product $product): void
     {
         // Bersihkan sufiks -deleted-{timestamp}
-        $cleanSlug = preg_replace('/-deleted-\d+$/', '', $product->slug);
+        $cleanSlug = (string) preg_replace('/-deleted-\d+$/', '', $product->slug);
 
-        // Jika slug original telah dipakai produk aktif lain, berikan sufiks angka unik
-        $count = Product::where('slug', $cleanSlug)->where('id', '!=', $product->id)->count();
-        $product->slug = $count > 0 ? "{$cleanSlug}-" . ($count + 1) : $cleanSlug;
+        // Loop deterministik: cari kandidat slug unik tanpa risiko benturan MySQL Unique Key
+        $candidate = $cleanSlug;
+        $counter = 1;
+        while (Product::withTrashed()->where('slug', $candidate)->where('id', '!=', $product->id)->exists()) {
+            $counter++;
+            $candidate = "{$cleanSlug}-{$counter}";
+        }
+        $product->slug = $candidate;
     }
 }
 ```

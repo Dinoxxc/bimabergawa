@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `AGY-PBB-AGENT-RULEBOOK` |
-| **Versi Dokumen** | 1.4.1 |
+| **Versi Dokumen** | 1.5.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Autonomous Agent & Engineering Operational Guidelines |
 
@@ -116,8 +116,10 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
 - Kolom NIK KTP (`nik_ktp`), NPWP (`npwp_number`), dan nomor rekening perbankan (`bank_account_number`) pada model `AgentProfile` wajib dienkripsi pada level basis data menggunakan Eloquent `$casts = ['encrypted']` (kunci enkripsi `APP_KEY`).
 
 ### 3.9 Isolasi Data Multi-Tenant Agen Freelance (Anti-IDOR)
-- Mitra Agen Freelance hanya boleh mengakses data inkuiri dan buku besar komisi miliknya sendiri.
-- Model `Inquiry` wajib menerapkan Global Scope `AgentTenantScope` untuk membatasi kueri otomatis (`WHERE agent_id = auth()->id()`).
+- Mitra Agen Freelance hanya boleh mengakses data inkuiri, penawaran, riwayat komisi, dan catatan publik miliknya sendiri.
+- Model `Inquiry`, `Quotation`, dan `CommissionPayout` wajib menerapkan Global Scope `AgentTenantScope` untuk membatasi kueri otomatis (`WHERE freelance_sales_id = auth()->user()->freelance_sales_id`).
+- `AgentTenantScope` wajib menyertakan bypass eksplisit untuk seluruh peran staf internal (`super_admin`, `sales_pic`, `finance`, `logistics`) agar staf tidak terkunci saat menguji atau membuka akun agen.
+- Model `InternalComment` wajib menerapkan Global Scope `agent_comment_visibility` otomatis sehingga akun agen freelance hanya dapat membaca komentar berstatus `type = 'agent_visible'` (0% kebocoran modal HPP atau instruksi direksi).
 - Endpoint pencairan komisi wajib memverifikasi kepemilikan record agen secara eksplisit sebelum melakukan mutasi saldo.
 
 ### 3.10 Efisiensi Memori Shared Hosting (Batas RAM 512 MB)
@@ -226,8 +228,9 @@ e:\Project\bimabergawa/
 7. **Protokol Deviasi & Validasi Rencana:** Selalu validasi instruksi pengguna terhadap blueprint `docs/`. Jika ada perbedaan, hentikan tindakan sementara, laporkan deviasi untuk konfirmasi pengguna, dan sinkronisasikan seluruh dokumentasi terkait sebelum mulai mengedit kode.
 8. **Enforce Morph Map Polimorfik:** Wajib mendaftarkan alias pendek pada `Relation::enforceMorphMap()` di `AppServiceProvider` untuk mereduksi konsumsi memori index RAM hingga 75% di server shared hosting 512 MB.
 9. **Isolasi Berkas Privat (UU PDP No. 27/2022):** Seluruh dokumen identitas agen (KTP), slip transfer bank, dan berkas fisik Purchase Order klien wajib disimpan di disk `private` (`storage/app/private/`) dan hanya diakses via Temporary Signed URL.
-10. **Resolusi Slug Soft Deletes:** Tangani benturan indeks unik MySQL saat entitas di-soft delete dengan memperbarui slug lama via `ProductObserver::deleting` (`-deleted-{timestamp}`), serta normalisasi kembali slug bersih saat dipulihkan via `ProductObserver::restoring` guna menghindari benturan duplikasi.
+10. **Resolusi Slug Soft Deletes Deterministik:** Tangani benturan indeks unik MySQL saat entitas di-soft delete dengan memotong slug maks 220 karakter dan memperbarui slug lama via `ProductObserver::deleting` (`-deleted-{timestamp}`), serta normalisasi kembali slug bersih saat dipulihkan via `ProductObserver::restoring` menggunakan candidate while-loop deterministik guna mencegah tabrakan duplicate key error.
 11. **SOP Tata Kelola Evolusi Fitur Pasca-Rilis:** Wajib mematuhi protokol `DOC-PBB-DEP-03` Bagian 4: penambahan fitur wajib melalui migrasi aditif non-destruktif (`nullable foreign keys`), modifikasi alur bisnis diprioritaskan via `system_settings`, dan penonaktifan fitur menggunakan feature flags / RBAC tanpa merusak data audit historis.
+12. **Integritas Rantai Transaksi Historis (Full-Chain withTrashed):** Seluruh relasi `BelongsTo` yang merujuk pada entitas induk SoftDeletable (`Product`, `Inquiry`, `Quotation`, `SalesOrder`, `DeliveryOrder`, `Invoice`, `FreelanceSales`) wajib memanggil `->withTrashed()` untuk mencegah crash *null pointer exception* saat memuat dokumen audit pajak 10 tahun UU KUP.
 
 ---
 
@@ -272,7 +275,7 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 
 ### Fase 1: Core Database & Model Layer
 - [x] `feature/core-01-database-migrations` : Skema tabel migrasi MySQL 8.0 InnoDB (23 tabel domain: `brands`, `categories`, `products`, `product_specifications`, `product_images`, `inquiries`, `inquiry_items`, `inquiry_telemetries`, `quotations`, `quotation_payment_terms`, `quotation_items`, `sales_orders`, `delivery_orders`, `delivery_order_items`, `invoices`, `invoice_items`, `commission_tiers`, `freelance_sales`, `commission_payouts`, `document_sequences`, `article_categories`, `articles`, `system_settings`, `notifications`, `internal_comments`, `activity_logs`) dilengkapi Soft Deletes dan multi-currency. *(Rujukan: test-cases/06-integration-and-infrastructure/01-database-seeders-and-migration-rollback.md)*
-- [/] `feature/core-02-eloquent-models-and-scopes` : 27 Model Eloquent domain, relasi ORM historis (`withTrashed`), `latestOfMany`, enkripsi data pribadi UU PDP `$casts = ['encrypted']`, Global Scope `AgentTenantScope`, `ProductObserver` resolusi slug deleting/restoring, dan `Relation::enforceMorphMap()`. *(Rujukan: test-cases/05-security-and-non-functional/04-data-privacy-and-audit-logging.md, test-cases/03-agent-commission-portal/02-agent-inquiry-and-tenant-isolation.md, test-cases/02-internal-erp-crm/06-commercial-invoicing-and-audit-trail.md)*
+- [/] `feature/core-02-eloquent-models-and-scopes` : 27 Model Eloquent domain, relasi ORM historis full-chain (`withTrashed`), `latestOfMany`, enkripsi data pribadi UU PDP `$casts = ['encrypted']`, Global Scope `AgentTenantScope` (dengan bypass staf internal & isolasi `CommissionPayout`), proteksi komentar internal `agent_comment_visibility`, `ProductObserver` resolusi slug deterministik deleting/restoring, dan `Relation::enforceMorphMap()`. *(Rujukan: test-cases/05-security-and-non-functional/04-data-privacy-and-audit-logging.md, test-cases/03-agent-commission-portal/02-agent-inquiry-and-tenant-isolation.md, test-cases/02-internal-erp-crm/06-commercial-invoicing-and-audit-trail.md)*
 - [ ] `feature/core-03-seeders-and-factories` : Seeder 5 Spatie Roles & Permissions, 4 Prinsipal Global (Schneider, Philips, ABB, Legrand), kategori, sample SKU, dan default system settings. *(Rujukan: test-cases/06-integration-and-infrastructure/01-seeder-and-database.md)*
 
 ### Fase 2: Core Service Layer (Logika Bisnis Terisolasi)

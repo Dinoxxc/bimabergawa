@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.5.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Application Architect | Ditinjau | Penambahan Eloquent Global Scope `FreelanceScope` untuk isolasi tenant agen |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Finalisasi relasi `Quotation` -> `QuotationPaymentTerm` & helper accessor margin |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
+| `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan trait `SoftDeletes` pada entitas master/transaksi, atribut `currency`, `customer_po_file_path`, `director_notes`, serta Model `Invoice`, `InvoiceItem`, dan `ActivityLog` |
 
 ---
 
@@ -382,6 +383,164 @@ class FreelanceSales extends Model
     public function payouts(): HasMany
     {
         return $this->hasMany(CommissionPayout::class);
+    }
+}
+```
+---
+
+### 2.15 Model `Invoice` & `InvoiceItem` (Modul Penagihan Komersial B2B)
+
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Invoice extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = [
+        'invoice_number',
+        'sales_order_id',
+        'quotation_id',
+        'payment_term_id',
+        'customer_name',
+        'company_name',
+        'invoice_date',
+        'due_date',
+        'subtotal',
+        'vat_rate_applied',
+        'tax_amount',
+        'grand_total',
+        'currency',
+        'status',
+        'payment_method',
+        'payment_proof_path',
+        'paid_at',
+        'notes',
+        'pdf_path',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'invoice_date' => 'date',
+            'due_date' => 'date',
+            'paid_at' => 'datetime',
+            'subtotal' => 'decimal:2',
+            'vat_rate_applied' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
+            'grand_total' => 'decimal:2',
+        ];
+    }
+
+    public function salesOrder(): BelongsTo
+    {
+        return $this->belongsTo(SalesOrder::class);
+    }
+
+    public function quotation(): BelongsTo
+    {
+        return $this->belongsTo(Quotation::class);
+    }
+
+    public function paymentTerm(): BelongsTo
+    {
+        return $this->belongsTo(QuotationPaymentTerm::class, 'payment_term_id');
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
+}
+```
+
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class InvoiceItem extends Model
+{
+    protected $fillable = [
+        'invoice_id',
+        'product_id',
+        'item_name',
+        'model_number',
+        'quantity',
+        'unit_price',
+        'total_price',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'quantity' => 'integer',
+            'unit_price' => 'decimal:2',
+            'total_price' => 'decimal:2',
+        ];
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+}
+```
+
+---
+
+### 2.16 Model `ActivityLog` (Immutable System Audit Trail)
+
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+
+class ActivityLog extends Model
+{
+    public $timestamps = false;
+
+    protected $fillable = [
+        'log_name',
+        'description',
+        'subject_type',
+        'subject_id',
+        'causer_type',
+        'causer_id',
+        'properties',
+        'ip_address',
+        'user_agent',
+        'created_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'properties' => 'array',
+            'created_at' => 'datetime',
+        ];
+    }
+
+    public function subject(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    public function causer(): MorphTo
+    {
+        return $this->morphTo();
     }
 }
 ```

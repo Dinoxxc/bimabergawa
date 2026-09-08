@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-IDX` |
-| **Versi Dokumen** | 1.4.1 |
+| **Versi Dokumen** | 1.5.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -57,6 +57,7 @@ test-cases/
 │   ├── 03-quotation-builder-and-live-margin.md        # [DOC-PBB-TC-ERP-03] Multi-Item Quotation, Live Margin HPP, PPN 11%, PDF
 │   ├── 04-sales-order-and-approval-workflow.md        # [DOC-PBB-TC-ERP-04] Konversi SO, Limit Approval Direksi, Lock Penomoran
 │   └── 05-delivery-order-and-fulfillment.md           # [DOC-PBB-TC-ERP-05] Partial DO, Tracking Sisa Qty, Status Fulfilled
+│   └── 06-commercial-invoicing-and-audit-trail.md     # [DOC-PBB-TC-ERP-06] Faktur Komersial INV, Tempo Kredit, Verifikasi Bayar, Audit Trail
 │
 ├── 03-agent-commission-portal/                        # Domain 3: Portal Agen Freelance
 │   ├── 01-agent-registration-and-profile.md           # [DOC-PBB-TC-AGN-01] Registrasi Agen, Upload KTP/NPWP, Enkripsi Rekening

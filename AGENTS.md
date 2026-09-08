@@ -109,6 +109,7 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
   - Penawaran: `QUO-YYYYMM-XXXX` (Revisi: `QUO-YYYYMM-XXXX-R1`)
   - Sales Order: `SO-YYYYMM-XXXX`
   - Surat Jalan: `DO-YYYYMM-XXXX`
+  - Faktur Tagihan (Invoice): `INV-YYYYMM-XXXX`
   - Faktur Komisi: `COM-YYYYMM-XXXX`
 
 ### 3.8 Enkripsi Data Pribadi Sensitif At-Rest (UU PDP No. 27/2022)
@@ -266,7 +267,7 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 - [x] `chore/01-environment-and-multidomain-config` : Konfigurasi `.env.example`, `.env`, multi-domain routing, dan koneksi MySQL 8.0.
 
 ### Fase 1: Core Database & Model Layer
-- [ ] `feature/core-01-database-migrations` : Skema tabel migrasi MySQL 8.0 InnoDB (`brands`, `categories`, `products`, `inquiries`, `quotations`, `sales_orders`, `delivery_orders`, `freelance_sales`, `commission_payouts`, `document_sequences`, `article_categories`, `articles`, `system_settings`, `notifications`, `internal_comments`). *(Rujukan: test-cases/06-integration-and-infrastructure/01-database-seeders-and-migration-rollback.md)*
+- [ ] `feature/core-01-database-migrations` : Skema tabel migrasi MySQL 8.0 InnoDB (23 tabel domain: `brands`, `categories`, `products`, `product_specifications`, `product_images`, `inquiries`, `inquiry_items`, `inquiry_telemetries`, `quotations`, `quotation_payment_terms`, `quotation_items`, `sales_orders`, `delivery_orders`, `delivery_order_items`, `invoices`, `invoice_items`, `commission_tiers`, `freelance_sales`, `commission_payouts`, `document_sequences`, `article_categories`, `articles`, `system_settings`, `notifications`, `internal_comments`, `activity_logs`) dilengkapi Soft Deletes dan multi-currency. *(Rujukan: test-cases/06-integration-and-infrastructure/01-database-seeders-and-migration-rollback.md)*
 - [ ] `feature/core-02-eloquent-models-and-scopes` : 10+ Eloquent Models, relasi, enkripsi PDP `$casts = ['encrypted']`, dan Global Scope `AgentTenantScope`. *(Rujukan: test-cases/05-security-and-non-functional/01-data-privacy-and-encryption.md)*
 - [ ] `feature/core-03-seeders-and-factories` : Seeder 5 Spatie Roles & Permissions, 4 Prinsipal Global (Schneider, Philips, ABB, Legrand), kategori, sample SKU, dan default system settings. *(Rujukan: test-cases/06-integration-and-infrastructure/01-seeder-and-database.md)*
 

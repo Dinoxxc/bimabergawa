@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.4.3 |
+| **Versi Dokumen** | 1.5.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -23,6 +23,7 @@
 | `1.4.1` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `notifications` untuk arsitektur notifikasi in-app lonceng ERP & email multi-kanal |
 | `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema tabel `internal_comments` untuk fitur diskusi & catatan koordinasi transaksi berkonteks |
 | `1.4.3` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan kolom `mentioned_user_ids` (JSON) dan dual-layer visibility (`internal`, `agent_visible`, `system`) pada `internal_comments` |
+| `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan softDeletes pada tabel kritis, berkas PO klien, catatan evaluasi direksi, multi-currency, modul faktur penagihan (`invoices`, `invoice_items`), dan audit log sistem (`activity_logs`) |
 
 ---
 
@@ -81,8 +82,9 @@
 | `availability_status` | ENUM | `ready_stock`, `indent_principal`, `discontinued` (Default: `ready_stock`) |
 | `is_featured` | BOOLEAN | Default: false |
 | `is_published` | BOOLEAN | Default: true |
+| `currency` | VARCHAR(3) | Default: 'IDR' (Mata Uang Transaksi: IDR, USD, EUR) |
 | `meta_description` | VARCHAR(255) | Nullable, SEO fallback description |
-| `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Timestamps & Soft Deletes (`deleted_at` nullable) |
 
 #### Tabel: `product_specifications`
 | Nama Kolom | Tipe Data | Keterangan & Atribut |
@@ -124,7 +126,7 @@
 | `notes` | TEXT | Nullable, Catatan teknis & negosiasi sales |
 | `boq_attachment_path`| VARCHAR(255) | Nullable, Path lampiran dokumen tender/BoQ (PDF/Excel) |
 | `first_contacted_at`| TIMESTAMP | Nullable, Waktu sales pertama kali mengubah status |
-| `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Timestamps & Soft Deletes (`deleted_at` nullable) |
 
 #### Tabel: `inquiry_items`
 | Nama Kolom | Tipe Data | Keterangan & Atribut |
@@ -176,8 +178,10 @@
 | `gross_profit_margin`| DECIMAL(5,2)| Persentase Margin Laba Kotor (%) |
 | `is_approved_by_director`| BOOLEAN | Default: false (Approval jika margin < 15% / diskon > 10%) |
 | `status` | ENUM | `draft`, `sent`, `approved`, `expired`, `rejected` |
+| `currency` | VARCHAR(3) | Default: 'IDR' (Mata uang penawaran resmi) |
+| `director_notes` | TEXT | Nullable, Catatan evaluasi/instruksi persetujuan atau penolakan Direktur |
 | `pdf_path` | VARCHAR(255) | Nullable, Path berkas PDF tersimpan |
-| `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Timestamps & Soft Deletes (`deleted_at` nullable) |
 
 #### Tabel: `quotation_payment_terms` (Milestones Engine)
 | Nama Kolom | Tipe Data | Keterangan & Atribut |
@@ -215,7 +219,9 @@
 | `status` | ENUM | `processing`, `indent_principal`, `ready_to_ship`, `shipped`, `completed`, `cancelled` |
 | `vat_rate_applied` | DECIMAL(5,2) | Default: 11.00 (Snapshot PPN transaksi terkunci) |
 | `total_amount` | DECIMAL(15,2) | Nilai total pesanan |
-| `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
+| `currency` | VARCHAR(3) | Default: 'IDR' (Mata uang pesanan penjualan) |
+| `customer_po_file_path` | VARCHAR(255) | Nullable, Path unggahan berkas fisik scan/PDF PO resmi dari klien |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Timestamps & Soft Deletes (`deleted_at` nullable) |
 
 #### Tabel: `delivery_orders` (Partial Shipment Ekspedisi)
 | Nama Kolom | Tipe Data | Keterangan & Atribut |
@@ -337,6 +343,73 @@
 
 ---
 
+---
+
+### 2.7 Modul Faktur Penagihan Komersial & Verifikasi Pembayaran
+
+Modul Faktur Penagihan (*Commercial Invoicing*) mengelola siklus penagihan resmi kepada kontraktor/klien berdasarkan Surat Pesanan (*Sales Order*) atau termin pembayaran (*Quotation Payment Terms*), serta pencatatan bukti pelunasan transfer bank.
+
+#### Tabel: `invoices` (Faktur Penagihan Resmi)
+| Nama Kolom | Tipe Data | Keterangan & Atribut |
+|:---|:---|:---|
+| `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
+| `invoice_number` | VARCHAR(35) | Unique, Format `INV-YYYYMM-XXXX` |
+| `sales_order_id` | BIGINT UNSIGNED | Foreign Key ke `sales_orders.id` (ON DELETE RESTRICT) |
+| `quotation_id` | BIGINT UNSIGNED | Nullable, Foreign Key ke `quotations.id` (ON DELETE RESTRICT) |
+| `payment_term_id` | BIGINT UNSIGNED | Nullable, FK ke `quotation_payment_terms.id` (ON DELETE SET NULL) |
+| `customer_name` | VARCHAR(150) | Snapshot Nama PIC Penagihan |
+| `company_name` | VARCHAR(200) | Snapshot Nama Badan Usaha / PT / CV Pembeli |
+| `invoice_date` | DATE | Tanggal resmi penerbitan faktur tagihan |
+| `due_date` | DATE | Tanggal jatuh tempo kredit (Net 14, Net 30, Net 60, CBD) |
+| `subtotal` | DECIMAL(15,2) | Nilai tagihan kotor sebelum pajak |
+| `vat_rate_applied` | DECIMAL(5,2) | Default: 11.00 (Snapshot persentase PPN saat invoice terbit) |
+| `tax_amount` | DECIMAL(15,2) | Nilai nominal PPN |
+| `grand_total` | DECIMAL(15,2) | Total Nilai Tagihan Bersih (`subtotal + tax_amount`) |
+| `currency` | VARCHAR(3) | Default: 'IDR' (Mata uang faktur) |
+| `status` | ENUM | `unpaid`, `partially_paid`, `paid`, `overdue`, `cancelled` (Default: `unpaid`, Indexed) |
+| `payment_method` | VARCHAR(100) | Nullable, misal: *Bank Transfer BCA, Mandiri, Giro Tempo* |
+| `payment_proof_path` | VARCHAR(255) | Nullable, Path unggahan berkas bukti transfer bank |
+| `paid_at` | TIMESTAMP | Nullable, Waktu verifikasi penerimaan pembayaran oleh Finance |
+| `notes` | TEXT | Nullable, Instruksi rekening tujuan transfer & keterangan faktur |
+| `pdf_path` | VARCHAR(255) | Nullable, Path berkas cetak PDF Invoice standar A4 Rasuna Said |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Timestamps & Soft Deletes (`deleted_at` nullable) |
+
+#### Tabel: `invoice_items`
+| Nama Kolom | Tipe Data | Keterangan & Atribut |
+|:---|:---|:---|
+| `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
+| `invoice_id` | BIGINT UNSIGNED | Foreign Key ke `invoices.id` (ON DELETE CASCADE) |
+| `product_id` | BIGINT UNSIGNED | Nullable, Foreign Key ke `products.id` (ON DELETE SET NULL) |
+| `item_name` | VARCHAR(255) | Nama barang atau uraian termin (misal: *Termin 1 DP 30% Proyek X*) |
+| `model_number` | VARCHAR(150) | Nullable, Part Number / Model Pabrikan |
+| `quantity` | INT | Kuantiti unit barang ditagihkan (Default: 1) |
+| `unit_price` | DECIMAL(15,2) | Nilai nominal satuan |
+| `total_price` | DECIMAL(15,2) | Total nilai item (`quantity * unit_price`) |
+| `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
+
+---
+
+### 2.8 Modul Jejak Audit Sistem Otomatis (System Audit Trail)
+
+Menyediakan pencatatan jejak audit (*immutable audit trail*) untuk mematuhi tata kelola enterprise dan merekam setiap mutasi data sensitif secara otomatis:
+
+#### Tabel: `activity_logs`
+| Nama Kolom | Tipe Data | Keterangan & Atribut |
+|:---|:---|:---|
+| `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
+| `log_name` | VARCHAR(100) | Nullable, Kategori log (misal: `quotation`, `sales_order`, `system_settings`, `auth`) |
+| `description` | TEXT | Narasi peristiwa mutasi (misal: *Perubahan tarif PPN dari 11% menjadi 12%*) |
+| `subject_type` | VARCHAR(255) | Nullable, Nama model target yang berubah (misal: `App\Models\Quotation`) |
+| `subject_id` | BIGINT UNSIGNED | Nullable, ID record model target |
+| `causer_type` | VARCHAR(255) | Nullable, Kelas pengguna eksekutor (`App\Models\User`) |
+| `causer_id` | BIGINT UNSIGNED | Nullable, ID pengguna yang melakukan perubahan |
+| `properties` | JSON | Nullable, Snapshot atribut data sebelum dan sesudah (`{"old": {...}, "new": {...}}`) |
+| `ip_address` | VARCHAR(45) | Nullable, Alamat IP klien eksekutor |
+| `user_agent` | TEXT | Nullable, Header identitas peramban |
+| `created_at` | TIMESTAMP | Waktu mutasi terjadi (Indexed) |
+
+---
+
 ## 3. Strategi Pengindeksan B-Tree Berkinerja Tinggi (Indexing Strategy)
 
 Untuk menjamin performa query katalog instan di Hostinger Premium Web Hosting:
@@ -355,6 +428,7 @@ CREATE UNIQUE INDEX uq_sales_orders_number ON sales_orders (order_number);
 CREATE UNIQUE INDEX uq_delivery_orders_number ON delivery_orders (delivery_number);
 CREATE UNIQUE INDEX uq_freelance_referral ON freelance_sales (referral_code);
 CREATE UNIQUE INDEX uq_system_settings_key ON system_settings (`key`);
+CREATE UNIQUE INDEX uq_invoices_number ON invoices (invoice_number);
 
 -- 4. Index Telemetri & Pelacakan Prospek
 CREATE INDEX idx_inquiries_phone ON inquiries (phone_wa);
@@ -369,4 +443,13 @@ CREATE INDEX idx_notifications_read_at ON notifications (read_at);
 -- 6. Index Diskusi & Catatan Internal Dokumen
 CREATE INDEX idx_internal_comments_commentable ON internal_comments (commentable_type, commentable_id);
 CREATE INDEX idx_internal_comments_user ON internal_comments (user_id);
+
+-- 7. Index Modul Faktur Penagihan (Invoices)
+CREATE INDEX idx_invoices_status_due ON invoices (status, due_date);
+CREATE INDEX idx_invoices_sales_order ON invoices (sales_order_id);
+
+-- 8. Index Jejak Audit Sistem (Activity Logs)
+CREATE INDEX idx_activity_subject ON activity_logs (subject_type, subject_id);
+CREATE INDEX idx_activity_causer ON activity_logs (causer_type, causer_id);
+CREATE INDEX idx_activity_created ON activity_logs (created_at);
 ```

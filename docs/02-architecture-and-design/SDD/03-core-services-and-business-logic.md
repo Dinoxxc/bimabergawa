@@ -16,6 +16,7 @@
 | Versi | Tanggal | Penulis / Peran | Status | Ringkasan Perubahan |
 | :---: | :---: | :--- | :---: | :--- |
 | `1.0.0` | 01 Sep 2026 | Senior Software Engineer | Draf Awal | Implementasi `DocumentNumberService` dengan atomic lock & DomPDF |
+| `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan penomoran atomik Faktur Penagihan (`INV-YYYYMM-XXXX`) pada `DocumentNumberService` |
 | `1.1.0` | 03 Sep 2026 | Backend Lead | Ditinjau | Penambahan `LiveMarginCalculator` & generator PDF Delivery Order tanpa harga |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Validasi watermarking dinamis DomPDF (`DRAFT` vs `OFFICIAL`) |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
@@ -75,6 +76,20 @@ class DocumentNumberService
                 ->first();
 
             $sequence = $last ? (int) substr($last->order_number, -4) + 1 : 1;
+            return $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+        });
+    }
+
+    public static function generateInvoiceNumber(): string
+    {
+        return DB::transaction(function () {
+            $prefix = 'INV-' . date('Ym') . '-';
+            $last = \App\Models\Invoice::where('invoice_number', 'LIKE', "{$prefix}%")
+                ->lockForUpdate()
+                ->orderByDesc('id')
+                ->first();
+
+            $sequence = $last ? (int) substr($last->invoice_number, -4) + 1 : 1;
             return $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
         });
     }

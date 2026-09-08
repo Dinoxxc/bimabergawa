@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-UIUX-04` |
-| **Versi Dokumen** | 1.4.4 |
+| **Versi Dokumen** | 1.5.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -24,6 +24,7 @@
 | `1.4.2` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX widget diskusi dan linimasa catatan internal dokumen transaksi |
 | `1.4.3` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX Mention `@User` popover, dual-layer visibility tab (`[Catatan Internal]` vs `[Pesan ke Agen]`), dan isolasi portal agen |
 | `1.4.4` | 07 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi navigasi sidebar grup `KONTEN & WEBSITE CMS` (Artikel, Konten Web, & Legalitas), wireframe visual CMS, dan cache invalidation |
+| `1.5.0` | 08 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX Manajemen Faktur Penagihan Komersial (`InvoiceResource`), verifikasi bukti bayar transfer bank, dan widget riwayat jejak audit |
 
 ---
 
@@ -557,3 +558,43 @@ Untuk menjaga performa tinggi shared hosting (LiteSpeed Web Server) sekaligus me
    ```
 4. **Respon Sub-Detik:** Pengunjung website publik langsung menerima teks, nomor telepon WhatsApp, atau banner terbaru pada muat ulang (*reload*) halaman berikutnya tanpa jeda tunda.
 
+---
+
+## 12. Spesifikasi UX Manajemen Faktur Tagihan Komersial (`/admin/invoices`)
+
+Modul **Invoices** menyediakan antarmuka bagi Finance dan Super Admin untuk menerbitkan penagihan komersial resmi, memantau jatuh tempo kredit (Net 14/30/60 hari), dan memverifikasi bukti pelunasan transfer bank:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ DAFTAR FAKTUR PENAGIHAN (INVOICES)                                             [ + Terbitkan Tagihan ] │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [ Filter: Status Pembayaran v ]  [ Filter: Jatuh Tempo v ]  [ Filter: Bank v ]      [ Cari Invoice... ]│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ NO. INVOICE     | NO. SO        | KLIEN / PERUSAHAAN | JATUH TEMPO | GRAND TOTAL   | STATUS PEMBAYARAN │
+├─────────────────┼───────────────┼────────────────────┼─────────────┼───────────────┼───────────────────┤
+│ INV-202609-0001 │ SO-202609-0001│ PT. Jaya Konstruksi│ 20 Sep 2026 │ Rp 85.000.000 │ [Lunas / Paid]    │
+│ INV-202609-0002 │ SO-202609-0003│ PT. PP Persero     │ 15 Sep 2026 │ Rp 42.500.000 │ [Menunggu Bayar]  │
+│ INV-202609-0003 │ SO-202609-0004│ CV. Sentosa Abadi  │ 05 Sep 2026 │ Rp 18.200.000 │ [!] Lewat Tempo   │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Menampilkan 1-3 dari 3 Faktur                                                     Halaman [ 1 ] dari 1 │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 12.1 Wireframe Modal Verifikasi Pembayaran Transfer Bank
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ VERIFIKASI PENERIMAAN PEMBAYARAN (INV-202609-0002)                                                     │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Total Nilai Tagihan   : Rp 42.500.000 (Termin 1 DP 50% SO-202609-0003)                                │
+│ Rekening Tujuan       : [ Bank BCA - 1234567890 a.n. PT. Panca Bima Bergawa v ]                        │
+│ Tanggal Bayar Aktual  : [ 08 September 2026                 ]                                          │
+│ Metode Pembayaran     : [ Bank Transfer RTGS / Realtime Online v ]                                     │
+│ Berkas Struk Transfer : [ Pilih Berkas Bukti Transfer... ] (PDF/JPG/PNG/WebP, Maksimal 5 MB)           │
+│ Catatan Finansial     : [ Pembayaran DP 50% diterima rekening BCA operasional. Dana sudah kliring.   ] │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                   [ Batal ]  [ Verifikasi & Tandai Lunas (Paid) ]      │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```

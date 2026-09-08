@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-INF-01` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.5.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & DevOps/QA Reference |
 
@@ -28,7 +28,7 @@
 - **Dokumen Acuan Spesifikasi:**
   - `DOC-PBB-MIG-01` (Spesifikasi Pipeline Database Seeder & 5 Peran Spatie RBAC)
   - `DOC-PBB-MIG-02` (Spesifikasi Seeding Master Brand Prinsipal & Kategori Hierarkis)
-  - `DOC-PBB-SDD-01` (Skema Basis Data MySQL 8.0 & Kamus Data 20 Tabel Domain)
+  - `DOC-PBB-SDD-01` (Skema Basis Data MySQL 8.0 & Kamus Data 23 Tabel Domain)
   - `DOC-PBB-SDD-02` (Definisi Model Eloquent, Relasi, & Foreign Key Constraints)
 - **Modul Sistem:** Modul Inisialisasi Basis Data, Seeder, & Migrasi Skema
 - **Target Kelas / Seeder / Perintah Artisan:**
@@ -44,7 +44,7 @@
 
 | ID Kasus Uji | Kategori | Skenario Pengujian | Prasyarat (Pre-conditions) | Data Input / Aksi | Hasil yang Diharapkan (Expected Result) | Status |
 | :--- | :---: | :--- | :--- | :--- | :--- | :--- | :---: |
-| **`TC-INF-MIG-001`** | Positif | Eksekusi Migrasi Skema Basis Data Bersih (*Fresh Migration*) | Database MySQL 8.0 kosong | Jalankan `php artisan migrate:fresh` | Seluruh 20 tabel domain (total 28 berkas migrasi) berhasil dibuat, tipe data presisi (`DECIMAL(15,2)`, `VARCHAR`, `TIMESTAMP`), foreign key terpasang tanpa error. | Not Executed |
+| **`TC-INF-MIG-001`** | Positif | Eksekusi Migrasi Skema Basis Data Bersih (*Fresh Migration*) | Database MySQL 8.0 kosong | Jalankan `php artisan migrate:fresh` | Seluruh 23 tabel domain (total 31 berkas migrasi) berhasil dibuat, tipe data presisi (`DECIMAL(15,2)`, `VARCHAR`, `TIMESTAMP`), foreign key terpasang tanpa error. | Not Executed |
 | **`TC-INF-MIG-002`** | Positif | Inisialisasi 5 Peran Standar & Hak Akses Spatie RBAC | Migrasi database selesai | Jalankan `RoleAndPermissionSeeder` | Terbentuk 5 role baku: `super-admin`, `sales-pic`, `finance`, `logistik`, `mitra-agen` beserta seluruh permissions pada tabel `roles` & `permissions`. | Not Executed |
 | **`TC-INF-MIG-003`** | Positif | Inisialisasi Akun Super Admin Awal (*Bootstrap Super Admin*) | Role Spatie telah dibuat | Jalankan `InitialSuperAdminSeeder` | Akun Super Admin `admin@bimabergawa.com` dibuat dengan status `is_active = true` dan terikat pada role `super-admin`. | Not Executed |
 | **`TC-INF-MIG-004`** | Positif | Seeding 4 Master Brand Prinsipal Resmi | Tabel `brands` kosong | Jalankan `BrandAndCategorySeeder` | Terbentuk 4 record brand aktif: *Schneider Electric, Philips Lighting, ABB, Legrand* dengan slug dan metadata resmi. | Not Executed |

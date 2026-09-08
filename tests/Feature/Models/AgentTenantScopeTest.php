@@ -7,6 +7,7 @@ namespace Tests\Feature\Models;
 use App\Models\CommissionTier;
 use App\Models\FreelanceSales;
 use App\Models\Inquiry;
+use App\Models\Quotation;
 use App\Models\Scopes\AgentTenantScope;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -110,5 +111,78 @@ class AgentTenantScopeTest extends TestCase
         $allInquiries = Inquiry::withoutGlobalScope(AgentTenantScope::class)->get();
         $this->assertTrue($allInquiries->contains('id', $inqA->id));
         $this->assertTrue($allInquiries->contains('id', $inqB->id));
+    }
+
+    /**
+     * Test AgentTenantScope also isolates Quotation records per agent.
+     */
+    public function test_agent_tenant_scope_isolates_quotations_per_agent(): void
+    {
+        $role = Role::firstOrCreate(['name' => 'freelance_sales', 'guard_name' => 'web']);
+
+        $tier = CommissionTier::create([
+            'name' => 'Gold Tier',
+            'min_turnover_amount' => 100000000.00,
+            'commission_rate' => 3.00,
+            'is_active' => true,
+        ]);
+
+        $agent = FreelanceSales::create([
+            'commission_tier_id' => $tier->id,
+            'name' => 'Agen Khusus',
+            'referral_code' => 'AGT-KHUSUS-'.time(),
+            'nik' => '9999999999999999',
+            'bank_name' => 'BCA',
+            'bank_account_number' => '99998888',
+            'bank_account_name' => 'Agen Khusus',
+            'status' => 'approved',
+        ]);
+
+        $user = User::create([
+            'name' => 'User Agen Khusus',
+            'email' => 'agent_khusus_'.time().'@example.com',
+            'freelance_sales_id' => $agent->id,
+        ]);
+        $user->assignRole($role);
+
+        $salesPic = User::create([
+            'name' => 'Internal Sales PIC',
+            'email' => 'sales_pic_q_'.time().'@example.com',
+        ]);
+
+        $quoMyAgent = Quotation::create([
+            'quotation_number' => 'QUO-AGENT-MY-'.time(),
+            'user_id' => $salesPic->id,
+            'freelance_sales_id' => $agent->id,
+            'customer_name' => 'Client Klien Agen',
+            'company_name' => 'PT Klien Agen',
+            'subtotal' => 5000000.00,
+            'dpp' => 5000000.00,
+            'vat_rate_applied' => 12.00,
+            'tax_amount' => 600000.00,
+            'grand_total' => 5600000.00,
+            'status' => 'draft',
+        ]);
+
+        $quoOther = Quotation::create([
+            'quotation_number' => 'QUO-AGENT-OTHER-'.time(),
+            'user_id' => $salesPic->id,
+            'freelance_sales_id' => null, // Direct lead
+            'customer_name' => 'Client Direct PBB',
+            'company_name' => 'PT Direct PBB',
+            'subtotal' => 20000000.00,
+            'dpp' => 20000000.00,
+            'vat_rate_applied' => 12.00,
+            'tax_amount' => 2400000.00,
+            'grand_total' => 22400000.00,
+            'status' => 'draft',
+        ]);
+
+        // When acting as agent, only agent's quotations are visible
+        $this->actingAs($user);
+        $visibleQuotations = Quotation::all();
+        $this->assertTrue($visibleQuotations->contains('id', $quoMyAgent->id));
+        $this->assertFalse($visibleQuotations->contains('id', $quoOther->id));
+        $this->assertNull(Quotation::find($quoOther->id));
     }
 }

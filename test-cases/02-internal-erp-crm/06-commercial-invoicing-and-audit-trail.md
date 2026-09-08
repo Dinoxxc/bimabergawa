@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-ERP-06` |
-| **Versi Dokumen** | 1.0.0 |
+| **Versi Dokumen** | 1.1.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -16,6 +16,7 @@
 | Versi | Tanggal | Penulis / Peran | Status | Ringkasan Perubahan |
 | :---: | :---: | :--- | :---: | :--- |
 | `1.0.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Skenario pengujian faktur komersial (`INV-YYYYMM-XXXX`), tempo kredit, verifikasi bukti bayar, soft deletes, dan immutable activity log |
+| `1.1.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario pembayaran parsial `paid_amount` (TC-ERP-INV-011) dan mitigasi benturan slug soft delete (TC-ERP-INV-012) |
 
 ---
 

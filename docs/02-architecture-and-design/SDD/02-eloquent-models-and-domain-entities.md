@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.5.0 |
+| **Versi Dokumen** | 1.5.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -20,6 +20,7 @@
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Finalisasi relasi `Quotation` -> `QuotationPaymentTerm` & helper accessor margin |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan trait `SoftDeletes` pada entitas master/transaksi, atribut `currency`, `customer_po_file_path`, `director_notes`, serta Model `Invoice`, `InvoiceItem`, dan `ActivityLog` |
+| `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan atribut `paid_amount`, accessor `remaining_balance` pada Model `Invoice`, serta panduan Enforce Morph Map |
 
 ---
 
@@ -415,6 +416,7 @@ class Invoice extends Model
         'vat_rate_applied',
         'tax_amount',
         'grand_total',
+        'paid_amount',
         'currency',
         'status',
         'payment_method',
@@ -434,7 +436,14 @@ class Invoice extends Model
             'vat_rate_applied' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'grand_total' => 'decimal:2',
+            'paid_amount' => 'decimal:2',
         ];
+    }
+
+    public function getRemainingBalanceAttribute(): float
+    {
+        return (float) max(0, $this->grand_total - $this->paid_amount);
+    }
     }
 
     public function salesOrder(): BelongsTo

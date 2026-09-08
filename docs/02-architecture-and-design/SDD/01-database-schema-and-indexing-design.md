@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.5.0 |
+| **Versi Dokumen** | 1.5.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -24,6 +24,7 @@
 | `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema tabel `internal_comments` untuk fitur diskusi & catatan koordinasi transaksi berkonteks |
 | `1.4.3` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan kolom `mentioned_user_ids` (JSON) dan dual-layer visibility (`internal`, `agent_visible`, `system`) pada `internal_comments` |
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan softDeletes pada tabel kritis, berkas PO klien, catatan evaluasi direksi, multi-currency, modul faktur penagihan (`invoices`, `invoice_items`), dan audit log sistem (`activity_logs`) |
+| `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan Bagian 4 (5 Evaluasi Arsitektural & Mitigasi Risiko Teknis) serta kolom `paid_amount` pada tabel `invoices` |
 
 ---
 
@@ -453,3 +454,65 @@ CREATE INDEX idx_activity_subject ON activity_logs (subject_type, subject_id);
 CREATE INDEX idx_activity_causer ON activity_logs (causer_type, causer_id);
 CREATE INDEX idx_activity_created ON activity_logs (created_at);
 ```
+
+---
+
+## 4. Evaluasi Arsitektural, Mitigasi Risiko Teknis, & Panduan Fase 2
+
+Berdasarkan audit kelayakan komersial menyeluruh pada tahap fondasi awal (*Early Foundation Stage*), berikut 5 evaluasi arsitektural penting dan standar mitigasi yang ditetapkan untuk memitigasi potensi risiko operasional sistem:
+
+### 4.1 Mitigasi Indeks Unik MySQL vs Soft Deletes (Unique Slug Resolution)
+- **Analisis Risiko:** MySQL InnoDB memberlakukan kekangan `UNIQUE` pada seluruh baris fisik tanpa memedulikan status `deleted_at IS NOT NULL`. Jika produk dengan slug `mcb-schneider-16a` di-soft delete, pembuatan produk baru dengan nama/slug yang sama akan memicu kesalahan SQL `1062 Duplicate entry`.
+- **Standar Mitigasi (Observer Pattern):**
+  1. Pada `ProductObserver` / `SluggableService`, sistem mendeteksi keberadaan slug yang bertabrakan dengan entitas terhapus (`withTrashed()`).
+  2. Saat model di-soft delete, event `deleting` secara otomatis memperbarui slug menjadi format unik historis:
+     ```php
+     $product->slug = $product->slug . '-deleted-' . time();
+     $product->saveQuietly();
+     ```
+  3. Dengan demikian, slug utama kembali bebas dan dapat digunakan kembali untuk produk katalog baru tanpa melanggar kekangan basis data.
+
+### 4.2 Strategi Master Pelanggan Denormalized vs Customer Master Directory
+- **Analisis Trade-Off:** Data kontak pembeli pada `inquiries`, `quotations`, dan `invoices` disimpan secara denormalized (`customer_name`, `company_name`, `phone_wa`, `email`). Pendekatan ini sengaja diadopsi agar alur pengajuan penawaran RFQ di web publik bersifat *frictionless* (calon klien B2B tidak dibebani kewajiban pendaftaran akun/password).
+- **Rencana Skalabilitas ERP:** Untuk mengantisipasi kebutuhan kontraktor repeat order (misal: analisis Lifetime Value, batas pagu kredit / *Credit Limit*, dan NPWP penagihan tetap), layer Eloquent pada Fase 1.2 dirancang fleksibel sehingga model `Customer` dapat diperkenalkan di masa mendatang dengan relasi opsional (`customer_id nullable`) tanpa merombak skema tabel transaksional yang sudah berjalan.
+
+### 4.3 Standar Pembayaran Parsial pada Faktur Tagihan (`paid_amount` & `remaining_balance`)
+- **Analisis Kebutuhan Finansial:** Dalam transaksi B2B bernilai puluhan/ratusan juta rupiah, klien kerap melakukan pembayaran bertahap (misal: transfer awal sebagian dana karena batasan limit harian RTGS bank).
+- **Implementasi Skema:** Tabel `invoices` dilengkapi kolom fisik `paid_amount DECIMAL(15,2) DEFAULT 0.00`.
+  - Status `partially_paid` berlaku jika `paid_amount > 0` dan `paid_amount < grand_total`.
+  - Status `paid` berlaku otomatis saat `paid_amount >= grand_total`.
+  - Nilai sisa piutang dihitung secara reaktif melalui Eloquent Accessor:
+    ```php
+    public function getRemainingBalanceAttribute(): float
+    {
+        return (float) max(0, $this->grand_total - $this->paid_amount);
+    }
+    ```
+
+### 4.4 Isolasi Disk Penyimpanan Privat Dokumen Sensitif UU PDP
+- **Analisis Keamanan Data:** Berkas identitas pribadi (KTP agen freelance), bukti transfer bank (`payment_proof_path`), dan surat Purchase Order fisik klien (`customer_po_file_path`) tergolong data konfidensial yang wajib dilindungi sesuai UU PDP No. 27/2022.
+- **Standar Arsitektur Storage:**
+  1. Dilarang keras menyimpan dokumen sensitif pada disk `public` (`storage/app/public`) yang terhubung dengan tautan simbolik web publik.
+  2. Seluruh dokumen sensitif wajib disimpan pada disk terenkripsi `private` (`storage/app/private/`).
+  3. Pengunduhan berkas hanya dapat diakses melalui controller privat dengan otentikasi sesi staf internal, verifikasi peran Spatie RBAC, dan URL bertanda tangan sementara (*Temporary Signed URL* berumur maksimal 300 detik).
+
+### 4.5 Efisiensi Memori RAM Shared Hosting 512 MB melalui Enforced Morph Map
+- **Analisis Kinerja Server:** Tabel audit `activity_logs`, `internal_comments`, dan `notifications` menggunakan relasi polimorfik (`subject_type`, `notifiable_type`, `commentable_type`). Penyimpanan nama kelas lengkap (*Fully Qualified Class Name* / FQCN sepanjang 255 karakter) membebani alokasi buffer pool memori InnoDB RAM 512 MB pada server shared hosting.
+- **Standar Implementasi:**
+  Mendaftarkan pemetaan alias pendek (*Enforce Morph Map*) pada `App\Providers\AppServiceProvider`:
+  ```php
+  use Illuminate\Database\Eloquent\Relations\Relation;
+
+  Relation::enforceMorphMap([
+      'user' => \App\Models\User::class,
+      'product' => \App\Models\Product::class,
+      'inquiry' => \App\Models\Inquiry::class,
+      'quotation' => \App\Models\Quotation::class,
+      'sales_order' => \App\Models\SalesOrder::class,
+      'delivery_order' => \App\Models\DeliveryOrder::class,
+      'invoice' => \App\Models\Invoice::class,
+      'setting' => \App\Models\SystemSetting::class,
+  ]);
+  ```
+  Langkah ini mereduksi ukuran penyimpanan indeks string komposit hingga 75% dan mencegah kegagalan *Out of Memory* pada server LiteSpeed.
+

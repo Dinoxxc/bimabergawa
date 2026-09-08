@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-UIUX-04` |
-| **Versi Dokumen** | 1.5.0 |
+| **Versi Dokumen** | 1.5.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -25,6 +25,7 @@
 | `1.4.3` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX Mention `@User` popover, dual-layer visibility tab (`[Catatan Internal]` vs `[Pesan ke Agen]`), dan isolasi portal agen |
 | `1.4.4` | 07 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi navigasi sidebar grup `KONTEN & WEBSITE CMS` (Artikel, Konten Web, & Legalitas), wireframe visual CMS, dan cache invalidation |
 | `1.5.0` | 08 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX Manajemen Faktur Penagihan Komersial (`InvoiceResource`), verifikasi bukti bayar transfer bank, dan widget riwayat jejak audit |
+| `1.5.1` | 08 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Penambahan kolom rincian nominal terbayar & sisa piutang pada wireframe daftar faktur serta formulir verifikasi cicilan parsial |
 
 ---
 
@@ -573,7 +574,7 @@ Modul **Invoices** menyediakan antarmuka bagi Finance dan Super Admin untuk mene
 │ NO. INVOICE     | NO. SO        | KLIEN / PERUSAHAAN | JATUH TEMPO | GRAND TOTAL   | STATUS PEMBAYARAN │
 ├─────────────────┼───────────────┼────────────────────┼─────────────┼───────────────┼───────────────────┤
 │ INV-202609-0001 │ SO-202609-0001│ PT. Jaya Konstruksi│ 20 Sep 2026 │ Rp 85.000.000 │ [Lunas / Paid]    │
-│ INV-202609-0002 │ SO-202609-0003│ PT. PP Persero     │ 15 Sep 2026 │ Rp 42.500.000 │ [Menunggu Bayar]  │
+│ INV-202609-0002 │ SO-202609-0003│ PT. PP Persero     │ 15 Sep 2026 │ Rp 42.500.000 │ [Sebagian: 20 Jt] │
 │ INV-202609-0003 │ SO-202609-0004│ CV. Sentosa Abadi  │ 05 Sep 2026 │ Rp 18.200.000 │ [!] Lewat Tempo   │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ Menampilkan 1-3 dari 3 Faktur                                                     Halaman [ 1 ] dari 1 │
@@ -589,6 +590,7 @@ Modul **Invoices** menyediakan antarmuka bagi Finance dan Super Admin untuk mene
 │ VERIFIKASI PENERIMAAN PEMBAYARAN (INV-202609-0002)                                                     │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ Total Nilai Tagihan   : Rp 42.500.000 (Termin 1 DP 50% SO-202609-0003)                                │
+│ Nominal Ditransfer    : [ Rp 20.000.000             ] (Sisa Piutang: Rp 22.500.000)                    │
 │ Rekening Tujuan       : [ Bank BCA - 1234567890 a.n. PT. Panca Bima Bergawa v ]                        │
 │ Tanggal Bayar Aktual  : [ 08 September 2026                 ]                                          │
 │ Metode Pembayaran     : [ Bank Transfer RTGS / Realtime Online v ]                                     │

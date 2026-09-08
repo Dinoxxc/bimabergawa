@@ -27,6 +27,7 @@ return new class extends Migration
             $table->decimal('vat_rate_applied', 5, 2)->default(11.00);
             $table->decimal('tax_amount', 15, 2)->default(0.00);
             $table->decimal('grand_total', 15, 2)->default(0.00);
+            $table->decimal('paid_amount', 15, 2)->default(0.00); // Akumulasi pembayaran yang telah diterima
             $table->string('currency', 3)->default('IDR');
             $table->enum('status', ['unpaid', 'partially_paid', 'paid', 'overdue', 'cancelled'])->default('unpaid')->index();
             $table->string('payment_method', 100)->nullable();

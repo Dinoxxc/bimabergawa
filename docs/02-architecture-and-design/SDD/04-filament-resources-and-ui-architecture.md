@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-04` |
-| **Versi Dokumen** | 1.5.0 |
+| **Versi Dokumen** | 1.5.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -26,6 +26,7 @@
 | `1.4.4` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi fitur Mention `@User`, dispatch notifikasi otomatis, dan pembatasan dual-layer chat agen freelance |
 | `1.4.5` | 07 Sep 2026 | Principal System Architect | Disetujui | Arsitektur CMS Website Dinamis (`ManageWebsiteContent`, `ManageLegalPages`), ArticleResource, dan mekanisme Tag Cache Invalidation |
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi `InvoiceResource` (faktur komersial, tempo kredit, upload bukti transfer) & `ActivityLogResource` |
+| `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan kalkulasi reaktif `paid_amount` & `remaining_balance` pada tabel dan modal verifikasi pembayaran `InvoiceResource` |
 
 ---
 
@@ -368,7 +369,7 @@ Modul **Konten Website CMS** melayani kebutuhan *Full Dynamic Site CMS* (PRD Sec
 - **Tujuan:** Pengelolaan faktur komersial resmi (`INV-YYYYMM-XXXX`), pemantauan jatuh tempo kredit (Net 14/30/60), dan verifikasi pembayaran transfer bank oleh peran **Finance** dan **Super Admin**.
 - **Model Terkait:** `App\Models\Invoice` dan `App\Models\InvoiceItem`.
 - **Fitur Antarmuka:**
-  - **Tabel Data:** Menampilkan nomor invoice, nomor SO, nama perusahaan klien, tanggal terbit, tanggal jatuh tempo, grand total, status pembayaran (`[Unpaid]`, `[Partially Paid]`, `[Paid]`, `[Overdue]`, `[Cancelled]`), serta indikator visual keterlambatan bayar.
+  - **Tabel Data:** Menampilkan nomor invoice, nomor SO, nama perusahaan klien, tanggal terbit, tanggal jatuh tempo, grand total, status pembayaran (`[Unpaid]`, `[Partially Paid]`, `[Paid]`, `[Overdue]`, `[Cancelled]`), nominal terbayar (`paid_amount`), sisa piutang (`remaining_balance`), serta indikator visual keterlambatan bayar.
   - **Filter Khusus:** Filter status pelunasan, filter rentang tanggal jatuh tempo, dan filter soft deletes (`TrashedFilter`).
   - **Aksi Transaksional:**
     - `Verifikasi Pembayaran`: Modal upload struk / bukti transfer bank (`payment_proof_path`), pilihan metode bayar, dan pencatatan tanggal lunas (`paid_at`).

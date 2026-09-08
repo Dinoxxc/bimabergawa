@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-UIUX-04` |
-| **Versi Dokumen** | 1.4.3 |
+| **Versi Dokumen** | 1.4.4 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -23,6 +23,7 @@
 | `1.4.1` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX drawer lonceng notifikasi ERP, unread badge, & format email transaksional |
 | `1.4.2` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX widget diskusi dan linimasa catatan internal dokumen transaksi |
 | `1.4.3` | 06 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX Mention `@User` popover, dual-layer visibility tab (`[Catatan Internal]` vs `[Pesan ke Agen]`), dan isolasi portal agen |
+| `1.4.4` | 07 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi navigasi sidebar grup `KONTEN & WEBSITE CMS` (Artikel, Konten Web, & Legalitas), wireframe visual CMS, dan cache invalidation |
 
 ---
 
@@ -443,5 +444,116 @@ Mitra agen freelance **HANYA** memiliki akses diskusi pada modul Inkuiri milikny
    - **Zero Visibility Catatan Internal:** Nilai kueri difilter ketat `WHERE type = 'agent_visible'` pada portal agen. Catatan HPP atau instruksi direksi tidak akan pernah terkirim ke browser agen.
    - **Restricted Mention Scope:** Mitra agen hanya diizinkan me-mention **Sales PIC yang ditugaskan** pada proyek tersebut. Autocomplete popover agen tidak akan menampilkan nama Direksi, Finance, atau staf lain.
 
+---
 
+## 11. Spesifikasi UX Manajemen Konten Website (CMS) & Halaman Legalitas
+
+Modul **KONTEN & WEBSITE CMS** pada panel internal ERP Filament memungkinkan Super Admin dan staf yang berwenang untuk memperbarui seluruh copy teks, narasi visual, kontak resmi, dan dokumen hukum pada website publik (`bimabergawa.com`) secara dinamis tanpa intervensi teknis kode sumber atau deploy ulang.
+
+---
+
+### 11.1 Wireframe Halaman Pengaturan Konten Web (`/admin/website-content`)
+
+Halaman kustom Filament Page (`ManageWebsiteContent`) menggunakan navigasi tab terstruktur untuk mengelompokkan pengaturan visual beranda dan profil perusahaan:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PENGATURAN KONTEN WEBSITE PUBLIK (bimabergawa.com)                                                     │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [ Tab: Beranda & Hero ]  [ Tab: Keunggulan PBB ]  [ Tab: Profil & Kantor ]  [ Tab: Kontak & Telemetri ]│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ PENGATURAN HERO SECTION (BERANDA):                                                                     │
+│                                                                                                        │
+│ Judul Utama Hero   : [ Distributor Resmi Elektrikal & Otomasi Industri Terpercaya                   ]  │
+│ Sub-Judul Hero     : [ Menyediakan solusi distribusi Schneider Electric, Philips, ABB, dan Legrand  ]  │
+│                      [ untuk kebutuhan proyek komersial, gedung, dan manufaktur di seluruh Indonesia. ]│
+│ Teks Tombol CTA 1  : [ Lihat Katalog Produk               ]  Link CTA 1: [ /products                 ] │
+│ Teks Tombol CTA 2  : [ Minta Penawaran Cepat (RFQ)        ]  Link CTA 2: [ /rfq                      ] │
+│ Banner Gambar Hero : [ Gambar Terpasang: hero_banner_rasuna.webp (1600x600, 320 KB)                  ] │
+│                      [ Ganti Gambar Banner... ] (Otomatis konversi WebP 82%, Max 5 MB)                 │
+│                                                                                                        │
+│ STATISTIK & PENCAPAIAN UTAMA (COUNTER STATS):                                                          │
+│ Stat 1: Angka [ 4 ]      Label [ Prinsipal Global Resmi ]                                              │
+│ Stat 2: Angka [ 2500+ ]  Label [ SKU Siap Kirim ]                                                      │
+│ Stat 3: Angka [ 500+ ]   Label [ Klien Korporat & Proyek ]                                             │
+│ Stat 4: Angka [ 100% ]   Label [ Keaslian Produk Terjamin ]                                            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                      [ Batal ]  [ Simpan Perubahan Konten Beranda ]     │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 11.2 Wireframe Halaman Pengaturan Halaman Legalitas (`/admin/legal-pages`)
+
+Halaman kustom Filament Page (`ManageLegalPages`) menyediakan editor teks kaya (*Rich Editor*) untuk memelihara kepatuhan regulasi UU PDP No. 27/2022 dan tata kelola transaksi komersial B2B:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PENGELOLAAN DOKUMEN HUKUM & KEBIJAKAN RESMI (LEGAL PAGES)                                              │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [ Tab: Syarat & Ketentuan ]  [ Tab: Kebijakan Privasi (UU PDP) ]  [ Tab: Kebijakan Garansi Resmi ]     │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ KEBIJAKAN PRIVASI & PERLINDUNGAN DATA PRIBADI (UU PDP NO. 27/2022):                                    │
+│                                                                                                        │
+│ Tanggal Pembaruan  : [ 07 September 2026                 ]  Status Publikasi: [ (●) Aktif  ( ) Nonaktif│
+│ Versi Regulasi     : [ Versi 1.3 - Kepatuhan Audit KUP & PDP 2026                                   ]  │
+│                                                                                                        │
+│ EDITOR KONTEN KEBIJAKAN PRIVASI:                                                                       │
+│ ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐ │
+│ │ [ B ] [ I ] [ U ] | [ H1 ] [ H2 ] [ H3 ] | [ List Bullets ] [ List Number ] | [ Link ] [ Code ]    │ │
+│ ├────────────────────────────────────────────────────────────────────────────────────────────────────┤ │
+│ │ 1. Komitmen Perlindungan Data Korporat dan Pribadi                                                 │ │
+│ │ PT. Panca Bima Bergawa (PBB) berkomitmen penuh untuk melindungi seluruh data pribadi dan informasi │ │
+│ │ korporat yang dikirimkan melalui formulir Request for Quotation (RFQ) maupun registrasi agen.      │ │
+│ │                                                                                                    │ │
+│ │ 2. Enkripsi dan Batasan Akses                                                                      │ │
+│ │ Seluruh identitas sensitif (NIK KTP, NPWP, dan Nomor Rekening Bank) disimpan menggunakan enkripsi  │ │
+│ │ simetris tingkat tinggi at-rest sesuai standar ISO/IEC 27001 dan UU PDP No. 27/2022.               │ │
+│ │                                                                                                    │ │
+│ │ 3. Hak Pemilik Data                                                                                │ │
+│ │ Pengguna berhak meminta konfirmasi, pembaruan, maupun penghapusan data kontak setelah transaksi    │ │
+│ │ komersial selesai dan melewati masa retensi audit pajak 10 tahun UU KUP.                           │ │
+│ └────────────────────────────────────────────────────────────────────────────────────────────────────┘ │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                    [ Reset Default ]  [ Publikasikan Dokumen Legal ]   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 11.3 Wireframe Manajemen Artikel & Blog Teknis (`/admin/articles`)
+
+Manajemen artikel industri dan edukasi teknis menggunakan Filament Resource standar (`ArticleResource`):
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ARTIKEL & EDUKASI TEKNIS B2B                                                   [ + Tulis Artikel Baru ]│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [ Filter: Kategori v ]  [ Filter: Status v ]  [ Filter: Penulis v ]                  [ Cari Artikel... ]│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ JUDUL ARTIKEL                | KATEGORI        | PENULIS        | STATUS     | DILIHAT | TANGGAL RILIS │
+├──────────────────────────────┼─────────────────┼────────────────┼────────────┼─────────┼───────────────┤
+│ Panduan Memilih MCCB vs ACB  │ Distribusi Daya │ Ahmad Fauzi    │ [Terbit]   │ 1,240   │ 05 Sep 2026   │
+│ Standar Lighting Industri    │ Smart Lighting  │ Bambang Wibowo │ [Terbit]   │ 850     │ 02 Sep 2026   │
+│ Proteksi Motor Listrik ABB   │ Otomasi & Drive │ Budi Santoso   │ [Draf]     │ -       │ 07 Sep 2026   │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Menampilkan 1-3 dari 3 Artikel                                                    Halaman [ 1 ] dari 1 │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 11.4 Mekanisme Cache Invalidation Publik Seketika (Real-Time Invalidation)
+
+Untuk menjaga performa tinggi shared hosting (LiteSpeed Web Server) sekaligus menjamin data web publik selalu akurat:
+1. **Penyimpanan Key-Value Dinamis:** Konten CMS disimpan pada tabel `system_settings` dengan `group = 'cms_content'` atau `group = 'legal_page'`.
+2. **Tag Caching Laravel:** Seluruh pembacaan konten pada domain publik (`bimabergawa.com`) dibungkus dalam `Cache::rememberForever('cms_settings_bundle', ...)` atau `Cache::tags(['public_website_content'])`.
+3. **Invalidasi Otomatis Saat Simpan:** Setiap pemanggilan tombol `Simpan Perubahan Konten` atau `Publikasikan Dokumen Legal` pada panel Filament secara otomatis mengeksekusi:
+   ```php
+   Cache::forget('cms_settings_bundle');
+   // atau jika mendukung cache tagging:
+   Cache::tags(['public_website_content'])->flush();
+   ```
+4. **Respon Sub-Detik:** Pengunjung website publik langsung menerima teks, nomor telepon WhatsApp, atau banner terbaru pada muat ulang (*reload*) halaman berikutnya tanpa jeda tunda.
 

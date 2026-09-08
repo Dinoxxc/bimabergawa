@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-PUB-01` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | UI/UX QA Tester | Ditinjau | Penambahan uji responsif mobile & verifikasi alamat kantor |
 | `1.2.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan header keamanan HTTP & validasi tautan brand |
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi komprehensif skenario uji & standardisasi status Not Executed |
+| `1.4.0` | 07 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario pengujian Full Dynamic Site CMS (Hero, Legal Pages UU PDP, Artikel Edukasi B2B, & Cache Invalidation) |
 
 ---
 
@@ -26,7 +27,7 @@
 
 - **Dokumen Acuan Spesifikasi:**
   - `DOC-PBB-PRD-02` (Spesifikasi Fitur Web Publik, Identitas Perusahaan, & Showcase)
-  - `DOC-PBB-SRS-02` (Kebutuhan Fungsional FR-COMPRO-01 s.d. FR-COMPRO-06)
+  - `DOC-PBB-SRS-02` (Kebutuhan Fungsional FR-COMPRO-01 s.d. FR-COMPRO-07 Full Dynamic Site CMS)
   - `DOC-PBB-UIUX-02` (Design Tokens, Monochrome Palette, Typography & Wireframe)
 - **Modul Sistem:** Modul Profil Perusahaan, Navigasi, & Showcase Brand Publik
 - **Target Kelas / Controller:** `App\Http\Controllers\HomeController`, `App\Http\Controllers\ContactController`
@@ -54,6 +55,10 @@
 | **`TC-PUB-NAV-014`** | Batas Nilai | Aksesibilitas Keyboard (Tab Navigation & Screen Reader) | Layar desktop tanpa menggunakan mouse | Navigasi seluruh halaman hanya menggunakan tombol `Tab`, `Shift+Tab`, dan `Enter` | Focus outline terlihat jelas pada seluruh elemen interaktif, tombol memiliki `aria-label`, urutan tab logis dari header ke footer. | Not Executed |
 | **`TC-PUB-NAV-015`** | Batas Nilai | Responsivitas Antarmuka pada Viewport Ekstrem (320px s.d. 4K 3840px) | Browser developer tools responsive mode | Resize browser dari 320px (iPhone SE lama) hingga 3840px (Monitor 4K) | Tidak ada *horizontal scrolling* liar pada layar 320px, teks dan grid kartu brand tetap berada dalam kontainer proporsional pada layar 4K. | Not Executed |
 | **`TC-PUB-NAV-016`** | SEO & Meta | Verifikasi Meta Tags, Open Graph, & JSON-LD Schema.org | Halaman dimuat | Inspeksi tag `<head>` pada `GET /` dan `GET /tentang-kami` | Memuat `<title>`, `<meta name="description">`, OpenGraph `og:title`, `og:image`, dan script `ld+json` tipe `Organization` memuat alamat resmi Rasuna Said. | Not Executed |
+| **`TC-PUB-NAV-017`** | Fungsional | Pembaruan Konten Hero & Call-to-Action via ERP Panel | Super Admin mengubah copy teks judul, subjudul, dan tautan tombol hero di panel ERP (`ManageWebsiteContent`) | Akses `https://bimabergawa.com/` di peramban publik | Halaman beranda langsung merender copy teks judul baru, subjudul baru, dan tautan CTA yang diperbarui tanpa memerlukan deploy ulang atau intervensi kode sumber. | Not Executed |
+| **`TC-PUB-NAV-018`** | Regulasi & Kepatuhan | Pembaruan Dokumen Legalitas (Syarat & Ketentuan, Kebijakan Privasi UU PDP) | Admin memperbarui klausul Kebijakan Privasi UU PDP pada panel ERP (`ManageLegalPages`) | Buka `https://bimabergawa.com/kebijakan-privasi` | Teks kebijakan privasi memuat klausul terbaru lengkap dengan format HTML/Markdown, tanggal versi efektif, dan kepatuhan UU PDP No. 27/2022. | Not Executed |
+| **`TC-PUB-NAV-019`** | Fungsional | Publikasi dan Render Artikel Teknis & Edukasi B2B | Staf menerbitkan artikel teknis baru berstatus `published` pada `ArticleResource` di ERP | Akses `https://bimabergawa.com/artikel` dan slug detail artikel | Artikel muncul pada daftar indeks artikel publik, halaman detail dapat diakses dengan judul, thumbnail WebP, dan format Rich Text yang utuh. | Not Executed |
+| **`TC-PUB-NAV-020`** | Kinerja & Integritas | Verifikasi Cache Invalidation Seketika Pasca-Simpan di ERP | Konten beranda tersimpan dalam cache web publik | Klik tombol `Simpan Perubahan Konten` di ERP lalu refresh halaman publik | Sistem mengeksekusi invalidasi cache (`Cache::tags(['public_website_content'])->flush()` atau forget key bundle), pengunjung langsung menerima konten mutakhir pada request berikutnya. | Not Executed |
 
 ---
 
@@ -85,3 +90,28 @@
    - Header `X-Content-Type-Options` bernilai `nosniff`.
    - Header `X-Frame-Options` bernilai `SAMEORIGIN`.
    - Tidak ada header `X-Powered-By: PHP/8.3`.
+
+### 3.3 Prosedur Uji TC-PUB-NAV-017 (Pembaruan Konten Dinamis & Cache Invalidation)
+
+1. **Langkah 1 (ERP Modification):**
+   - Login ke panel internal ERP `https://app.bimabergawa.com` sebagai Super Admin.
+   - Buka menu **KONTEN & WEBSITE CMS > Konten Web** (`/admin/website-content`).
+   - Ubah `Judul Utama Hero` menjadi: `Distributor Resmi Elektrikal & Otomasi Industri Terkemuka`.
+   - Klik tombol `[ Simpan Perubahan Konten Beranda ]`.
+2. **Langkah 2 (Public Verification):**
+   - Buka browser publik (mode incognito) dan akses `https://bimabergawa.com/`.
+   - Periksa heading H1 pada hero section.
+3. **Verifikasi Hasil:**
+   - Teks H1 langsung menampilkan string baru tanpa membutuhkan deploy atau pembersihan cache terminal manual.
+   - Response time halaman publik tetap sub-detik (< 500ms) berkat cache bundle yang di-regenerate secara otomatis.
+
+### 3.4 Prosedur Uji TC-PUB-NAV-018 (Verifikasi Dokumen Hukum & UU PDP)
+
+1. **Langkah 1 (ERP Update):**
+   - Di panel internal ERP, buka menu **KONTEN & WEBSITE CMS > Legalitas** (`/admin/legal-pages`).
+   - Pilih tab `Kebijakan Privasi (UU PDP)`.
+   - Tambahkan klausul enkripsi data pribadi NIK & NPWP.
+   - Klik `[ Publikasikan Dokumen Legal ]`.
+2. **Langkah 2 (Public Verification):**
+   - Akses `https://bimabergawa.com/kebijakan-privasi`.
+   - Pastikan teks klausul UU PDP tampil lengkap dengan formatting paragraf dan tanggal revisi terbaru.

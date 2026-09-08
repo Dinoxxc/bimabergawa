@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-04` |
-| **Versi Dokumen** | 1.4.4 |
+| **Versi Dokumen** | 1.4.5 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -24,6 +24,7 @@
 | `1.4.2` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi arsitektur notifikasi multi-kanal (Database In-App Bell & Email Transaksional) |
 | `1.4.3` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan komponen Livewire diskusi internal dokumen transaksi (Internal Comments Timeline) |
 | `1.4.4` | 06 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi fitur Mention `@User`, dispatch notifikasi otomatis, dan pembatasan dual-layer chat agen freelance |
+| `1.4.5` | 07 Sep 2026 | Principal System Architect | Disetujui | Arsitektur CMS Website Dinamis (`ManageWebsiteContent`, `ManageLegalPages`), ArticleResource, dan mekanisme Tag Cache Invalidation |
 
 ---
 
@@ -300,5 +301,61 @@ Untuk mendukung koordinasi tanpa friksi antar-staf internal serta komunikasi ter
    - Menggunakan query database relasional `internal_comments` terindeks polimorfik (`commentable_type`, `commentable_id`).
    - Pembaruan UI dilakukan secara reaktif melalui polling interval ringan Livewire (cth: `wire:poll.30s` atau event emit) tanpa koneksi daemon WebSocket (Soketi/Node.js) sehingga 100% aman dan stabil pada LiteSpeed Shared Hosting RAM 512 MB.
 
+---
 
+### 2.11 Arsitektur Modul Konten Website CMS & Manajemen Legalitas
+
+Modul **Konten Website CMS** melayani kebutuhan *Full Dynamic Site CMS* (PRD Section 2.8 & SRS FR-COMPRO-07) yang memungkinkan Super Admin mengelola seluruh copy teks, media promosi, kontak resmi, dan dokumen hukum website publik (`bimabergawa.com`) tanpa mengubah kode sumber:
+
+#### 2.11.1 Filament Custom Page: `ManageWebsiteContent`
+- **Tujuan:** Mengelola konten beranda, section profil, dan parameter telemetri kontak.
+- **Rute ERP:** `https://app.bimabergawa.com/admin/website-content`
+- **Penyimpanan:** Tabel `system_settings` dengan `group = 'cms_content'` dan `is_public = 1`:
+  - `cms.hero_headline` : Judul utama hero section (string)
+  - `cms.hero_subheadline` : Narasi subjudul hero section (text)
+  - `cms.hero_cta_primary_label` / `cms.hero_cta_primary_url` : Tombol aksi utama (Lihat Katalog)
+  - `cms.hero_cta_secondary_label` / `cms.hero_cta_secondary_url` : Tombol aksi sekunder (Minta RFQ)
+  - `cms.hero_banner_image` : Path file WebP hasil optimasi pada `storage/app/public/cms/`
+  - `cms.stats_counter` : JSON array metrik pencapaian (4 prinsipal, 2500+ SKU, dll.)
+  - `cms.company_history` : Deskripsi profil korporat PT. Panca Bima Bergawa
+  - `cms.rasuna_said_maps_url` : Embed URL Google Maps kantor Gd. Wirausaha Rasuna Said
+
+#### 2.11.2 Filament Custom Page: `ManageLegalPages`
+- **Tujuan:** Pengelolaan halaman hukum dan kepatuhan privasi (UU PDP No. 27/2022).
+- **Rute ERP:** `https://app.bimabergawa.com/admin/legal-pages`
+- **Penyimpanan:** Tabel `system_settings` dengan `group = 'legal_page'` dan `is_public = 1`:
+  - `legal.terms_and_conditions` : Syarat dan ketentuan transaksi komersial B2B (HTML/Markdown)
+  - `legal.privacy_policy` : Kebijakan privasi perlindungan data pribadi UU PDP (HTML/Markdown)
+  - `legal.warranty_policy` : Kebijakan garansi resmi pabrikan prinsipal (HTML/Markdown)
+  - `legal.last_updated_at` : Tanggal efektif pembaruan dokumen hukum
+
+#### 2.11.3 Filament Resource: `ArticleResource`
+- **Tujuan:** Publikasi artikel teknis industri, studi kasus elektrikal, dan panduan produk B2B.
+- **Model Terkait:** `App\Models\Article` dan `App\Models\ArticleCategory`.
+- **Fitur Antarmuka:**
+  - Auto-generate slug URL ramah SEO dari judul artikel.
+  - Unggah thumbnail artikel teroptimasi WebP 82% (Max 1600px).
+  - RichEditor / Tiptap dengan dukungan heading, blockquote, tabel, dan format kode.
+  - Kolom SEO terdedikasi: `meta_title`, `meta_description`, `canonical_url`.
+  - Filter tabel berdasarkan kategori artikel dan status publikasi (`draft` vs `published`).
+
+#### 2.11.4 Mekanisme Cache & Real-Time Invalidation
+1. **Public Web Controller Caching:**
+   - Controller publik (`HomeController`, `LegalController`, `ArticleController`) membaca konten menggunakan cache:
+     ```php
+     $cmsContent = Cache::rememberForever('public_cms_bundle', function () {
+         return SystemSetting::where('group', 'cms_content')
+             ->where('is_public', true)
+             ->pluck('value', 'key');
+     });
+     ```
+2. **Instant Invalidation Trigger:**
+   - Metode `save()` pada `ManageWebsiteContent` dan `ManageLegalPages` memicu pembersihan cache:
+     ```php
+     Cache::forget('public_cms_bundle');
+     Cache::forget('public_legal_bundle');
+     // Tagged cache flush jika didukung:
+     // Cache::tags(['public_website_content'])->flush();
+     ```
+   - Pengunjung website publik menerima pembaruan secara instan pada permintaan HTTP berikutnya tanpa membutuhkan *artisan optimize:clear* manual.
 

@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-IDX` |
-| **Versi Dokumen** | 1.4.0 |
+| **Versi Dokumen** | 1.4.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -46,7 +46,7 @@ test-cases/
 ├── README.md                                          # [Dokumen Ini] Master Index & Kerangka Kerja Pengujian
 │
 ├── 01-public-website/                                 # Domain 1: Public Web & RFQ Cart
-│   ├── 01-company-profile-and-navigation.md           # [DOC-PBB-TC-PUB-01] Profil Perusahaan, Hero, Navbar, Brand Grid
+│   ├── 01-company-profile-and-navigation.md           # [DOC-PBB-TC-PUB-01] Profil Perusahaan, Hero, Navbar, Brand Grid, Full Dynamic Site CMS, & Legal Pages
 │   ├── 02-product-catalog-and-search.md               # [DOC-PBB-TC-PUB-02] Katalog Zero Price, Filter Brand/Kategori, Search SKU
 │   ├── 03-rfq-cart-and-inquiry-submission.md          # [DOC-PBB-TC-PUB-03] RFQ Cart Alpine.js, Bulk Parser, Form Inkuiri
 │   └── 04-whatsapp-direct-inquiry.md                  # [DOC-PBB-TC-PUB-04] Floating WA Button, Prefilled Text, Telemetri

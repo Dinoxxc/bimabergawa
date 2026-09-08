@@ -31,6 +31,7 @@ return new class extends Migration
             $table->decimal('vat_rate_applied', 5, 2)->default(11.00); // Snapshot Statis UU HPP
             $table->decimal('tax_amount', 15, 2)->default(0.00);
             $table->decimal('grand_total', 15, 2)->default(0.00);
+            $table->string('currency', 3)->default('IDR');
             $table->decimal('total_cost', 15, 2)->default(0.00); // Modal HPP Internal
             $table->decimal('gross_profit_margin', 5, 2)->default(0.00); // Persentase Margin Laba Kotor
             $table->boolean('is_approved_by_director')->default(false);
@@ -40,7 +41,9 @@ return new class extends Migration
             $table->string('pdf_path', 255)->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('approved_at')->nullable();
+            $table->text('director_notes')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['status', 'expires_at'], 'idx_quotations_status_expires');
         });

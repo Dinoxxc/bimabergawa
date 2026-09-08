@@ -38,6 +38,7 @@ return new class extends Migration
             $table->text('rejection_reason')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

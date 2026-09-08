@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('slug', 255)->unique();
             $table->string('model_number', 150)->index();
             $table->decimal('cost_price', 15, 2)->default(0.00); // HPP Internal (Bebas bocor ke publik)
+            $table->string('currency', 3)->default('IDR');
             $table->longText('description')->nullable();
             $table->string('datasheet_path', 255)->nullable();
             $table->enum('availability_status', ['ready_stock', 'indent_principal', 'discontinued'])
@@ -34,6 +35,7 @@ return new class extends Migration
             $table->boolean('is_published')->default(true)->index();
             $table->string('meta_description', 255)->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             // Composite index untuk faceted live filter di katalog publik
             $table->index(['is_published', 'brand_id', 'category_id'], 'idx_products_catalog_search');

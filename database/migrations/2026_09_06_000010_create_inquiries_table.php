@@ -36,6 +36,7 @@ return new class extends Migration
             $table->string('boq_attachment_path', 255)->nullable();
             $table->timestamp('first_contacted_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['status', 'created_at'], 'idx_inquiries_status_created');
         });

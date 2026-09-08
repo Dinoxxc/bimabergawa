@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('quotation_id')->unique()->constrained('quotations')->onDelete('restrict');
             $table->string('customer_po_number', 100)->nullable();
             $table->date('customer_po_date')->nullable();
+            $table->string('customer_po_file_path', 255)->nullable();
             $table->enum('status', [
                 'processing',
                 'indent_principal',
@@ -30,10 +31,12 @@ return new class extends Migration
             ])->default('processing')->index();
             $table->decimal('vat_rate_applied', 5, 2)->default(11.00); // Snapshot PPN transaksi
             $table->decimal('total_amount', 15, 2)->default(0.00);
+            $table->string('currency', 3)->default('IDR');
             $table->boolean('is_approved_by_director')->default(false); // Wajib Direktur jika >= 100 Juta
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['status', 'created_at'], 'idx_so_status_created');
         });

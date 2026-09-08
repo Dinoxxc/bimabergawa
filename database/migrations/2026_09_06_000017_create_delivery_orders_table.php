@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('proof_of_delivery_path', 255)->nullable();
             $table->timestamp('shipped_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['sales_order_id', 'status'], 'idx_do_order_status');
         });

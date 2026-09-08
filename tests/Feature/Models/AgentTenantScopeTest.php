@@ -185,4 +185,75 @@ class AgentTenantScopeTest extends TestCase
         $this->assertFalse($visibleQuotations->contains('id', $quoOther->id));
         $this->assertNull(Quotation::find($quoOther->id));
     }
+
+    /**
+     * TC-ERP-INV-014: Resolusi Inkuiri Multi-Revisi Penawaran via latestOfMany()
+     */
+    public function test_inquiry_quotation_relation_returns_latest_of_many_revision(): void
+    {
+        $salesPic = User::create([
+            'name' => 'Sales PIC Revision',
+            'email' => 'sales_rev_'.time().'@example.com',
+        ]);
+
+        $inquiry = Inquiry::create([
+            'inquiry_number' => 'INQ-REV-'.time(),
+            'customer_name' => 'PT Multi Revisi',
+            'company_name' => 'PT Multi Revisi',
+            'phone_wa' => '081122334455',
+            'type' => 'single_direct',
+            'source' => 'website_rfq',
+            'status' => 'new',
+        ]);
+
+        // Create Revision 0 (Initial)
+        $quoRev0 = Quotation::create([
+            'quotation_number' => 'QUO-REV-'.time().'-R0',
+            'revision_number' => 0,
+            'inquiry_id' => $inquiry->id,
+            'user_id' => $salesPic->id,
+            'customer_name' => 'PT Multi Revisi',
+            'company_name' => 'PT Multi Revisi',
+            'subtotal' => 10000000.00,
+            'grand_total' => 11200000.00,
+            'status' => 'rejected',
+            'created_at' => now()->subMinutes(10),
+        ]);
+
+        // Create Revision 1 (Updated discount)
+        $quoRev1 = Quotation::create([
+            'quotation_number' => 'QUO-REV-'.time().'-R1',
+            'revision_number' => 1,
+            'inquiry_id' => $inquiry->id,
+            'user_id' => $salesPic->id,
+            'customer_name' => 'PT Multi Revisi',
+            'company_name' => 'PT Multi Revisi',
+            'subtotal' => 9500000.00,
+            'grand_total' => 10640000.00,
+            'status' => 'rejected',
+            'created_at' => now()->subMinutes(5),
+        ]);
+
+        // Create Revision 2 (Final Deal)
+        $quoRev2 = Quotation::create([
+            'quotation_number' => 'QUO-REV-'.time().'-R2',
+            'revision_number' => 2,
+            'inquiry_id' => $inquiry->id,
+            'user_id' => $salesPic->id,
+            'customer_name' => 'PT Multi Revisi',
+            'company_name' => 'PT Multi Revisi',
+            'subtotal' => 9000000.00,
+            'grand_total' => 10080000.00,
+            'status' => 'approved',
+            'created_at' => now(),
+        ]);
+
+        // Verification: inquiry->quotation must resolve to the latest revision (R2)
+        $freshInquiry = $inquiry->fresh();
+        $this->assertNotNull($freshInquiry->quotation);
+        $this->assertEquals($quoRev2->id, $freshInquiry->quotation->id);
+        $this->assertEquals(2, $freshInquiry->quotation->revision_number);
+        $this->assertEquals(9000000.00, (float) $freshInquiry->quotation->subtotal);
+        $this->assertCount(3, $freshInquiry->quotations);
+    }
 }

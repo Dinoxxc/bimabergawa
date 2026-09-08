@@ -68,7 +68,7 @@ class Inquiry extends Model
 
     public function quotation(): HasOne
     {
-        return $this->hasOne(Quotation::class);
+        return $this->hasOne(Quotation::class)->latestOfMany();
     }
 
     public function quotations(): HasMany

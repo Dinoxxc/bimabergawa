@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Models;
 
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\SalesOrder;
 use App\Models\User;
@@ -81,5 +84,84 @@ class InvoiceModelTest extends TestCase
         // Pay remaining balance in full
         $invoice->update(['paid_amount' => 11200000.00, 'status' => 'paid']);
         $this->assertEquals(0.0, $invoice->remaining_balance);
+    }
+
+    /**
+     * TC-ERP-INV-013: Relasi Item Transaksi Historis terhadap Produk Discontinue (withTrashed)
+     */
+    public function test_transactional_item_retains_product_relation_even_after_product_soft_deleted(): void
+    {
+        $brand = Brand::create([
+            'name' => 'Schneider Historical',
+            'slug' => 'schneider-hist-'.time(),
+        ]);
+
+        $category = Category::create([
+            'name' => 'Historical Category',
+            'slug' => 'hist-cat-'.time(),
+        ]);
+
+        $product = Product::create([
+            'brand_id' => $brand->id,
+            'category_id' => $category->id,
+            'name' => 'Legacy Discontinued Contactor',
+            'slug' => 'legacy-contactor-'.time(),
+            'model_number' => 'LC1D09M7',
+            'cost_price' => 150000.00,
+            'availability_status' => 'discontinued',
+            'is_published' => false,
+        ]);
+
+        $salesPic = User::create([
+            'name' => 'Sales PIC Hist',
+            'email' => 'sales_hist_'.time().'@example.com',
+        ]);
+
+        $quotation = Quotation::create([
+            'quotation_number' => 'QUO-HIST-'.time(),
+            'user_id' => $salesPic->id,
+            'customer_name' => 'PT Pelanggan Lama',
+            'company_name' => 'PT Pelanggan Lama',
+            'subtotal' => 150000.00,
+            'status' => 'approved',
+        ]);
+
+        $salesOrder = SalesOrder::create([
+            'order_number' => 'SO-HIST-'.time(),
+            'quotation_id' => $quotation->id,
+            'total_amount' => 150000.00,
+            'status' => 'completed',
+        ]);
+
+        $invoice = Invoice::create([
+            'invoice_number' => 'INV-HIST-'.time(),
+            'sales_order_id' => $salesOrder->id,
+            'customer_name' => 'PT Pelanggan Lama',
+            'company_name' => 'PT Pelanggan Lama',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'grand_total' => 150000.00,
+            'status' => 'paid',
+        ]);
+
+        $invoiceItem = InvoiceItem::create([
+            'invoice_id' => $invoice->id,
+            'product_id' => $product->id,
+            'item_name' => 'Legacy Discontinued Contactor',
+            'model_number' => 'LC1D09M7',
+            'quantity' => 1,
+            'unit_price' => 200000.00,
+            'total_price' => 200000.00,
+        ]);
+
+        // Soft delete the product (e.g. principal discontinued the SKU)
+        $product->delete();
+        $this->assertNotNull($product->fresh()->deleted_at);
+
+        // Verification: invoiceItem still successfully resolves the product relation
+        $loadedItem = InvoiceItem::find($invoiceItem->id);
+        $this->assertNotNull($loadedItem->product);
+        $this->assertEquals('Legacy Discontinued Contactor', $loadedItem->product->name);
+        $this->assertEquals($product->id, $loadedItem->product->id);
     }
 }

@@ -18,4 +18,17 @@ class ProductObserver
             $product->saveQuietly();
         }
     }
+
+    /**
+     * Handle the Product "restoring" event.
+     */
+    public function restoring(Product $product): void
+    {
+        // Bersihkan sufiks -deleted-{timestamp}
+        $cleanSlug = (string) preg_replace('/-deleted-\d+$/', '', $product->slug);
+
+        // Jika slug original telah dipakai produk aktif lain, berikan sufiks angka unik
+        $count = Product::where('slug', $cleanSlug)->where('id', '!=', $product->id)->count();
+        $product->slug = $count > 0 ? "{$cleanSlug}-".($count + 1) : $cleanSlug;
+    }
 }

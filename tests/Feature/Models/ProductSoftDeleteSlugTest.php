@@ -68,4 +68,53 @@ class ProductSoftDeleteSlugTest extends TestCase
         $this->assertNotNull($product2->id);
         $this->assertEquals($targetSlug, $product2->slug);
     }
+
+    /**
+     * TC-ERP-INV-015: Pemulihan Produk (Product Restoring) dan Normalisasi Slug Bebas Benturan
+     */
+    public function test_restoring_product_normalizes_slug_and_handles_collision_gracefully(): void
+    {
+        $brand = Brand::create([
+            'name' => 'ABB Test',
+            'slug' => 'abb-test-'.time(),
+        ]);
+
+        $category = Category::create([
+            'name' => 'Switch Test',
+            'slug' => 'switch-test-'.time(),
+        ]);
+
+        $originalSlug = 'abb-isolator-switch-40a-'.time();
+
+        // 1. Create and delete product
+        $product = Product::create([
+            'brand_id' => $brand->id,
+            'category_id' => $category->id,
+            'name' => 'ABB Isolator Switch 40A',
+            'slug' => $originalSlug,
+            'model_number' => 'OT40F3',
+            'cost_price' => 120000.00,
+            'availability_status' => 'ready_stock',
+            'is_published' => true,
+        ]);
+        $product->delete();
+
+        // 2. Another product takes the original slug
+        $newProduct = Product::create([
+            'brand_id' => $brand->id,
+            'category_id' => $category->id,
+            'name' => 'ABB Isolator Switch 40A V2',
+            'slug' => $originalSlug,
+            'model_number' => 'OT40F3-V2',
+            'cost_price' => 125000.00,
+            'availability_status' => 'ready_stock',
+            'is_published' => true,
+        ]);
+
+        // 3. Restore deleted product: ProductObserver detects collision and generates unique suffix
+        $product->restore();
+        $this->assertNull($product->deleted_at);
+        $this->assertNotEquals($originalSlug, $product->slug);
+        $this->assertStringStartsWith($originalSlug.'-', $product->slug);
+    }
 }

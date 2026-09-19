@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-MIG-02` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Catalog Architect | Ditinjau | Penambahan struktur hierarki parent-child & spesifikasi JSON |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan skema atribut teknis per kategori industri |
 | `1.3.0` | 05 Sep 2026 | Principal Integration Engineer | Disetujui | Pemisahan berkas mandiri taksonomi master data & zero emoji |
+| `1.4.0` | 19 Sep 2026 | Catalog Architect & Lead | Disetujui | Penyelarasan 4 prinsipal global kemitraan resmi PBB (Schneider, Philips, ABB, Legrand) & kategori kelistrikan-otomasi industri |
 
 ---
 
@@ -33,45 +34,39 @@ use App\Models\Brand;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
-class BrandMasterSeeder extends Seeder
+class BrandAndCategorySeeder extends Seeder
 {
     public function run(): void
     {
+        // 1. Inisialisasi 4 Prinsipal Kemitraan Resmi PT. Panca Bima Bergawa
         $brands = [
             [
-                'name'         => 'Ebara',
-                'country_origin' => 'Jepang',
-                'description'  => 'Produsen global terkemuka untuk pompa sentrifugal, pompa submersible, dan sistem perpompaan industri berat.',
-                'logo_url'     => 'brands/ebara-logo.webp',
-                'is_active'    => true,
-            ],
-            [
-                'name'         => 'Schneider Electric',
+                'name'           => 'Schneider Electric',
                 'country_origin' => 'Prancis',
-                'description'  => 'Pemimpin global dalam transformasi digital manajemen energi dan otomatisasi industri (Inverter Altivar, Kontaktor, PLC).',
-                'logo_url'     => 'brands/schneider-logo.webp',
-                'is_active'    => true,
+                'description'    => 'Distribusi tenaga listrik, MCB, MCCB, ACB, kontaktor TeSys, inverter Altivar, sensor telemecanique, dan relay otomasi.',
+                'logo_path'      => 'brands/schneider-electric.webp',
+                'is_active'      => true,
             ],
             [
-                'name'         => 'Danfoss',
-                'country_origin' => 'Denmark',
-                'description'  => 'Solusi efisiensi energi terdepan di dunia untuk Variable Frequency Drive (VFD VLT Series) dan refrigerasi industri.',
-                'logo_url'     => 'brands/danfoss-logo.webp',
-                'is_active'    => true,
+                'name'           => 'Philips Lighting / Signify',
+                'country_origin' => 'Belanda',
+                'description'    => 'Pencahayaan industri komersial, high-bay LED, lampu sorot stadion/proyek, downlight architectural, dan armatur tahan ledakan.',
+                'logo_path'      => 'brands/philips-lighting.webp',
+                'is_active'      => true,
             ],
             [
-                'name'         => 'Omron',
-                'country_origin' => 'Jepang',
-                'description'  => 'Komponen otomasi pabrik presisi tinggi meliputi proximity sensor, photoelectric sensor, timer, dan safety relays.',
-                'logo_url'     => 'brands/omron-logo.webp',
-                'is_active'    => true,
+                'name'           => 'ABB',
+                'country_origin' => 'Swiss',
+                'description'    => 'Sakelar pemutus beban, isolator switch, motor starter, miniature circuit breaker, dan sistem proteksi kelistrikan industri berat.',
+                'logo_path'      => 'brands/abb.webp',
+                'is_active'      => true,
             ],
             [
-                'name'         => 'Mitsubishi Electric',
-                'country_origin' => 'Jepang',
-                'description'  => 'Peralatan otomasi industri kelas dunia mencakup PLC Seri Melsec, Servo Motors, dan Inverter Seri FR-D/E/A.',
-                'logo_url'     => 'brands/mitsubishi-logo.webp',
-                'is_active'    => true,
+                'name'           => 'Legrand',
+                'country_origin' => 'Prancis',
+                'description'    => 'Sistem pengkabelan terstruktur, kabel tray, stop kontak industri komersial, box panel industri, dan modul otomasi gedung.',
+                'logo_path'      => 'brands/legrand.webp',
+                'is_active'      => true,
             ],
         ];
 
@@ -80,6 +75,57 @@ class BrandMasterSeeder extends Seeder
                 ['name' => $brand['name']],
                 array_merge($brand, ['slug' => Str::slug($brand['name'])])
             );
+        }
+
+        // 2. Inisialisasi Taksonomi Kategori Hierarkis
+        $taxonomy = [
+            'Distribusi Daya Listrik' => [
+                'Miniature Circuit Breaker (MCB)',
+                'Molded Case Circuit Breaker (MCCB)',
+                'Air Circuit Breaker (ACB)',
+                'Kapasitor Bank & Power Quality',
+            ],
+            'Otomasi & Kendali Industri' => [
+                'Variable Frequency Drive (Inverter VFD)',
+                'Kontaktor & Thermal Overload Relay',
+                'Programmable Logic Controller (PLC)',
+                'Sensor & Limit Switch Industri',
+            ],
+            'Pencahayaan Industri Komersial' => [
+                'High-Bay LED Industri',
+                'Lampu Sorot & Floodlight Proyek',
+                'Architectural Downlight',
+                'Armatur Tahan Ledakan (Explosion-Proof)',
+            ],
+            'Infrastruktur Pengkabelan & Panel' => [
+                'Kabel Tray & Cable Ladder',
+                'Box Panel Industri IP66',
+                'Stop Kontak & Steker Industri',
+            ],
+        ];
+
+        foreach ($taxonomy as $parentName => $subCategories) {
+            $parent = Category::firstOrCreate(
+                ['name' => $parentName],
+                [
+                    'slug'        => Str::slug($parentName),
+                    'parent_id'   => null,
+                    'description' => "Kategori induk perlengkapan {$parentName}.",
+                    'is_active'   => true,
+                ]
+            );
+
+            foreach ($subCategories as $subName) {
+                Category::firstOrCreate(
+                    ['name' => $subName],
+                    [
+                        'slug'        => Str::slug($subName),
+                        'parent_id'   => $parent->id,
+                        'description' => "Sub-kategori teknis {$subName}.",
+                        'is_active'   => true,
+                    ]
+                );
+            }
         }
     }
 }

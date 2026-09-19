@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-IDX` |
-| **Versi Dokumen** | 1.7.0 |
+| **Versi Dokumen** | 1.8.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -22,6 +22,7 @@
 | `1.4.0` | 06 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan skenario uji notifikasi drawer, diskusi transaksi linimasa, autocomplete mention `@User`, dan chat isolasi multi-tenant agen |
 | `1.6.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 15 skenario DOC-PBB-TC-ERP-06 (Faktur, paid_amount, withTrashed, latestOfMany, dan slug restoring), total skenario meningkat menjadi 399+ skenario |
 | `1.7.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 5 skenario mitigasi celah arsitektur pada DOC-PBB-TC-ERP-06 (TC-ERP-INV-016 s.d. TC-ERP-INV-020), total skenario meningkat menjadi 404+ skenario |
+| `1.8.0` | 19 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 2 skenario pada DOC-PBB-TC-INF-01 (TC-INF-MIG-017 SystemSettingSeeder & TC-INF-MIG-018 ProductSampleSeeder), total skenario meningkat menjadi 406+ skenario |
 
 ---
 

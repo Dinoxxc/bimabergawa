@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Models\Scopes\AgentTenantScope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Inquiry extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'inquiry_number',
@@ -23,6 +24,7 @@ class Inquiry extends Model
         'freelance_sales_id',
         'customer_name',
         'company_name',
+        'project_name',
         'phone_wa',
         'email',
         'project_location',

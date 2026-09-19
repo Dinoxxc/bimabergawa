@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class QuotationItem extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'quotation_id',
         'product_id',
@@ -16,10 +19,13 @@ class QuotationItem extends Model
         'model_number',
         'lead_time',
         'quantity',
+        'uom',
         'unit_price',
         'cost_price',
         'discount_percent',
         'total_price',
+        'warranty_period',
+        'custom_specifications',
     ];
 
     protected function casts(): array
@@ -30,6 +36,7 @@ class QuotationItem extends Model
             'cost_price' => 'decimal:2',
             'discount_percent' => 'decimal:2',
             'total_price' => 'decimal:2',
+            'custom_specifications' => 'array',
         ];
     }
 

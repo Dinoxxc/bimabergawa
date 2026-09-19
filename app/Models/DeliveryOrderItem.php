@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DeliveryOrderItem extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'delivery_order_id',
         'product_id',
         'item_name',
         'model_number',
         'quantity_shipped',
+        'uom',
     ];
 
     protected function casts(): array

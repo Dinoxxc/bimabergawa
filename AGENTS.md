@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `AGY-PBB-AGENT-RULEBOOK` |
-| **Versi Dokumen** | 1.5.0 |
+| **Versi Dokumen** | 1.6.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Autonomous Agent & Engineering Operational Guidelines |
 
@@ -15,11 +15,16 @@
 
 ## 1. Identitas Korporat, Konteks Bisnis, & Ruang Lingkup Sistem
 
-PT. Panca Bima Bergawa (PBB) adalah entitas distributor resmi B2B (*Business-to-Business*) terkemuka di Indonesia untuk produk elektrikal, mekanikal, dan otomasi industri. PBB memegang kemitraan resmi dengan prinsipal global papan atas:
-- **Schneider Electric** (Distribusi tenaga listrik, MCB, MCCB, ACB, kontaktor, inverter Altivar, sensor telemecanique, dan relay otomasi).
-- **Philips Lighting / Signify** (Pencahayaan industri komersial, *high-bay LED*, lampu sorot stadion/proyek, *downlight architectural*, dan armatur tahan ledakan).
-- **ABB** (Sakelar pemutus beban, isolator switch, motor starter, miniature circuit breaker, dan sistem proteksi kelistrikan industri berat).
-- **Legrand** (Sistem pengkabelan terstruktur, kabel tray, stop kontak industri komersial, box panel industri, dan modul otomasi gedung).
+PT. Panca Bima Bergawa (PBB) adalah entitas distributor resmi B2B (*Business-to-Business*) dan mitra pengadaan industri terpadu (*One-Stop Industrial General Supplier & Procurement Partner*) terkemuka di Indonesia yang melayani seluruh kebutuhan operasional pabrik, gedung komersial, dan perusahaan:
+- **Elektrikal & Tenaga Listrik:** Distribusi daya listrik, MCB, MCCB, ACB, kontaktor, kapasitor bank, panel listrik, kabel, busbar, dan trafo (Kemitraan resmi: Schneider Electric, ABB, Legrand, Chint).
+- **Mekanikal, Pompa, & Pemipaan:** Katup industri (*valves*), pompa sentrifugal, pipa seamless/welded, *flange*, *fitting*, *gasket*, dan *bearing* (Kitz, Grundfos, Torishima, Rucika).
+- **Otomasi Pabrik, Kontrol, & Sensor:** Inverter frekuensi (*variable speed drive*), PLC, sensor telemecanique/otomasi, *relay*, instrumentasi digital, dan transmisi data industri (Schneider Electric, Omron, Mitsubishi Electric).
+- **Peralatan Keselamatan Kerja, Safety & K3 (HSE):** Sepatu safety, helm proyek, rompi visibilitas tinggi, sarung tangan proteksi, kacamata safety, harness, APAR, dan rambu K3 (3M, Cheetah, Krisbow Safety).
+- **Perkakas Teknik & MRO Pabrik (Maintenance, Repair, Operations):** *Hand tools*, *power tools*, bahan kimia industri, *lubricant / grease*, *sealant / adhesive*, baut/fastener, dan peralatan bengkel pemeliharaan mesin pabrik (Bosch, Tekiro, Loctite, WD-40).
+- **Pencahayaan Industri & Komersial:** Pencahayaan industri komersial, *high-bay LED*, lampu sorot stadion/proyek, *downlight architectural*, dan armatur tahan ledakan (*explosion-proof*) (Philips Lighting / Signify).
+- **Infrastruktur Fasilitas Gedung:** Sistem pengkabelan terstruktur, kabel tray / ladder (Legrand P31), stop kontak industri komersial, box panel industri, HVAC, dan modul otomasi gedung.
+
+PBB melayani baik pengadaan barang katalog resmi maupun pengadaan barang kustom / *ad-hoc sourcing* non-katalog sesuai daftar kebutuhan (*Bill of Quantities / BOQ*) dari kontraktor MEP, pembuat panel (*panel builders*), pengelola gedung, dan bagian pemeliharaan (*maintenance*) pabrik manufaktur di seluruh Indonesia.
 
 ### 1.1 Topologi Sistem Multi-Domain (Single Database Multi-Domain Architecture)
 
@@ -276,7 +281,7 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 ### Fase 1: Core Database & Model Layer
 - [x] `feature/core-01-database-migrations` : Skema tabel migrasi MySQL 8.0 InnoDB (23 tabel domain: `brands`, `categories`, `products`, `product_specifications`, `product_images`, `inquiries`, `inquiry_items`, `inquiry_telemetries`, `quotations`, `quotation_payment_terms`, `quotation_items`, `sales_orders`, `delivery_orders`, `delivery_order_items`, `invoices`, `invoice_items`, `commission_tiers`, `freelance_sales`, `commission_payouts`, `document_sequences`, `article_categories`, `articles`, `system_settings`, `notifications`, `internal_comments`, `activity_logs`) dilengkapi Soft Deletes dan multi-currency. *(Rujukan: test-cases/06-integration-and-infrastructure/01-database-seeders-and-migration-rollback.md)*
 - [x] `feature/core-02-eloquent-models-and-scopes` : 27 Model Eloquent domain, relasi ORM historis full-chain (`withTrashed`), `latestOfMany`, enkripsi data pribadi UU PDP `$casts = ['encrypted']`, Global Scope `AgentTenantScope` (dengan bypass staf internal & isolasi `CommissionPayout`), proteksi komentar internal `agent_comment_visibility`, `ProductObserver` resolusi slug deterministik deleting/restoring, dan `Relation::enforceMorphMap()`. *(Rujukan: test-cases/05-security-and-non-functional/04-data-privacy-and-audit-logging.md, test-cases/03-agent-commission-portal/02-agent-inquiry-and-tenant-isolation.md, test-cases/02-internal-erp-crm/06-commercial-invoicing-and-audit-trail.md)*
-- [ ] `feature/core-03-seeders-and-factories` : Seeder 5 Spatie Roles & Permissions, 4 Prinsipal Global (Schneider, Philips, ABB, Legrand), kategori, sample SKU, dan default system settings. *(Rujukan: test-cases/06-integration-and-infrastructure/01-seeder-and-database.md)*
+- [x] `feature/core-03-seeders-and-factories` : Seeder 5 Spatie Roles & Permissions, 18 Prinsipal Global + taksonomi multi-divisi industri (Elektrikal, Mekanikal, Otomasi, Safety K3, MRO), Master Satuan Dinamis (`units_of_measure`), kustomisasi spesifikasi per item, 28 Model Factories, dan integritas data pengadaan pabrik. *(Rujukan: test-cases/06-integration-and-infrastructure/01-database-seeders-and-migration-rollback.md)*
 
 ### Fase 2: Core Service Layer (Logika Bisnis Terisolasi)
 - [ ] `feature/core-04-service-document-number` : `DocumentNumberService` Atomic Lock `SELECT ... FOR UPDATE` + 3x retry saat deadlock (`INQ`, `QUO`, `SO`, `DO`, `COM`). *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*

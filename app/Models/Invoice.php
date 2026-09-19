@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,15 +13,17 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'invoice_number',
+        'faktur_pajak_number',
         'sales_order_id',
         'quotation_id',
         'payment_term_id',
         'customer_name',
         'company_name',
+        'company_npwp',
         'invoice_date',
         'due_date',
         'subtotal',

@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-INF-01` |
-| **Versi Dokumen** | 1.5.0 |
+| **Versi Dokumen** | 1.7.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & DevOps/QA Reference |
 
@@ -20,6 +20,9 @@
 | `1.2.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan pengujian integritas foreign key saat rollback skema |
 | `1.3.0` | 06 Sep 2026 | Principal QA Architect | Disetujui | Pembuatan berkas mandiri domain integrasi & standardisasi status Not Executed |
 | `1.4.0` | 06 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan ekspansi 20 tabel domain, 24 migrasi domain, dan total 28 berkas migrasi |
+| `1.5.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Pembaruan verifikasi 31 berkas migrasi dan 23 tabel domain bisnis |
+| `1.6.0` | 19 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan 5 peran Spatie snake_case, penambahan skenario TC-INF-MIG-017 (SystemSettingSeeder) dan TC-INF-MIG-018 (ProductSampleSeeder), total 18 skenario |
+| `1.7.0` | 19 Sep 2026 | Principal QA Architect | Disetujui | Penambahan TC-INF-MIG-019 (UnitOfMeasureSeeder Master Satuan) dan TC-INF-MIG-020 (Integritas Atribut B2B General Supplier & Kustomisasi Spesifikasi per Item), total 20 skenario |
 
 ---
 
@@ -45,7 +48,7 @@
 | ID Kasus Uji | Kategori | Skenario Pengujian | Prasyarat (Pre-conditions) | Data Input / Aksi | Hasil yang Diharapkan (Expected Result) | Status |
 | :--- | :---: | :--- | :--- | :--- | :--- | :--- | :---: |
 | **`TC-INF-MIG-001`** | Positif | Eksekusi Migrasi Skema Basis Data Bersih (*Fresh Migration*) | Database MySQL 8.0 kosong | Jalankan `php artisan migrate:fresh` | Seluruh 23 tabel domain (total 31 berkas migrasi) berhasil dibuat, tipe data presisi (`DECIMAL(15,2)`, `VARCHAR`, `TIMESTAMP`), foreign key terpasang tanpa error. | Not Executed |
-| **`TC-INF-MIG-002`** | Positif | Inisialisasi 5 Peran Standar & Hak Akses Spatie RBAC | Migrasi database selesai | Jalankan `RoleAndPermissionSeeder` | Terbentuk 5 role baku: `super-admin`, `sales-pic`, `finance`, `logistik`, `mitra-agen` beserta seluruh permissions pada tabel `roles` & `permissions`. | Not Executed |
+| **`TC-INF-MIG-002`** | Positif | Inisialisasi 5 Peran Standar & Hak Akses Spatie RBAC | Migrasi database selesai | Jalankan `RoleAndPermissionSeeder` | Terbentuk 5 role baku: `super_admin`, `sales_pic`, `finance`, `logistics`, `freelance_sales` beserta seluruh permissions pada tabel `roles` & `permissions`. | Not Executed |
 | **`TC-INF-MIG-003`** | Positif | Inisialisasi Akun Super Admin Awal (*Bootstrap Super Admin*) | Role Spatie telah dibuat | Jalankan `InitialSuperAdminSeeder` | Akun Super Admin `admin@bimabergawa.com` dibuat dengan status `is_active = true` dan terikat pada role `super-admin`. | Not Executed |
 | **`TC-INF-MIG-004`** | Positif | Seeding 4 Master Brand Prinsipal Resmi | Tabel `brands` kosong | Jalankan `BrandAndCategorySeeder` | Terbentuk 4 record brand aktif: *Schneider Electric, Philips Lighting, ABB, Legrand* dengan slug dan metadata resmi. | Not Executed |
 | **`TC-INF-MIG-005`** | Positif | Seeding Taksonomi Kategori Hierarkis (*Parent-Child Tree*) | Master brand telah ter-seed | Jalankan `BrandAndCategorySeeder` | Terbentuk kategori induk (cth: *Electrical Distribution*) dan sub-kategori terkait dengan `parent_id` terhubung presisi. | Not Executed |
@@ -58,8 +61,12 @@
 | **`TC-INF-MIG-012`** | Integritas | Penegakan Cascade Delete pada Tabel Terisolasi (*Cascade Cleanup*) | Hapus inquiry yang belum berstatus kontrak | Eksekusi delete pada inkuiri draf | Seluruh baris terkait pada tabel `inquiry_items` otomatis terhapus bersih (*clean cascade deletion*). | Not Executed |
 | **`TC-INF-MIG-013`** | Keamanan | Penegakan Default Enkripsi Kata Sandi / Token saat Seeding | Seeder akun awal dieksekusi | Cek kolom `password` pada tabel `users` | Kata sandi awal (jika ada) di-hash menggunakan algoritma Bcrypt (`Hash::make()`), tidak ada password plaintext di basis data. | Not Executed |
 | **`TC-INF-MIG-014`** | Batas Nilai | Integritas Indeks Unik pada Kolom Kritis (*Unique Indexes*) | Tabel `products`, `brands`, `users` | Tes insert duplikasi slug / email / SKU | MySQL menegakkan index unik (`UNIQUE KEY`), menolak duplikasi data di level engine penyimpanan InnoDB. | Not Executed |
-| **`TC-INF-MIG-015`** | Performa | Waktu Eksekusi Migrasi & Seeder Lengkap pada Shared Hosting | Hostinger Shared Hosting CLI | Ukur durasi `php artisan migrate:fresh --seed` | Seluruh alur migrasi 28 berkas dan seeding tuntas dalam waktu < 10 detik, memori RAM puncak < 32 MB. | Not Executed |
-| **`TC-INF-MIG-016`** | Verifikasi | Perintah Pengecekan Status Migrasi (*Migrate Status Inspection*) | Skema termigrasi penuh | Jalankan `php artisan migrate:status` | Seluruh 28 berkas migrasi berstatus `Ran = Yes` dengan batch number konsisten. | Not Executed |
+| **`TC-INF-MIG-015`** | Performa | Waktu Eksekusi Migrasi & Seeder Lengkap pada Shared Hosting | Hostinger Shared Hosting CLI | Ukur durasi `php artisan migrate:fresh --seed` | Seluruh alur migrasi 31 berkas dan seeding tuntas dalam waktu < 10 detik, memori RAM puncak < 32 MB. | Not Executed |
+| **`TC-INF-MIG-016`** | Verifikasi | Perintah Pengecekan Status Migrasi (*Migrate Status Inspection*) | Skema termigrasi penuh | Jalankan `php artisan migrate:status` | Seluruh 31 berkas migrasi berstatus `Ran = Yes` dengan batch number konsisten. | Not Executed |
+| **`TC-INF-MIG-017`** | Positif | Inisialisasi Pengaturan Komersial Dinamis (*System Settings Seeding*) | Tabel `system_settings` siap | Jalankan `SystemSettingSeeder` | Terbentuk konfigurasi default PPN 11%, ambang margin 8%/15%, profil kantor Rasuna Said, dan batas approval SO. | Not Executed |
+| **`TC-INF-MIG-018`** | Positif | Inisialisasi Sample Katalog Produk Teknik (*Product Sample Seeding*) | Brand & kategori ter-seed | Jalankan `ProductAndSkuSampleSeeder` | Terbentuk 12 sample SKU (3 per brand Schneider, Philips, ABB, Legrand) lengkap dengan spesifikasi teknis dan modal dasar HPP. | Not Executed |
+| **`TC-INF-MIG-019`** | Positif | Inisialisasi Master Satuan Dinamis (*Unit of Measure Seeding*) | Tabel `units_of_measure` siap | Jalankan `UnitOfMeasureSeeder` | Terbentuk 15 satuan industri default (`pcs`, `meter`, `batang`, `set`, `roll`, `box`, `pack`, `pail`, `drum`, `liter`, `kg`, `pasang`, `lot`, `can`, `tube`) dengan status aktif. | Not Executed |
+| **`TC-INF-MIG-020`** | Integritas | Kustomisasi Spesifikasi per Item & Atribut B2B General Supplier | Migrasi komprehensif selesai | Cek kolom `uom`, `project_name`, `company_npwp`, `faktur_pajak_number`, `driver_name`, `vehicle_plate_number`, `moq`, `warranty_period`, `custom_specifications` | Seluruh kolom baru terpasang di database, tipe data dan casts tepat, serta mendukung spesifikasi dinamis per item. | Not Executed |
 
 ---
 

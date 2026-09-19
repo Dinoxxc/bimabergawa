@@ -24,11 +24,13 @@ class InvoiceFactory extends Factory
 
         return [
             'invoice_number' => 'INV-'.date('Ym').'-'.strtoupper(fake()->unique()->bothify('####')),
+            'faktur_pajak_number' => '010.032-26.'.fake()->numerify('########'),
             'sales_order_id' => SalesOrder::factory(),
             'quotation_id' => Quotation::factory(),
             'payment_term_id' => null,
             'customer_name' => fake()->name(),
             'company_name' => fake()->company(),
+            'company_npwp' => '01.234.567.8-'.fake()->numerify('###.###'),
             'invoice_date' => now()->toDateString(),
             'due_date' => now()->addDays(30)->toDateString(),
             'subtotal' => $subtotal,

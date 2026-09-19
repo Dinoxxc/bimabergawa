@@ -14,14 +14,18 @@ class ProductSpecification extends Model
 
     protected $fillable = [
         'product_id',
+        'spec_group',
         'spec_key',
         'spec_value',
+        'spec_unit',
+        'is_highlight',
         'sort_order',
     ];
 
     protected function casts(): array
     {
         return [
+            'is_highlight' => 'boolean',
             'sort_order' => 'integer',
         ];
     }

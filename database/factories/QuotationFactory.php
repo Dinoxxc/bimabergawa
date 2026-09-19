@@ -32,6 +32,7 @@ class QuotationFactory extends Factory
             'freelance_sales_id' => null,
             'customer_name' => fake()->name(),
             'company_name' => fake()->company(),
+            'project_name' => 'Proyek '.fake()->company().' '.fake()->city(),
             'delivery_terms' => 'Franco Jakarta',
             'validity_days' => 14,
             'expires_at' => now()->addDays(14),

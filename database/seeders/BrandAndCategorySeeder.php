@@ -76,6 +76,22 @@ class BrandAndCategorySeeder extends Seeder
                 'Box Panel Industri IP66',
                 'Stop Kontak & Steker Industri',
             ],
+            'Mekanikal & Pemipaan Industri' => [
+                'Industrial Valves (Ball, Butterfly, Gate, Globe)',
+                'Pompa Sentrifugal & Booster',
+                'Pipa Baja Seamless & Fitting Flange',
+            ],
+            'Keselamatan Kerja & K3 (HSE)' => [
+                'Sepatu Safety & Boot K3',
+                'Helm Proyek & Pelindung Kepala',
+                'Sarung Tangan Proteksi Industri',
+                'Alat Pemadam Api Ringan (APAR)',
+            ],
+            'Perkakas Teknik & MRO Pabrik' => [
+                'Hand Tools & Kunci Mekanik',
+                'Power Tools & Mesin Bor/Gerinda',
+                'Pelumas, Grease, & Aerosol Industri',
+            ],
         ];
 
         foreach ($taxonomy as $parentName => $subCategories) {

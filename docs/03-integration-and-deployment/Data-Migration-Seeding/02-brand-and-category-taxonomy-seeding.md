@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-MIG-02` |
-| **Versi Dokumen** | 1.5.0 |
+| **Versi Dokumen** | 1.6.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -21,6 +21,7 @@
 | `1.3.0` | 05 Sep 2026 | Principal Integration Engineer | Disetujui | Pemisahan berkas mandiri taksonomi master data & zero emoji |
 | `1.4.0` | 19 Sep 2026 | Catalog Architect & Lead | Disetujui | Penyelarasan 4 prinsipal global kemitraan resmi PBB (Schneider, Philips, ABB, Legrand) & kategori kelistrikan-otomasi industri |
 | `1.5.0` | 19 Sep 2026 | Catalog Architect & Lead | Disetujui | Sinkronisasi skema tabel brands dan categories (menghapus kolom non-skema country_origin dan is_active), serta dokumentasi normalisasi product_specifications |
+| `1.6.0` | 19 Sep 2026 | Catalog Architect & Lead | Disetujui | Penyelarasan taksonomi multi-divisi industri General Supplier (Elektrikal, Mekanikal & Pemipaan, Otomasi, Safety K3 HSE, MRO Tools, Pencahayaan) dan atribut UOM, MOQ, Garansi |
 
 ---
 

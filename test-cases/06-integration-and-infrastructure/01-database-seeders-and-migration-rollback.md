@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-INF-01` |
-| **Versi Dokumen** | 1.6.0 |
+| **Versi Dokumen** | 1.7.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & DevOps/QA Reference |
 
@@ -22,6 +22,7 @@
 | `1.4.0` | 06 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan ekspansi 20 tabel domain, 24 migrasi domain, dan total 28 berkas migrasi |
 | `1.5.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Pembaruan verifikasi 31 berkas migrasi dan 23 tabel domain bisnis |
 | `1.6.0` | 19 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan 5 peran Spatie snake_case, penambahan skenario TC-INF-MIG-017 (SystemSettingSeeder) dan TC-INF-MIG-018 (ProductSampleSeeder), total 18 skenario |
+| `1.7.0` | 19 Sep 2026 | Principal QA Architect | Disetujui | Penambahan TC-INF-MIG-019 (UnitOfMeasureSeeder Master Satuan) dan TC-INF-MIG-020 (Integritas Atribut B2B General Supplier & Kustomisasi Spesifikasi per Item), total 20 skenario |
 
 ---
 
@@ -64,6 +65,8 @@
 | **`TC-INF-MIG-016`** | Verifikasi | Perintah Pengecekan Status Migrasi (*Migrate Status Inspection*) | Skema termigrasi penuh | Jalankan `php artisan migrate:status` | Seluruh 31 berkas migrasi berstatus `Ran = Yes` dengan batch number konsisten. | Not Executed |
 | **`TC-INF-MIG-017`** | Positif | Inisialisasi Pengaturan Komersial Dinamis (*System Settings Seeding*) | Tabel `system_settings` siap | Jalankan `SystemSettingSeeder` | Terbentuk konfigurasi default PPN 11%, ambang margin 8%/15%, profil kantor Rasuna Said, dan batas approval SO. | Not Executed |
 | **`TC-INF-MIG-018`** | Positif | Inisialisasi Sample Katalog Produk Teknik (*Product Sample Seeding*) | Brand & kategori ter-seed | Jalankan `ProductAndSkuSampleSeeder` | Terbentuk 12 sample SKU (3 per brand Schneider, Philips, ABB, Legrand) lengkap dengan spesifikasi teknis dan modal dasar HPP. | Not Executed |
+| **`TC-INF-MIG-019`** | Positif | Inisialisasi Master Satuan Dinamis (*Unit of Measure Seeding*) | Tabel `units_of_measure` siap | Jalankan `UnitOfMeasureSeeder` | Terbentuk 15 satuan industri default (`pcs`, `meter`, `batang`, `set`, `roll`, `box`, `pack`, `pail`, `drum`, `liter`, `kg`, `pasang`, `lot`, `can`, `tube`) dengan status aktif. | Not Executed |
+| **`TC-INF-MIG-020`** | Integritas | Kustomisasi Spesifikasi per Item & Atribut B2B General Supplier | Migrasi komprehensif selesai | Cek kolom `uom`, `project_name`, `company_npwp`, `faktur_pajak_number`, `driver_name`, `vehicle_plate_number`, `moq`, `warranty_period`, `custom_specifications` | Seluruh kolom baru terpasang di database, tipe data dan casts tepat, serta mendukung spesifikasi dinamis per item. | Not Executed |
 
 ---
 

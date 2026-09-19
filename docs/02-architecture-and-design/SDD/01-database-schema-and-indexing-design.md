@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.5.1 |
+| **Versi Dokumen** | 1.6.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -25,6 +25,7 @@
 | `1.4.3` | 06 Sep 2026 | Principal System Architect | Disetujui | Penambahan kolom `mentioned_user_ids` (JSON) dan dual-layer visibility (`internal`, `agent_visible`, `system`) pada `internal_comments` |
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan softDeletes pada tabel kritis, berkas PO klien, catatan evaluasi direksi, multi-currency, modul faktur penagihan (`invoices`, `invoice_items`), dan audit log sistem (`activity_logs`) |
 | `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan Bagian 4 (5 Evaluasi Arsitektural & Mitigasi Risiko Teknis) serta kolom `paid_amount` pada tabel `invoices` |
+| `1.6.0` | 19 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `units_of_measure` (Master Satuan Dinamis), kolom `uom`, `project_name`, `company_npwp`, `faktur_pajak_number`, `driver_name`, `vehicle_plate_number`, `moq`, `warranty_period`, serta kustomisasi spesifikasi per item (`spec_group`, `spec_unit`, `is_highlight`, `custom_specifications`) untuk kesiapan B2B General Industrial Supplier |
 
 ---
 
@@ -39,6 +40,25 @@
 ---
 
 ## 2. Kamus Data & Definisi Skema Tabel (Data Dictionary)
+
+### 2.0 Modul Master Satuan Dinamis (Unit of Measure)
+
+#### Tabel: `units_of_measure`
+Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-industri (Elektrikal, Mekanikal, K3, MRO, Kimia, Fasilitas Pabrik):
+
+| Nama Kolom | Tipe Data | Keterangan & Batasan Teknis |
+| :--- | :--- | :--- |
+| `id` | `BIGINT UNSIGNED` | Primary Key, Auto Increment. |
+| `code` | `VARCHAR(20)` | Unique, indeks, kode satuan (cth: `pcs`, `meter`, `batang`, `set`, `roll`, `box`, `pack`, `pail`, `drum`, `liter`, `kg`, `pasang`, `lot`, `can`, `tube`). |
+| `name` | `VARCHAR(100)` | Nama lengkap satuan resmi (cth: *Pieces, Meter Lari, Batang (2.4m/3m), Set Lengkap, Roll, Pail (20 Liter), Drum (200 Liter), Pasang / Pair, Lot Proyek*). |
+| `description` | `VARCHAR(255)` | Nullable, penjelasan penggunaan satuan. |
+| `is_active` | `BOOLEAN` | Default `true`, status aktif satuan di antarmuka ERP. |
+| `sort_order` | `INTEGER` | Default `0`, urutan prioritas pada dropdown pilihan. |
+| `created_at` | `TIMESTAMP` | Waktu pencatatan. |
+| `updated_at` | `TIMESTAMP` | Waktu pembaruan. |
+| `deleted_at` | `TIMESTAMP` | Nullable, Soft Deletes. |
+
+---
 
 ### 2.1 Modul Master Produk & Katalog
 

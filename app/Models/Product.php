@@ -25,6 +25,9 @@ class Product extends Model
         'model_number',
         'cost_price',
         'currency',
+        'uom',
+        'moq',
+        'warranty_period',
         'description',
         'datasheet_path',
         'availability_status',
@@ -37,6 +40,7 @@ class Product extends Model
     {
         return [
             'cost_price' => 'decimal:2',
+            'moq' => 'integer',
             'is_featured' => 'boolean',
             'is_published' => 'boolean',
         ];

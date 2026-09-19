@@ -13,6 +13,7 @@ use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\SalesOrder;
+use App\Models\UnitOfMeasure;
 use App\Models\User;
 use App\Observers\ProductObserver;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -44,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
             'commission_payout' => CommissionPayout::class,
             'freelance_sales' => FreelanceSales::class,
             'article' => Article::class,
+            'unit_of_measure' => UnitOfMeasure::class,
         ]);
 
         Product::observe(ProductObserver::class);

@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.7.0 |
+| **Versi Dokumen** | 1.8.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -24,6 +24,7 @@
 | `1.6.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Ekspansi komprehensif seluruh 27 Model Eloquent domain, kelas `AgentTenantScope`, `ProductObserver` untuk soft-deletes unique slug, dan konfigurasi `Relation::enforceMorphMap()` |
 | `1.6.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan relasi withTrashed() pada child item transaksi historis, Inquiry latestOfMany(), dan lifecycle hook restoring() pada ProductObserver |
 | `1.7.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan mitigasi 5 celah arsitektur: loop deterministik restoring slug, AgentTenantScope bypass internal & scoping CommissionPayout, global scope agent_comment_visibility pada InternalComment, full-chain withTrashed() transaksi historis, dan helper margin status Quotation |
+| `1.8.0` | 19 Sep 2026 | Principal System Architect | Disetujui | Penambahan Model `UnitOfMeasure` (Master Satuan Dinamis), ekspansi 28 Model Domain, integrasi atribut `uom`, `project_name`, `company_npwp`, `faktur_pajak_number`, `driver_name`, `vehicle_plate_number`, `moq`, `warranty_period`, serta kustomisasi spesifikasi dinamis per item (`custom_specifications`) |
 
 ---
 
@@ -42,7 +43,7 @@ Seluruh model domain ditempatkan di direktori `app/Models/`, mewarisi `Illuminat
 
 ---
 
-## 2. Definisi 27 Model Domain & Relasi Bisnis
+## 2. Definisi 28 Model Domain & Relasi Bisnis
 
 ### 2.1 Model `Product` (Master SKU Multi-Brand)
 ```php

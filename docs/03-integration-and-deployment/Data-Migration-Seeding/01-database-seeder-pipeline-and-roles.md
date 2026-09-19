@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-MIG-01` |
-| **Versi Dokumen** | 1.5.0 |
+| **Versi Dokumen** | 1.6.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -21,6 +21,7 @@
 | `1.3.0` | 05 Sep 2026 | Principal Integration Engineer | Disetujui | Pemisahan berkas mandiri pipeline seeder & zero emoji |
 | `1.4.0` | 19 Sep 2026 | Principal Integration Engineer | Disetujui | Penyelarasan 5 peran resmi Spatie RBAC (super_admin, sales_pic, finance, logistics, freelance_sales), SystemSettingSeeder, & ProductAndSkuSampleSeeder |
 | `1.5.0` | 19 Sep 2026 | Lead Database Architect | Disetujui | Penyelarasan urutan pipeline master, sinkronisasi skema commission_tiers, users (phone), akun staf uji coba, dan mitigasi seeder mandiri |
+| `1.6.0` | 19 Sep 2026 | Lead Database Architect | Disetujui | Penambahan UnitOfMeasureSeeder (15 Master Satuan Industri Indonesia) dan integrasi pipeline DatabaseSeeder |
 
 ---
 
@@ -41,6 +42,7 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
             CommissionTierSeeder::class,
             InitialSuperAdminSeeder::class,
+            UnitOfMeasureSeeder::class,
             BrandAndCategorySeeder::class,
             SystemSettingSeeder::class,
             ArticleCategorySeeder::class,

@@ -29,6 +29,7 @@ use App\Models\QuotationItem;
 use App\Models\QuotationPaymentTerm;
 use App\Models\SalesOrder;
 use App\Models\SystemSetting;
+use App\Models\UnitOfMeasure;
 use App\Models\User;
 use Database\Seeders\BrandAndCategorySeeder;
 use Database\Seeders\CommissionTierSeeder;
@@ -37,6 +38,7 @@ use Database\Seeders\InitialSuperAdminSeeder;
 use Database\Seeders\ProductAndSkuSampleSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Database\Seeders\SystemSettingSeeder;
+use Database\Seeders\UnitOfMeasureSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -230,7 +232,7 @@ class DatabaseSeederTest extends TestCase
     }
 
     /**
-     * Verifikasi Seluruh 27 Model Factories Dapat Membuat Model Valid.
+     * Verifikasi Seluruh 28 Model Factories Dapat Membuat Model Valid.
      */
     public function test_model_factories_can_instantiate_and_persist_domain_entities(): void
     {
@@ -320,6 +322,9 @@ class DatabaseSeederTest extends TestCase
 
         $article = Article::factory()->create();
         $this->assertDatabaseHas('articles', ['id' => $article->id]);
+
+        $uom = UnitOfMeasure::factory()->create();
+        $this->assertDatabaseHas('units_of_measure', ['id' => $uom->id]);
     }
 
     /**
@@ -381,5 +386,145 @@ class DatabaseSeederTest extends TestCase
 
         $this->assertEquals(4, Brand::count(), 'Brands must be automatically seeded by self-healing check.');
         $this->assertEquals(12, Product::count(), 'Products must be seeded successfully.');
+    }
+
+    /**
+     * TC-INF-MIG-019: Inisialisasi Master Satuan Dinamis (Unit of Measure).
+     */
+    public function test_unit_of_measure_seeder_initializes_fifteen_industrial_units(): void
+    {
+        $this->seed(UnitOfMeasureSeeder::class);
+
+        $this->assertEquals(15, UnitOfMeasure::count());
+
+        $expectedCodes = [
+            'pcs', 'unit', 'set', 'meter', 'batang', 'roll', 'box',
+            'pack', 'pail', 'drum', 'liter', 'kg', 'pasang', 'can', 'lot',
+        ];
+
+        foreach ($expectedCodes as $code) {
+            $uom = UnitOfMeasure::where('code', $code)->first();
+            $this->assertNotNull($uom, "UOM code '{$code}' must exist.");
+            $this->assertTrue($uom->is_active);
+            $this->assertNotEmpty($uom->name);
+        }
+    }
+
+    /**
+     * TC-INF-MIG-020: Inisialisasi Kategori Multi-Divisi Industrial General Supplier.
+     */
+    public function test_brand_and_category_seeder_initializes_multi_division_categories(): void
+    {
+        $this->seed(BrandAndCategorySeeder::class);
+
+        // Verify parent categories across multiple industrial divisions exist
+        $this->assertTrue(Category::where('name', 'Distribusi Daya Listrik')->whereNull('parent_id')->exists());
+        $this->assertTrue(Category::where('name', 'Mekanikal & Pemipaan Industri')->whereNull('parent_id')->exists());
+        $this->assertTrue(Category::where('name', 'Keselamatan Kerja & K3 (HSE)')->whereNull('parent_id')->exists());
+        $this->assertTrue(Category::where('name', 'Perkakas Teknik & MRO Pabrik')->whereNull('parent_id')->exists());
+
+        // Verify specific technical sub-categories exist
+        $electricalCat = Category::where('name', 'Miniature Circuit Breaker (MCB)')->first();
+        $mechanicalCat = Category::where('name', 'Industrial Valves (Ball, Butterfly, Gate, Globe)')->first();
+        $safetyCat = Category::where('name', 'Sepatu Safety & Boot K3')->first();
+        $toolsCat = Category::where('name', 'Hand Tools & Kunci Mekanik')->first();
+
+        $this->assertNotNull($electricalCat, 'Electrical category must exist.');
+        $this->assertNotNull($mechanicalCat, 'Mechanical & Piping category must exist.');
+        $this->assertNotNull($safetyCat, 'Safety & HSE category must exist.');
+        $this->assertNotNull($toolsCat, 'Tools & MRO category must exist.');
+    }
+
+    /**
+     * TC-INF-MIG-021: Validasi Integritas Atribut B2B Industrial & Kustomisasi Spesifikasi per Item.
+     */
+    public function test_b2b_industrial_attributes_and_specifications_integrity(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        // Verify product B2B industrial fields
+        $product = Product::firstOrFail();
+        $this->assertNotEmpty($product->uom);
+        $this->assertGreaterThanOrEqual(1, $product->moq);
+        $this->assertNotEmpty($product->warranty_period);
+
+        // Verify dynamic specification columns on ProductSpecification
+        $spec = ProductSpecification::where('product_id', $product->id)->firstOrFail();
+        $this->assertNotEmpty($spec->spec_group);
+        $this->assertIsBool($spec->is_highlight);
+
+        // Verify per-item custom specifications and industrial fields on InquiryItem & QuotationItem
+        $inquiry = Inquiry::factory()->create(['project_name' => 'Proyek Ekspansi Fasilitas Fabrikasi Cikarang']);
+        $this->assertEquals('Proyek Ekspansi Fasilitas Fabrikasi Cikarang', $inquiry->project_name);
+
+        $customSpecs = [
+            ['label' => 'Tekanan Operasional', 'value' => '16 Bar (PN16)'],
+            ['label' => 'Koneksi Flange', 'value' => 'ANSI 150# RF'],
+        ];
+
+        $inquiryItem = InquiryItem::factory()->create([
+            'inquiry_id' => $inquiry->id,
+            'uom' => 'unit',
+            'custom_specifications' => $customSpecs,
+        ]);
+        $this->assertEquals('unit', $inquiryItem->uom);
+        $this->assertIsArray($inquiryItem->custom_specifications);
+        $this->assertCount(2, $inquiryItem->custom_specifications);
+        $this->assertEquals('Tekanan Operasional', $inquiryItem->custom_specifications[0]['label']);
+
+        // QuotationItem
+        $quotation = Quotation::factory()->create([
+            'inquiry_id' => $inquiry->id,
+            'project_name' => 'Proyek Ekspansi Fasilitas Fabrikasi Cikarang',
+        ]);
+        $this->assertEquals('Proyek Ekspansi Fasilitas Fabrikasi Cikarang', $quotation->project_name);
+
+        $quoItem = QuotationItem::factory()->create([
+            'quotation_id' => $quotation->id,
+            'uom' => 'unit',
+            'warranty_period' => '24 Bulan Garansi Resmi Pabrik',
+            'custom_specifications' => $customSpecs,
+        ]);
+        $this->assertEquals('unit', $quoItem->uom);
+        $this->assertEquals('24 Bulan Garansi Resmi Pabrik', $quoItem->warranty_period);
+        $this->assertIsArray($quoItem->custom_specifications);
+
+        // SalesOrder
+        $so = SalesOrder::factory()->create([
+            'quotation_id' => $quotation->id,
+            'project_name' => 'Proyek Ekspansi Fasilitas Fabrikasi Cikarang',
+        ]);
+        $this->assertEquals('Proyek Ekspansi Fasilitas Fabrikasi Cikarang', $so->project_name);
+
+        // DeliveryOrder
+        $do = DeliveryOrder::factory()->create([
+            'sales_order_id' => $so->id,
+            'driver_name' => 'Bambang Supriyanto',
+            'vehicle_plate_number' => 'B 9876 PBB',
+        ]);
+        $this->assertEquals('Bambang Supriyanto', $do->driver_name);
+        $this->assertEquals('B 9876 PBB', $do->vehicle_plate_number);
+
+        $doItem = DeliveryOrderItem::factory()->create([
+            'delivery_order_id' => $do->id,
+            'uom' => 'unit',
+        ]);
+        $this->assertEquals('unit', $doItem->uom);
+
+        // Invoice
+        $inv = Invoice::factory()->create([
+            'sales_order_id' => $so->id,
+            'quotation_id' => $quotation->id,
+            'company_npwp' => '01.234.567.8-012.000',
+            'faktur_pajak_number' => '010.001-26.00000001',
+        ]);
+        $this->assertEquals('01.234.567.8-012.000', $inv->company_npwp);
+        $this->assertEquals('010.001-26.00000001', $inv->faktur_pajak_number);
+
+        $invItem = InvoiceItem::factory()->create([
+            'invoice_id' => $inv->id,
+            'uom' => 'unit',
+        ]);
+        $this->assertEquals('unit', $invItem->uom);
     }
 }

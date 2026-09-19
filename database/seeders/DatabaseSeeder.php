@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
             CommissionTierSeeder::class,
             InitialSuperAdminSeeder::class,
+            UnitOfMeasureSeeder::class,
             BrandAndCategorySeeder::class,
             SystemSettingSeeder::class,
             ArticleCategorySeeder::class,

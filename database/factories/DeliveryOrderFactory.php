@@ -20,7 +20,9 @@ class DeliveryOrderFactory extends Factory
         return [
             'delivery_number' => 'DO-'.date('Ym').'-'.strtoupper(fake()->unique()->bothify('####')).'/01',
             'sales_order_id' => SalesOrder::factory(),
-            'courier_name' => fake()->randomElement(['Baraka Sarana Tama', 'Dakota Cargo', 'JNE Trucking', 'Kurir Internal PBB']),
+            'courier_name' => fake()->randomElement(['Baraka Sarana Tama', 'Dakota Cargo', 'JNE Trucking', 'Armada Internal PBB']),
+            'driver_name' => fake()->name(),
+            'vehicle_plate_number' => 'B '.fake()->numberBetween(1000, 9999).' PBB',
             'tracking_number' => strtoupper(fake()->bothify('TRK-########')),
             'tracking_url' => null,
             'shipping_address' => fake()->address(),

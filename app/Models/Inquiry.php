@@ -24,6 +24,7 @@ class Inquiry extends Model
         'freelance_sales_id',
         'customer_name',
         'company_name',
+        'project_name',
         'phone_wa',
         'email',
         'project_location',

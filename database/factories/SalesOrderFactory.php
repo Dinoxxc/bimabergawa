@@ -23,6 +23,7 @@ class SalesOrderFactory extends Factory
             'customer_po_number' => 'PO-'.strtoupper(fake()->bothify('###-????')),
             'customer_po_date' => now()->subDays(2),
             'customer_po_file_path' => null,
+            'project_name' => 'Proyek '.fake()->company().' '.fake()->city(),
             'status' => 'processing',
             'vat_rate_applied' => 11.00,
             'total_amount' => fake()->randomFloat(2, 10000000, 100000000),

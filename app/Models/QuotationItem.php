@@ -19,10 +19,13 @@ class QuotationItem extends Model
         'model_number',
         'lead_time',
         'quantity',
+        'uom',
         'unit_price',
         'cost_price',
         'discount_percent',
         'total_price',
+        'warranty_period',
+        'custom_specifications',
     ];
 
     protected function casts(): array
@@ -33,6 +36,7 @@ class QuotationItem extends Model
             'cost_price' => 'decimal:2',
             'discount_percent' => 'decimal:2',
             'total_price' => 'decimal:2',
+            'custom_specifications' => 'array',
         ];
     }
 

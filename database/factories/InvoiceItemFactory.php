@@ -27,6 +27,7 @@ class InvoiceItemFactory extends Factory
             'item_name' => fake()->words(3, true),
             'model_number' => strtoupper(fake()->bothify('MOD-###-???')),
             'quantity' => $qty,
+            'uom' => fake()->randomElement(['pcs', 'unit', 'set', 'meter', 'batang', 'roll', 'box', 'pack', 'pail', 'drum']),
             'unit_price' => $unitPrice,
             'total_price' => round($unitPrice * $qty, 2),
         ];

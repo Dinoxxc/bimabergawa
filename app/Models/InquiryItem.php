@@ -18,13 +18,16 @@ class InquiryItem extends Model
         'item_name',
         'model_number',
         'quantity',
+        'uom',
         'custom_notes',
+        'custom_specifications',
     ];
 
     protected function casts(): array
     {
         return [
             'quantity' => 'integer',
+            'custom_specifications' => 'array',
         ];
     }
 

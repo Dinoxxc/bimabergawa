@@ -22,6 +22,7 @@ class SalesOrder extends Model
         'customer_po_number',
         'customer_po_date',
         'customer_po_file_path',
+        'project_name',
         'status',
         'vat_rate_applied',
         'total_amount',

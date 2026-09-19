@@ -24,6 +24,7 @@ class DeliveryOrderItemFactory extends Factory
             'item_name' => fake()->words(3, true),
             'model_number' => strtoupper(fake()->bothify('MOD-###-???')),
             'quantity_shipped' => fake()->numberBetween(1, 20),
+            'uom' => fake()->randomElement(['pcs', 'unit', 'set', 'meter', 'batang', 'roll', 'box', 'pack', 'pail', 'drum']),
         ];
     }
 }

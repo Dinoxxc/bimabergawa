@@ -29,10 +29,13 @@ class QuotationItemFactory extends Factory
             'model_number' => strtoupper(fake()->bothify('MOD-###-???')),
             'lead_time' => 'Ready Stock',
             'quantity' => $qty,
+            'uom' => fake()->randomElement(['pcs', 'unit', 'set', 'meter', 'batang', 'roll', 'box', 'pack', 'pail', 'drum']),
             'unit_price' => $unitPrice,
             'cost_price' => $costPrice,
             'discount_percent' => 0.00,
             'total_price' => round($unitPrice * $qty, 2),
+            'warranty_period' => '12 Bulan Garansi Resmi',
+            'custom_specifications' => [['key' => 'Standar', 'value' => 'SNI']],
         ];
     }
 }

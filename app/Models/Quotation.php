@@ -26,6 +26,7 @@ class Quotation extends Model
         'freelance_sales_id',
         'customer_name',
         'company_name',
+        'project_name',
         'delivery_terms',
         'validity_days',
         'expires_at',

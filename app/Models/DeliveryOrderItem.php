@@ -18,6 +18,7 @@ class DeliveryOrderItem extends Model
         'item_name',
         'model_number',
         'quantity_shipped',
+        'uom',
     ];
 
     protected function casts(): array

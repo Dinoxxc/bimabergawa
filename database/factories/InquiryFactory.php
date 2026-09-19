@@ -22,6 +22,7 @@ class InquiryFactory extends Factory
             'freelance_sales_id' => null,
             'customer_name' => fake()->name(),
             'company_name' => fake()->company(),
+            'project_name' => 'Proyek '.fake()->company().' '.fake()->city(),
             'phone_wa' => fake()->phoneNumber(),
             'email' => fake()->safeEmail(),
             'project_location' => fake()->city(),

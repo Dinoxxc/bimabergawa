@@ -19,6 +19,8 @@ class DeliveryOrder extends Model
         'delivery_number',
         'sales_order_id',
         'courier_name',
+        'driver_name',
+        'vehicle_plate_number',
         'tracking_number',
         'tracking_url',
         'shipping_address',

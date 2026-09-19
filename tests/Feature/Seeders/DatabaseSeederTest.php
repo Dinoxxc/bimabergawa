@@ -4,14 +4,29 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Seeders;
 
+use App\Models\ActivityLog;
 use App\Models\Article;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\CommissionPayout;
 use App\Models\CommissionTier;
+use App\Models\DeliveryOrder;
+use App\Models\DeliveryOrderItem;
+use App\Models\DocumentSequence;
 use App\Models\FreelanceSales;
 use App\Models\Inquiry;
+use App\Models\InquiryItem;
+use App\Models\InquiryTelemetry;
+use App\Models\InternalComment;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\Notification;
 use App\Models\Product;
+use App\Models\ProductImage;
+use App\Models\ProductSpecification;
 use App\Models\Quotation;
+use App\Models\QuotationItem;
+use App\Models\QuotationPaymentTerm;
 use App\Models\SalesOrder;
 use App\Models\SystemSetting;
 use App\Models\User;
@@ -22,7 +37,10 @@ use Database\Seeders\InitialSuperAdminSeeder;
 use Database\Seeders\ProductAndSkuSampleSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Database\Seeders\SystemSettingSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -212,7 +230,7 @@ class DatabaseSeederTest extends TestCase
     }
 
     /**
-     * Verifikasi Model Factories Dapat Membuat Model Valid.
+     * Verifikasi Seluruh 27 Model Factories Dapat Membuat Model Valid.
      */
     public function test_model_factories_can_instantiate_and_persist_domain_entities(): void
     {
@@ -225,6 +243,12 @@ class DatabaseSeederTest extends TestCase
         $product = Product::factory()->create(['brand_id' => $brand->id, 'category_id' => $category->id]);
         $this->assertDatabaseHas('products', ['id' => $product->id]);
 
+        $spec = ProductSpecification::factory()->create(['product_id' => $product->id]);
+        $this->assertDatabaseHas('product_specifications', ['id' => $spec->id]);
+
+        $img = ProductImage::factory()->create(['product_id' => $product->id]);
+        $this->assertDatabaseHas('product_images', ['id' => $img->id]);
+
         $tier = CommissionTier::factory()->create();
         $this->assertDatabaseHas('commission_tiers', ['id' => $tier->id]);
 
@@ -234,13 +258,128 @@ class DatabaseSeederTest extends TestCase
         $inquiry = Inquiry::factory()->create();
         $this->assertDatabaseHas('inquiries', ['id' => $inquiry->id]);
 
+        $inquiryItem = InquiryItem::factory()->create(['inquiry_id' => $inquiry->id]);
+        $this->assertDatabaseHas('inquiry_items', ['id' => $inquiryItem->id]);
+
+        $telemetry = InquiryTelemetry::factory()->create(['inquiry_id' => $inquiry->id]);
+        $this->assertDatabaseHas('inquiry_telemetries', ['id' => $telemetry->id]);
+
         $quotation = Quotation::factory()->create(['inquiry_id' => $inquiry->id]);
         $this->assertDatabaseHas('quotations', ['id' => $quotation->id]);
+
+        $quoItem = QuotationItem::factory()->create(['quotation_id' => $quotation->id]);
+        $this->assertDatabaseHas('quotation_items', ['id' => $quoItem->id]);
+
+        $quoTerm = QuotationPaymentTerm::factory()->create(['quotation_id' => $quotation->id]);
+        $this->assertDatabaseHas('quotation_payment_terms', ['id' => $quoTerm->id]);
 
         $so = SalesOrder::factory()->create(['quotation_id' => $quotation->id]);
         $this->assertDatabaseHas('sales_orders', ['id' => $so->id]);
 
+        $do = DeliveryOrder::factory()->create(['sales_order_id' => $so->id]);
+        $this->assertDatabaseHas('delivery_orders', ['id' => $do->id]);
+
+        $doItem = DeliveryOrderItem::factory()->create(['delivery_order_id' => $do->id]);
+        $this->assertDatabaseHas('delivery_order_items', ['id' => $doItem->id]);
+
+        $invoice = Invoice::factory()->create(['sales_order_id' => $so->id, 'quotation_id' => $quotation->id]);
+        $this->assertDatabaseHas('invoices', ['id' => $invoice->id]);
+
+        $invItem = InvoiceItem::factory()->create(['invoice_id' => $invoice->id]);
+        $this->assertDatabaseHas('invoice_items', ['id' => $invItem->id]);
+
+        $payout = CommissionPayout::factory()->create(['freelance_sales_id' => $agent->id, 'sales_order_id' => $so->id]);
+        $this->assertDatabaseHas('commission_payouts', ['id' => $payout->id]);
+
+        $user = User::factory()->create();
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+
+        $comment = InternalComment::factory()->create([
+            'user_id' => $user->id,
+            'commentable_type' => 'inquiry',
+            'commentable_id' => $inquiry->id,
+        ]);
+        $this->assertDatabaseHas('internal_comments', ['id' => $comment->id]);
+
+        $activity = ActivityLog::factory()->create([
+            'subject_type' => 'quotation',
+            'subject_id' => $quotation->id,
+            'causer_type' => 'user',
+            'causer_id' => $user->id,
+        ]);
+        $this->assertDatabaseHas('activity_logs', ['id' => $activity->id]);
+
+        $setting = SystemSetting::factory()->create();
+        $this->assertDatabaseHas('system_settings', ['id' => $setting->id]);
+
+        $notif = Notification::factory()->create();
+        $this->assertDatabaseHas('notifications', ['id' => $notif->id]);
+
+        $seq = DocumentSequence::factory()->create();
+        $this->assertDatabaseHas('document_sequences', ['id' => $seq->id]);
+
         $article = Article::factory()->create();
         $this->assertDatabaseHas('articles', ['id' => $article->id]);
+    }
+
+    /**
+     * TC-INF-MIG-013: Validasi Enkripsi PII At-Rest & Password Hashing.
+     */
+    public function test_seeded_credentials_and_pii_encryption_at_rest(): void
+    {
+        $this->seed(RoleAndPermissionSeeder::class);
+        $this->seed(CommissionTierSeeder::class);
+        $this->seed(InitialSuperAdminSeeder::class);
+
+        // Verify password hashing on seeded user
+        $admin = User::where('email', 'admin@bimabergawa.com')->firstOrFail();
+        $this->assertNotEquals('PBB-RasunaSaid-2026!', $admin->password);
+        $this->assertTrue(Hash::check('PBB-RasunaSaid-2026!', $admin->password));
+
+        $sales = User::where('email', 'sales@bimabergawa.com')->firstOrFail();
+        $this->assertNotEquals('PBB-Staff-2026!', $sales->password);
+        $this->assertTrue(Hash::check('PBB-Staff-2026!', $sales->password));
+
+        // Verify PII encryption at rest on freelance_sales
+        $agent = FreelanceSales::firstOrFail();
+        $rawDbRecord = DB::table('freelance_sales')->where('id', $agent->id)->first();
+
+        // Raw database column values MUST NOT contain plaintext
+        $this->assertNotEquals('3171012345670001', $rawDbRecord->nik);
+        $this->assertNotEquals('09.123.456.7-012.000', $rawDbRecord->npwp_number);
+        $this->assertNotEquals('1234567890', $rawDbRecord->bank_account_number);
+
+        // Raw database values must be encrypted strings (Laravel encrypter format)
+        $this->assertStringStartsWith('eyJpdiI6', (string) $rawDbRecord->nik);
+        $this->assertStringStartsWith('eyJpdiI6', (string) $rawDbRecord->npwp_number);
+        $this->assertStringStartsWith('eyJpdiI6', (string) $rawDbRecord->bank_account_number);
+
+        // Eloquent Model access MUST automatically decrypt to valid plaintext
+        $this->assertEquals('3171012345670001', $agent->nik);
+        $this->assertEquals('09.123.456.7-012.000', $agent->npwp_number);
+        $this->assertEquals('1234567890', $agent->bank_account_number);
+    }
+
+    /**
+     * TC-INF-MIG-014: Validasi Integritas Unique Index Database.
+     */
+    public function test_unique_indexes_enforced_by_database(): void
+    {
+        $brand = Brand::factory()->create(['slug' => 'unique-brand-slug']);
+        $this->expectException(QueryException::class);
+        Brand::factory()->create(['slug' => 'unique-brand-slug']);
+    }
+
+    /**
+     * TC-INF-MIG-015: Validasi Standalone Self-Healing Seeders.
+     */
+    public function test_self_healing_standalone_seeder_execution(): void
+    {
+        // Run ProductAndSkuSampleSeeder directly on empty database
+        // It must automatically invoke BrandAndCategorySeeder
+        $this->seed(ProductAndSkuSampleSeeder::class);
+
+        $this->assertEquals(4, Brand::count(), 'Brands must be automatically seeded by self-healing check.');
+        $this->assertEquals(12, Product::count(), 'Products must be seeded successfully.');
     }
 }

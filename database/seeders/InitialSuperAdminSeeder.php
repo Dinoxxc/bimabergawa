@@ -9,6 +9,7 @@ use App\Models\FreelanceSales;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class InitialSuperAdminSeeder extends Seeder
 {
@@ -17,6 +18,14 @@ class InitialSuperAdminSeeder extends Seeder
      */
     public function run(): void
     {
+        // Self-healing dependency check jika seeder dieksekusi mandiri
+        if (Role::count() === 0) {
+            $this->call(RoleAndPermissionSeeder::class);
+        }
+        if (CommissionTier::count() === 0) {
+            $this->call(CommissionTierSeeder::class);
+        }
+
         // 1. Super Admin Bootstrap User
         $superAdmin = User::firstOrCreate(
             ['email' => 'admin@bimabergawa.com'],
@@ -31,12 +40,14 @@ class InitialSuperAdminSeeder extends Seeder
         $superAdmin->syncRoles(['super_admin']);
 
         // 2. Test Accounts for Internal Roles
+        $staffPassword = Hash::make(config('app.initial_staff_password', 'PBB-Staff-2026!'));
+
         $salesUser = User::firstOrCreate(
             ['email' => 'sales@bimabergawa.com'],
             [
                 'name' => 'Ahmad Fauzi (Sales PIC)',
                 'phone' => '081299887766',
-                'password' => Hash::make('PBB-Sales-2026!'),
+                'password' => $staffPassword,
                 'email_verified_at' => now(),
                 'is_active' => true,
             ]
@@ -48,7 +59,7 @@ class InitialSuperAdminSeeder extends Seeder
             [
                 'name' => 'Budi Santoso (Finance)',
                 'phone' => '081311223344',
-                'password' => Hash::make('PBB-Finance-2026!'),
+                'password' => $staffPassword,
                 'email_verified_at' => now(),
                 'is_active' => true,
             ]
@@ -60,7 +71,7 @@ class InitialSuperAdminSeeder extends Seeder
             [
                 'name' => 'Bayu Saputra (Logistik)',
                 'phone' => '081355667788',
-                'password' => Hash::make('PBB-Logistik-2026!'),
+                'password' => $staffPassword,
                 'email_verified_at' => now(),
                 'is_active' => true,
             ]
@@ -73,7 +84,7 @@ class InitialSuperAdminSeeder extends Seeder
             [
                 'name' => 'Hendra Nugraha (Mitra Agen)',
                 'phone' => '081377889900',
-                'password' => Hash::make('PBB-Agen-2026!'),
+                'password' => $staffPassword,
                 'email_verified_at' => now(),
                 'is_active' => true,
             ]

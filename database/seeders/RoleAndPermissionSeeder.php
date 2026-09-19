@@ -29,6 +29,7 @@ class RoleAndPermissionSeeder extends Seeder
             'create_quotations',
             'view_quotations',
             'view_hpp_margin',
+            'approve_quotations',
             'approve_quotation_margin',
             // Sales Orders
             'create_sales_orders',

@@ -19,6 +19,11 @@ class ProductAndSkuSampleSeeder extends Seeder
      */
     public function run(): void
     {
+        // Self-healing dependency check jika seeder dieksekusi mandiri
+        if (Brand::count() === 0 || Category::count() === 0) {
+            $this->call(BrandAndCategorySeeder::class);
+        }
+
         // Map Brands
         $schneider = Brand::where('name', 'Schneider Electric')->first();
         $philips = Brand::where('name', 'Philips Lighting / Signify')->first();

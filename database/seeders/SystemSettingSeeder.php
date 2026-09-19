@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use App\Models\SystemSetting;
+use Illuminate\Database\Seeder;
+
+class SystemSettingSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $settings = [
+            // Identitas & Umum (group: general)
+            ['key' => 'general.company_name', 'value' => 'PT. Panca Bima Bergawa', 'group' => 'general', 'type' => 'string', 'is_public' => true],
+            ['key' => 'general.company_tagline', 'value' => 'Distributor Resmi Elektrikal, Mekanikal & Otomasi Industri', 'group' => 'general', 'type' => 'string', 'is_public' => true],
+            ['key' => 'general.company_address', 'value' => 'Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920', 'group' => 'general', 'type' => 'text', 'is_public' => true],
+            ['key' => 'general.contact_email', 'value' => 'sales@bimabergawa.com', 'group' => 'general', 'type' => 'string', 'is_public' => true],
+            ['key' => 'general.contact_phone', 'value' => '+62 21 5292 0000', 'group' => 'general', 'type' => 'string', 'is_public' => true],
+            ['key' => 'general.contact_whatsapp', 'value' => '6281112345678', 'group' => 'general', 'type' => 'string', 'is_public' => true],
+            ['key' => 'general.default_timezone', 'value' => 'Asia/Jakarta', 'group' => 'general', 'type' => 'string', 'is_public' => false],
+            ['key' => 'general.date_format', 'value' => 'd/m/Y', 'group' => 'general', 'type' => 'string', 'is_public' => false],
+
+            // Komersial & Pajak Dinamis UU HPP (group: commercial_tax)
+            ['key' => 'commercial_tax.tax_vat_rate', 'value' => '11.00', 'group' => 'commercial_tax', 'type' => 'decimal', 'is_public' => false],
+            ['key' => 'commercial_tax.critical_margin_threshold', 'value' => '8.00', 'group' => 'commercial_tax', 'type' => 'decimal', 'is_public' => false],
+            ['key' => 'commercial_tax.warning_margin_threshold', 'value' => '15.00', 'group' => 'commercial_tax', 'type' => 'decimal', 'is_public' => false],
+            ['key' => 'commercial_tax.director_approval_limit', 'value' => '100000000.00', 'group' => 'commercial_tax', 'type' => 'decimal', 'is_public' => false],
+            ['key' => 'commercial_tax.quote_validity_days', 'value' => '14', 'group' => 'commercial_tax', 'type' => 'integer', 'is_public' => false],
+
+            // CRM & Sales SLA (group: crm_sales)
+            ['key' => 'crm_sales.inquiry_stale_hours', 'value' => '24', 'group' => 'crm_sales', 'type' => 'integer', 'is_public' => false],
+            ['key' => 'crm_sales.whatsapp_quotation_template', 'value' => 'Halo {pic_name}, terima kasih telah menghubungi PT. Panca Bima Bergawa. Berikut kami lampirkan dokumen penawaran resmi {quote_number}.', 'group' => 'crm_sales', 'type' => 'text', 'is_public' => false],
+
+            // Logistik & Gudang (group: logistics)
+            ['key' => 'logistics.default_warehouse_origin', 'value' => 'Gudang Pusat Rasuna Said, Jakarta Selatan', 'group' => 'logistics', 'type' => 'string', 'is_public' => false],
+            ['key' => 'logistics.authorized_couriers', 'value' => json_encode(['Dakota Cargo', 'Baraka Sarana Tama', 'JNE Trucking', 'Kurir Internal PBB']), 'group' => 'logistics', 'type' => 'json', 'is_public' => false],
+
+            // Konten CMS Beranda (group: cms_content)
+            ['key' => 'cms.hero_headline', 'value' => 'Distributor Resmi Elektrikal, Mekanikal & Otomasi Industri', 'group' => 'cms_content', 'type' => 'string', 'is_public' => true],
+            ['key' => 'cms.hero_subheadline', 'value' => 'Menyediakan solusi distribusi Schneider Electric, Philips, ABB, dan Legrand untuk kebutuhan proyek komersial, gedung, dan manufaktur di seluruh Indonesia.', 'group' => 'cms_content', 'type' => 'text', 'is_public' => true],
+            ['key' => 'cms.stats_counter', 'value' => json_encode([
+                ['number' => '4', 'label' => 'Prinsipal Global Resmi'],
+                ['number' => '2500+', 'label' => 'SKU Siap Kirim'],
+                ['number' => '500+', 'label' => 'Klien Korporat & Proyek'],
+                ['number' => '100%', 'label' => 'Keaslian Terjamin'],
+            ]), 'group' => 'cms_content', 'type' => 'json', 'is_public' => true],
+
+            // Halaman Legalitas (group: legal_page)
+            ['key' => 'legal.terms_and_conditions', 'value' => 'Syarat dan Ketentuan resmi transaksi komersial B2B PT. Panca Bima Bergawa.', 'group' => 'legal_page', 'type' => 'text', 'is_public' => true],
+            ['key' => 'legal.privacy_policy', 'value' => 'Kebijakan Privasi PT. Panca Bima Bergawa berlandaskan kepatuhan UU Perlindungan Data Pribadi No. 27/2022.', 'group' => 'legal_page', 'type' => 'text', 'is_public' => true],
+            ['key' => 'legal.warranty_policy', 'value' => 'Kebijakan Garansi Resmi Manufaktur Prinsipal Schneider, Philips, ABB, dan Legrand.', 'group' => 'legal_page', 'type' => 'text', 'is_public' => true],
+        ];
+
+        foreach ($settings as $setting) {
+            SystemSetting::updateOrCreate(
+                ['key' => $setting['key']],
+                $setting
+            );
+        }
+    }
+}

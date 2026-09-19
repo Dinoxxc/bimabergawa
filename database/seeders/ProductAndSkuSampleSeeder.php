@@ -29,6 +29,12 @@ class ProductAndSkuSampleSeeder extends Seeder
         $philips = Brand::where('name', 'Philips Lighting / Signify')->first();
         $abb = Brand::where('name', 'ABB')->first();
         $legrand = Brand::where('name', 'Legrand')->first();
+        $kitz = Brand::where('name', 'Kitz')->first();
+        $grundfos = Brand::where('name', 'Grundfos')->first();
+        $cheetah = Brand::where('name', 'Cheetah')->first();
+        $bosch = Brand::where('name', 'Bosch')->first();
+        $loctite = Brand::where('name', 'Loctite')->first();
+        $threeM = Brand::where('name', '3M')->first();
 
         // Map Categories
         $catMcb = Category::where('name', 'Miniature Circuit Breaker (MCB)')->first();
@@ -41,6 +47,12 @@ class ProductAndSkuSampleSeeder extends Seeder
         $catTray = Category::where('name', 'Kabel Tray & Cable Ladder')->first();
         $catPanel = Category::where('name', 'Box Panel Industri IP66')->first();
         $catSocket = Category::where('name', 'Stop Kontak & Steker Industri')->first();
+        $catValve = Category::where('name', 'Industrial Valves (Ball, Butterfly, Gate, Globe)')->first();
+        $catPump = Category::where('name', 'Pompa Sentrifugal & Booster')->first();
+        $catShoes = Category::where('name', 'Sepatu Safety & Boot K3')->first();
+        $catPpe = Category::where('name', 'Helm Proyek & Pelindung Kepala')->first();
+        $catPowerTools = Category::where('name', 'Power Tools & Mesin Bor/Gerinda')->first();
+        $catChemical = Category::where('name', 'Pelumas, Grease, & Aerosol Industri')->first();
 
         $sampleProducts = [
             // Schneider Electric (3 SKU)
@@ -260,6 +272,126 @@ class ProductAndSkuSampleSeeder extends Seeder
                     ['spec_group' => 'Proteksi Lingkungan', 'spec_key' => 'Protection Standards', 'spec_value' => 'IP66 / IK10', 'spec_unit' => null, 'is_highlight' => true, 'sort_order' => 2],
                     ['spec_group' => 'Material Box', 'spec_key' => 'Material', 'spec_value' => 'Fiberglass Reinforced Polyester', 'spec_unit' => null, 'is_highlight' => true, 'sort_order' => 3],
                     ['spec_group' => 'Mekanikal Pintu', 'spec_key' => 'Door Opening', 'spec_value' => '180 Degrees Reversible', 'spec_unit' => null, 'is_highlight' => false, 'sort_order' => 4],
+                ],
+            ],
+
+            // Kitz - Mekanikal & Pemipaan (1 SKU)
+            [
+                'brand_id' => $kitz?->id,
+                'category_id' => $catValve?->id,
+                'sku' => '10FCTB-50',
+                'name' => 'Cast Iron Ball Valve 10K Flange 2 Inch (DN50)',
+                'technical_summary' => 'Ball valve cast iron kelas JIS 10K koneksi flange 2 inch dengan bola stainless steel dan dudukan PTFE.',
+                'cost_price' => 1850000.00,
+                'stock_status' => 'ready',
+                'uom' => 'unit',
+                'moq' => 1,
+                'warranty_period' => '12 Bulan Resmi Kitz',
+                'specs' => [
+                    ['spec_group' => 'Tekanan Operasional', 'spec_key' => 'Pressure Class', 'spec_value' => 'JIS 10K', 'spec_unit' => 'K', 'is_highlight' => true, 'sort_order' => 1],
+                    ['spec_group' => 'Dimensi Pemipaan', 'spec_key' => 'Nominal Diameter', 'spec_value' => '50 (2 Inch)', 'spec_unit' => 'mm', 'is_highlight' => true, 'sort_order' => 2],
+                    ['spec_group' => 'Material Konstruksi', 'spec_key' => 'Body Material', 'spec_value' => 'Cast Iron (FC200)', 'spec_unit' => null, 'is_highlight' => true, 'sort_order' => 3],
+                    ['spec_group' => 'Koneksi Mekanikal', 'spec_key' => 'End Connection', 'spec_value' => 'Flanged JIS B2239', 'spec_unit' => null, 'is_highlight' => false, 'sort_order' => 4],
+                ],
+            ],
+
+            // Grundfos - Pompa Industri (1 SKU)
+            [
+                'brand_id' => $grundfos?->id,
+                'category_id' => $catPump?->id,
+                'sku' => 'CR3-10-A-FGJ-A-E-HQQE',
+                'name' => 'Vertical Multistage Centrifugal Pump CR 3-10',
+                'technical_summary' => 'Pompa sentrifugal vertikal multistage in-line 1.1kW 3-phase 380V kapasitas debit 3 m3/jam head 48.5m.',
+                'cost_price' => 12800000.00,
+                'stock_status' => 'ready',
+                'uom' => 'unit',
+                'moq' => 1,
+                'warranty_period' => '24 Bulan Resmi Grundfos',
+                'specs' => [
+                    ['spec_group' => 'Kapasitas Hidrolik', 'spec_key' => 'Rated Flow Rate', 'spec_value' => '3.0', 'spec_unit' => 'm3/h', 'is_highlight' => true, 'sort_order' => 1],
+                    ['spec_group' => 'Kapasitas Hidrolik', 'spec_key' => 'Rated Head', 'spec_value' => '48.5', 'spec_unit' => 'm', 'is_highlight' => true, 'sort_order' => 2],
+                    ['spec_group' => 'Kelistrikan & Motor', 'spec_key' => 'Motor Rated Power', 'spec_value' => '1.1', 'spec_unit' => 'kW', 'is_highlight' => true, 'sort_order' => 3],
+                    ['spec_group' => 'Kelistrikan & Motor', 'spec_key' => 'Power Supply', 'spec_value' => '3 x 380-415 V 50 Hz', 'spec_unit' => null, 'is_highlight' => false, 'sort_order' => 4],
+                ],
+            ],
+
+            // Cheetah - Safety & K3 HSE (1 SKU)
+            [
+                'brand_id' => $cheetah?->id,
+                'category_id' => $catShoes?->id,
+                'sku' => 'CHEETAH-7001H',
+                'name' => 'Cheetah Revolution 7001H High-Cut Safety Shoes',
+                'technical_summary' => 'Sepatu safety boot kulit asli high-cut dengan toe cap baja 200 Joule sol polyurethane tahan minyak dan kimia standar SNI.',
+                'cost_price' => 385000.00,
+                'stock_status' => 'ready',
+                'uom' => 'pasang',
+                'moq' => 2,
+                'warranty_period' => '6 Bulan Garansi Manufaktur',
+                'specs' => [
+                    ['spec_group' => 'Sertifikasi K3', 'spec_key' => 'Safety Standard', 'spec_value' => 'SNI 7079 & EN ISO 20345', 'spec_unit' => null, 'is_highlight' => true, 'sort_order' => 1],
+                    ['spec_group' => 'Proteksi Mekanikal', 'spec_key' => 'Toe Cap Protection', 'spec_value' => 'Steel Toe Cap 200J Impact', 'spec_unit' => null, 'is_highlight' => true, 'sort_order' => 2],
+                    ['spec_group' => 'Material & Sol', 'spec_key' => 'Outsole Material', 'spec_value' => 'Dual Density PU Oil & Slip Resistant', 'spec_unit' => null, 'is_highlight' => true, 'sort_order' => 3],
+                    ['spec_group' => 'Desain Ergonomis', 'spec_key' => 'Closure Type', 'spec_value' => 'High-Cut Lace with Padded Collar', 'spec_unit' => null, 'is_highlight' => false, 'sort_order' => 4],
+                ],
+            ],
+
+            // Bosch - Perkakas Power Tools (1 SKU)
+            [
+                'brand_id' => $bosch?->id,
+                'category_id' => $catPowerTools?->id,
+                'sku' => 'GWS-750-100',
+                'name' => 'Bosch GWS 750-100 Professional Small Angle Grinder',
+                'technical_summary' => 'Mesin gerinda tangan listrik profesional 750 Watt 11.000 rpm ukuran piringan 100mm (4 inch) motor bertenaga beban tinggi.',
+                'cost_price' => 540000.00,
+                'stock_status' => 'ready',
+                'uom' => 'unit',
+                'moq' => 1,
+                'warranty_period' => '12 Bulan Garansi Resmi Bosch',
+                'specs' => [
+                    ['spec_group' => 'Kelistrikan & Daya', 'spec_key' => 'Rated Input Power', 'spec_value' => '750', 'spec_unit' => 'W', 'is_highlight' => true, 'sort_order' => 1],
+                    ['spec_group' => 'Performa Mekanikal', 'spec_key' => 'No-load Speed', 'spec_value' => '11,000', 'spec_unit' => 'rpm', 'is_highlight' => true, 'sort_order' => 2],
+                    ['spec_group' => 'Dimensi Alat', 'spec_key' => 'Disc Diameter', 'spec_value' => '100 (4 Inch)', 'spec_unit' => 'mm', 'is_highlight' => true, 'sort_order' => 3],
+                    ['spec_group' => 'Spesifikasi Spindle', 'spec_key' => 'Spindle Thread', 'spec_value' => 'M10', 'spec_unit' => null, 'is_highlight' => false, 'sort_order' => 4],
+                ],
+            ],
+
+            // Loctite - Kimia MRO & Perekat (1 SKU)
+            [
+                'brand_id' => $loctite?->id,
+                'category_id' => $catChemical?->id,
+                'sku' => 'LOCTITE-242-50ML',
+                'name' => 'Loctite 242 Medium Strength Threadlocker Blue 50ml',
+                'technical_summary' => 'Cairan pengunci ulir baut medium blue 50ml mencegah pengenduran baut akibat getaran mesin dapat dibongkar dengan perkakas tangan.',
+                'cost_price' => 175000.00,
+                'stock_status' => 'ready',
+                'uom' => 'can',
+                'moq' => 5,
+                'warranty_period' => 'Garansi Keaslian 100% Henkel',
+                'specs' => [
+                    ['spec_group' => 'Aplikasi Mekanikal', 'spec_key' => 'Thread Size Range', 'spec_value' => 'M6 to M20 (1/4 to 3/4 inch)', 'spec_unit' => null, 'is_highlight' => true, 'sort_order' => 1],
+                    ['spec_group' => 'Kekuatan Penguncian', 'spec_key' => 'Breakaway Torque', 'spec_value' => '11.5', 'spec_unit' => 'Nm', 'is_highlight' => true, 'sort_order' => 2],
+                    ['spec_group' => 'Ketahanan Termal', 'spec_key' => 'Temperature Range', 'spec_value' => '-54 to +150', 'spec_unit' => '°C', 'is_highlight' => true, 'sort_order' => 3],
+                    ['spec_group' => 'Sifat Fisik Kimia', 'spec_key' => 'Viscosity', 'spec_value' => 'Medium Thixotropic Liquid', 'spec_unit' => null, 'is_highlight' => false, 'sort_order' => 4],
+                ],
+            ],
+
+            // 3M - Personal Protective Equipment (1 SKU)
+            [
+                'brand_id' => $threeM?->id,
+                'category_id' => $catPpe?->id,
+                'sku' => '3M-6200-KIT',
+                'name' => '3M 6200 Half Facepiece Reusable Respirator Kit',
+                'technical_summary' => 'Masker respirator reusable setengah wajah ukuran medium lengkap dengan cartridge gas/uap organik 6001 dan filter partikel 5N11.',
+                'cost_price' => 295000.00,
+                'stock_status' => 'ready',
+                'uom' => 'set',
+                'moq' => 2,
+                'warranty_period' => 'Garansi Keaslian 100% 3M Indonesia',
+                'specs' => [
+                    ['spec_group' => 'Sertifikasi K3', 'spec_key' => 'Protection Standard', 'spec_value' => 'NIOSH Approved', 'spec_unit' => null, 'is_highlight' => true, 'sort_order' => 1],
+                    ['spec_group' => 'Material & Kenyamanan', 'spec_key' => 'Facepiece Material', 'spec_value' => 'Thermoplastic Elastomer (TPE)', 'spec_unit' => null, 'is_highlight' => true, 'sort_order' => 2],
+                    ['spec_group' => 'Koneksi Filter', 'spec_key' => 'Filter Connection', 'spec_value' => 'Bayonet Twin Filter Design', 'spec_unit' => null, 'is_highlight' => false, 'sort_order' => 3],
+                    ['spec_group' => 'Ukuran Fisik', 'spec_key' => 'Size', 'spec_value' => 'Medium (M)', 'spec_unit' => null, 'is_highlight' => false, 'sort_order' => 4],
                 ],
             ],
         ];

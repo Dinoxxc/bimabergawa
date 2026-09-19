@@ -178,18 +178,20 @@ class DatabaseSeederTest extends TestCase
     /**
      * TC-INF-MIG-018: Inisialisasi Sample Katalog Produk Teknik Multi-Brand.
      */
-    public function test_product_and_sku_sample_seeder_creates_twelve_technical_products(): void
+    public function test_product_and_sku_sample_seeder_creates_eighteen_technical_products(): void
     {
         $this->seed(BrandAndCategorySeeder::class);
         $this->seed(ProductAndSkuSampleSeeder::class);
 
-        $this->assertEquals(12, Product::count(), 'Exactly 12 sample products must be seeded.');
+        $this->assertEquals(18, Product::count(), 'Exactly 18 sample products must be seeded.');
 
         $expectedSkus = [
             'LC1D25M7', 'ATV320U55N4B', 'NSX100F-TM80D',
             'BY698P-LED200', 'BVP151-LED100', 'DN027B-LED12',
             'S203-C16', 'OT63F3', 'MS116-16',
             'P31-100X50', 'HYPRA-055533', 'MARINA-035504',
+            '10FCTB-50', 'CR3-10-A-FGJ-A-E-HQQE', 'CHEETAH-7001H',
+            'GWS-750-100', 'LOCTITE-242-50ML', '3M-6200-KIT',
         ];
 
         foreach ($expectedSkus as $sku) {
@@ -216,8 +218,8 @@ class DatabaseSeederTest extends TestCase
         $tiersCount = CommissionTier::count();
 
         $this->assertEquals(5, $rolesCount);
-        $this->assertEquals(4, $brandsCount);
-        $this->assertEquals(12, $productsCount);
+        $this->assertEquals(18, $brandsCount);
+        $this->assertEquals(18, $productsCount);
         $this->assertEquals(3, $tiersCount);
         $this->assertGreaterThan(10, $settingsCount);
 
@@ -384,8 +386,8 @@ class DatabaseSeederTest extends TestCase
         // It must automatically invoke BrandAndCategorySeeder
         $this->seed(ProductAndSkuSampleSeeder::class);
 
-        $this->assertEquals(4, Brand::count(), 'Brands must be automatically seeded by self-healing check.');
-        $this->assertEquals(12, Product::count(), 'Products must be seeded successfully.');
+        $this->assertEquals(18, Brand::count(), 'Brands must be automatically seeded by self-healing check.');
+        $this->assertEquals(18, Product::count(), 'Products must be seeded successfully.');
     }
 
     /**

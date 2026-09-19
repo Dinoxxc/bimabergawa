@@ -59,7 +59,7 @@ class User extends Authenticatable
 
     public function freelanceSales(): BelongsTo
     {
-        return $this->belongsTo(FreelanceSales::class, 'freelance_sales_id');
+        return $this->belongsTo(FreelanceSales::class, 'freelance_sales_id')->withTrashed();
     }
 
     public function assignedInquiries(): HasMany

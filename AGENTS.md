@@ -286,7 +286,7 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 
 ### Fase 2: Core Service Layer (Logika Bisnis Terisolasi)
 - [x] `feature/core-04-service-document-number` : `DocumentNumberService` format resmi `PBB/{TYPE3}/{YYYY}/{MMSSSS}/{XXXX}` ber-salt kriptografis, Atomic Lock `SELECT ... FOR UPDATE` + 3x retry saat deadlock (`INQ`, `QUO`, `SOR`, `DOR`, `INV`, `COM`), integrasi `DocumentNumberRequestDTO`, emisi domain event `DocumentNumberGenerated`, format revisi penawaran `-R{n}`, partial DO, dan proteksi overflow > 9999. *(Rujukan: test-cases/05-security-and-non-functional/02-concurrency-and-race-condition.md)*
-- [ ] `feature/core-05-service-quotation-margin` : `PricingAndMarginCalculatorService` Live Margin HPP Guard formula + snapshot PPN dinamis via `SystemSettingService`. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
+- [/] `feature/core-05-service-quotation-margin` : `PricingAndMarginCalculatorService` Live Margin HPP Guard formula + snapshot PPN dinamis via `SystemSettingService`. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
 - [ ] `feature/core-06-service-sku-parser` : `SkuParserService` Regex textarea RFQ parser & `BulkSkuNormalizationService`. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md)*
 - [ ] `feature/core-07-service-secure-upload` : `SecureFileUploadService` biner kernel `finfo` magic bytes & UUID v4 storage privat. *(Rujukan: test-cases/05-security-and-non-functional/03-file-upload-security.md)*
 - [ ] `feature/core-08-service-fulfillment-and-commission` : `DeliveryOrderFulfillmentService` pelacakan `remaining_qty` & `CommissionPayoutService` ledger mutasi komisi. *(Rujukan: test-cases/02-internal-erp-crm/04-delivery-order.md)*

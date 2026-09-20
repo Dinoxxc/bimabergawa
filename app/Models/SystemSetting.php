@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\SystemSettingService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -28,16 +29,25 @@ class SystemSetting extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saved(function (SystemSetting $setting) {
+            Cache::forget("system_setting_{$setting->key}");
+            SystemSettingService::clearCache($setting->key);
+        });
+
+        static::deleted(function (SystemSetting $setting) {
+            Cache::forget("system_setting_{$setting->key}");
+            SystemSettingService::clearCache($setting->key);
+        });
+    }
+
     /**
-     * Get setting value by key with cache.
+     * Get setting value by key with cache and intelligent resolution.
      */
     public static function get(string $key, mixed $default = null): mixed
     {
-        return Cache::remember("system_setting_{$key}", 3600, function () use ($key, $default) {
-            $setting = static::where('key', $key)->first();
-
-            return $setting !== null ? $setting->value : $default;
-        });
+        return SystemSettingService::get($key, $default);
     }
 
     /**
@@ -45,15 +55,6 @@ class SystemSetting extends Model
      */
     public static function set(string $key, mixed $value, ?string $group = null, ?string $type = null): void
     {
-        $data = ['value' => (string) $value];
-        if ($group !== null) {
-            $data['group'] = $group;
-        }
-        if ($type !== null) {
-            $data['type'] = $type;
-        }
-
-        static::updateOrCreate(['key' => $key], $data);
-        Cache::forget("system_setting_{$key}");
+        SystemSettingService::set($key, $value, $group, $type);
     }
 }

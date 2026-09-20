@@ -451,4 +451,89 @@ class PricingAndMarginCalculatorServiceTest extends TestCase
 
         $this->assertTrue(PricingAndMarginCalculatorService::validatePaymentMilestones($milestones));
     }
+
+    public function test_negative_unit_price_or_cost_price_is_safely_clamped_to_zero(): void
+    {
+        $item = PricingAndMarginCalculatorService::calculateItem(
+            quantity: 2,
+            unitPrice: -50000.0,
+            costPrice: -25000.0
+        );
+
+        $this->assertSame(0.0, $item['unit_price']);
+        $this->assertSame(0.0, $item['cost_price']);
+        $this->assertSame(0.0, $item['subtotal']);
+        $this->assertSame(0.0, $item['total_cost']);
+        $this->assertSame(0.0, $item['gross_profit']);
+        $this->assertSame(0.0, $item['margin_percentage']);
+    }
+
+    public function test_item_discount_amount_exceeding_item_gross_is_capped_at_item_gross(): void
+    {
+        // Gross = 100,000, Diskon = 150,000 -> Capped di 100,000
+        $item = PricingAndMarginCalculatorService::calculateItem(
+            quantity: 1,
+            unitPrice: 100000.0,
+            costPrice: 80000.0,
+            discountAmount: 150000.0
+        );
+
+        $this->assertSame(100000.0, $item['discount_amount']);
+        $this->assertSame(0.0, $item['net_total']);
+        $this->assertSame(-80000.0, $item['gross_profit']);
+    }
+
+    public function test_system_setting_model_booted_observer_clears_service_cache_automatically(): void
+    {
+        // 1. Initial value
+        SystemSettingService::set('commercial_tax.test_cache_obs', '10.00');
+        $this->assertSame(10.0, SystemSettingService::getFloat('commercial_tax.test_cache_obs'));
+
+        // 2. Direct model update simulating Filament form save
+        $setting = SystemSetting::where('key', 'commercial_tax.test_cache_obs')->first();
+        $setting->value = '25.00';
+        $setting->save();
+
+        // 3. Service cache must immediately reflect the updated value
+        $this->assertSame(25.0, SystemSettingService::getFloat('commercial_tax.test_cache_obs'));
+        // And via shorthand
+        $this->assertSame(25.0, SystemSettingService::getFloat('test_cache_obs'));
+    }
+
+    public function test_validate_payment_milestones_empty_array_throws_exception(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Daftar termin pembayaran tidak boleh kosong.');
+
+        PricingAndMarginCalculatorService::validatePaymentMilestones([]);
+    }
+
+    public function test_validate_payment_milestones_negative_or_zero_phase_throws_exception(): void
+    {
+        $invalidMilestones = [
+            ['phase' => 'DP', 'percentage' => -50.0],
+            ['phase' => 'Pelunasan', 'percentage' => 150.0],
+        ];
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Setiap termin pembayaran wajib memiliki persentase positif lebih dari 0%.');
+
+        PricingAndMarginCalculatorService::validatePaymentMilestones($invalidMilestones);
+    }
+
+    public function test_negative_vat_rate_is_safely_clamped_to_zero(): void
+    {
+        $items = [
+            ['quantity' => 1, 'unit_price' => 100000.0, 'cost_price' => 80000.0],
+        ];
+
+        $result = PricingAndMarginCalculatorService::calculate(
+            items: $items,
+            vatRate: -10.0
+        );
+
+        $this->assertSame(0.0, $result['vat_rate_applied']);
+        $this->assertSame(0.0, $result['tax_amount']);
+        $this->assertSame(100000.0, $result['grand_total']);
+    }
 }

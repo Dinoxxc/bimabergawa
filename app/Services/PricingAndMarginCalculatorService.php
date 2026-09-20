@@ -42,8 +42,8 @@ class PricingAndMarginCalculatorService
 
         foreach ($items as $item) {
             $qty = max(1, (int) ($item['quantity'] ?? 1));
-            $unitPrice = (float) ($item['unit_price'] ?? 0);
-            $costPrice = (float) ($item['cost_price'] ?? 0);
+            $unitPrice = max(0.0, (float) ($item['unit_price'] ?? 0));
+            $costPrice = max(0.0, (float) ($item['cost_price'] ?? 0));
             $itemDiscountPercent = (float) ($item['discount_percent'] ?? 0);
             $itemDiscountAmount = (float) ($item['discount_amount'] ?? 0);
 
@@ -65,10 +65,10 @@ class PricingAndMarginCalculatorService
         $dpp = max(0.0, $subtotal - $aggregatedDiscount);
 
         // Ambil tarif PPN aktif dinamis dari SystemSettingService (mendukung 11%, 12%, 13%, dll.)
-        $effectiveVatRate = $vatRate ?? SystemSettingService::getFloat(
+        $effectiveVatRate = max(0.0, (float) ($vatRate ?? SystemSettingService::getFloat(
             'commercial_tax.tax_vat_rate',
             (float) env('STATIC_VAT_RATE', self::DEFAULT_STATIC_VAT_RATE)
-        );
+        )));
 
         $taxAmount = round($dpp * ($effectiveVatRate / 100), 2);
         $grandTotal = round($dpp + $taxAmount, 2);
@@ -144,24 +144,26 @@ class PricingAndMarginCalculatorService
         float $discountAmount = 0.0
     ): array {
         $qty = max(1, (int) $quantity);
-        $itemGross = $qty * $unitPrice;
-        $itemCost = $qty * $costPrice;
+        $cleanUnitPrice = max(0.0, $unitPrice);
+        $cleanCostPrice = max(0.0, $costPrice);
+        $itemGross = $qty * $cleanUnitPrice;
+        $itemCost = $qty * $cleanCostPrice;
 
-        // Tentukan diskon baris: prioritaskan discountAmount eksplisit, fallback ke discountPercent
+        // Tentukan diskon baris: prioritaskan discountAmount eksplisit (dibatasi maks itemGross), fallback ke discountPercent
         $effectiveDiscount = $discountAmount > 0.0
-            ? $discountAmount
+            ? min($itemGross, max(0.0, $discountAmount))
             : round($itemGross * (max(0.0, min(100.0, $discountPercent)) / 100), 2);
 
         $netTotal = max(0.0, $itemGross - $effectiveDiscount);
         $grossProfit = round($netTotal - $itemCost, 2);
         $marginPercentage = $netTotal > 0.0 ? round(($grossProfit / $netTotal) * 100, 2) : 0.0;
-        $isBelowCost = ($unitPrice < $costPrice) || ($grossProfit < 0);
+        $isBelowCost = ($cleanUnitPrice < $cleanCostPrice) || ($grossProfit < 0);
         $marginTier = self::evaluateMarginTier($marginPercentage, $grossProfit);
 
         return [
             'quantity' => $qty,
-            'unit_price' => round($unitPrice, 2),
-            'cost_price' => round($costPrice, 2),
+            'unit_price' => round($cleanUnitPrice, 2),
+            'cost_price' => round($cleanCostPrice, 2),
             'subtotal' => round($itemGross, 2),
             'discount_percent' => round($discountPercent, 2),
             'discount_amount' => round($effectiveDiscount, 2),
@@ -279,9 +281,17 @@ class PricingAndMarginCalculatorService
      */
     public static function validatePaymentMilestones(array $milestones): bool
     {
+        if (empty($milestones)) {
+            throw new InvalidArgumentException('Daftar termin pembayaran tidak boleh kosong.');
+        }
+
         $totalPercentage = 0.0;
         foreach ($milestones as $phase) {
-            $totalPercentage += (float) ($phase['percentage'] ?? 0);
+            $pct = (float) ($phase['percentage'] ?? 0);
+            if ($pct <= 0.0) {
+                throw new InvalidArgumentException('Setiap termin pembayaran wajib memiliki persentase positif lebih dari 0%.');
+            }
+            $totalPercentage += $pct;
         }
 
         if (abs($totalPercentage - 100.00) > 0.01) {

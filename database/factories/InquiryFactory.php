@@ -17,7 +17,7 @@ class InquiryFactory extends Factory
     public function definition(): array
     {
         return [
-            'inquiry_number' => 'PBB/INQ/'.date('Y').'/'.date('m').strtoupper(fake()->bothify('????')).'/'.strtoupper(fake()->unique()->bothify('####')),
+            'inquiry_number' => 'PBB/INQ/'.date('Y').'/'.date('m').'/'.strtoupper(fake()->unique()->bothify('####')),
             'assigned_user_id' => null,
             'freelance_sales_id' => null,
             'customer_name' => fake()->name(),

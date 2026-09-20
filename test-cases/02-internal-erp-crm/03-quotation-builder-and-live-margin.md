@@ -53,7 +53,7 @@
 | **`TC-ERP-QUO-005`** | Positif | Penerapan Snapshot Pajak PPN 11% Statis (*Tax Immutability*) | Quotation dibuat pada periode tarif PPN 11% | Simpan Quotation | Kolom `vat_rate_applied` terisi `11.00`, nilai PPN = 11% x Subtotal Netto, Grand Total = Subtotal + PPN. Angka ini terkunci permanen. | Passed |
 | **`TC-ERP-QUO-006`** | Positif | Pembuatan Berkas PDF Resmi Penawaran Harga (*DomPDF Export*) | Quotation berstatus `approved` | Klik tombol "Cetak / Unduh PDF Quotation" | Sistem menghasilkan berkas PDF berstandar tinggi: Kop surat resmi PBB Rasuna Said, tabel SKU, syarat pembayaran, blok tanda tangan, 0 emoji. | Not Executed |
 | **`TC-ERP-QUO-007`** | Positif | Pengiriman Otomatis PDF Quotation ke Email Klien | Quotation disetujui | Klik aksi "Kirim via Email ke Klien" | Job email mengeksekusi pengiriman berkas PDF terlampir ke alamat email PIC klien dengan status inkuiri berubah menjadi `quoted`. | Not Executed |
-| **`TC-ERP-QUO-008`** | Positif | Alur Pembuatan Revisi Dokumen Penawaran (*Revision Tracking*) | Quotation `PBB/QUO/2026/092F9C/0001` aktif | Klik aksi "Buat Revisi (Revise)" | Sistem membuat salinan quotation baru bernomor `PBB/QUO/2026/092F9C/0001-R1`, status dokumen lama berubah menjadi `superseded`. | Not Executed |
+| **`TC-ERP-QUO-008`** | Positif | Alur Pembuatan Revisi Dokumen Penawaran (*Revision Tracking*) | Quotation `PBB/QUO/2026/09/0001` aktif | Klik aksi "Buat Revisi (Revise)" | Sistem membuat salinan quotation baru bernomor `PBB/QUO/2026/09/0001-R1`, status dokumen lama berubah menjadi `superseded`. | Not Executed |
 | **`TC-ERP-QUO-009`** | Negatif | Validasi Penolakan Harga Jual di Bawah HPP (*Minus Margin*) | Base HPP = Rp 100.000 | Input Harga Jual = Rp 90.000 (Margin = -11.1%) | Sistem menolak penyimpanan atau mengunci total dengan status `Hard Rejection: Harga jual di bawah modal dasar (HPP) dilarang`. | Passed |
 | **`TC-ERP-QUO-010`** | Negatif | Validasi Nilai Kuantitas Nol atau Negatif | Form item quotation | Input Qty = `0` atau `-5` | Validasi form memunculkan error: "Kuantitas produk minimal 1 pcs". | Not Executed |
 | **`TC-ERP-QUO-011`** | Negatif | Modifikasi Item pada Quotation yang Telah Berstatus Approved/Won | Quotation berstatus `won` atau `converted_to_so` | Pengguna mencoba menyunting harga / kuantitas | Form dalam mode read-only (terkunci), tombol simpan dinonaktifkan untuk menjaga integritas data akuntansi. | Not Executed |
@@ -61,7 +61,7 @@
 | **`TC-ERP-QUO-013`** | Keamanan | Integritas Kalkulasi Finansial Sisi Server (*Server-Side Recalculation*) | Penyerang memanipulasi field `grand_total` via inspect element | Submit form dengan grand total dimanipulasi jadi Rp 1.000 | `QuotationCalculationService` menghitung ulang seluruh subtotal, PPN, dan grand total di level server, nilai manipulasi client diabaikan. | Passed |
 | **`TC-ERP-QUO-014`** | Batas Nilai | Penanganan Diskon Maksimal (Diskon 0% s.d. 99.99%) | Subtotal = Rp 10.000.000 | Input Diskon = 0% dan 50% | Kalkulasi subtotal terdiskon berjalan presisi hingga 2 desimal tanpa pembulatan liar (*floating point precision*). | Passed |
 | **`TC-ERP-QUO-015`** | Batas Nilai | Ekspor PDF Quotation dengan Jumlah Item Sangat Banyak (> 50 SKU) | Quotation memuat 60 baris produk | Cetak berkas PDF | DomPDF memecah halaman (*page break*) secara rapi dengan pengulangan header tabel pada halaman ke-2 dan ke-3 tanpa teks tertimpa. | Not Executed |
-| **`TC-ERP-QUO-016`** | Konkurensi | Penomoran Dokumen Penawaran Simultan (*Race Condition Prevention*) | 2 Sales membuat quotation baru di detik yang sama | Klik simpan penawaran baru secara serentak | `DocumentNumberService` menggunakan *Atomic Lock* / `SELECT FOR UPDATE`, menghasilkan nomor unik berurutan `PBB/QUO/2026/092F9C/0001` dan `PBB/QUO/2026/092F9C/0002` tanpa duplikasi. | Passed |
+| **`TC-ERP-QUO-016`** | Konkurensi | Penomoran Dokumen Penawaran Simultan (*Race Condition Prevention*) | 2 Sales membuat quotation baru di detik yang sama | Klik simpan penawaran baru secara serentak | `DocumentNumberService` menggunakan *Atomic Lock* / `SELECT FOR UPDATE`, menghasilkan nomor unik berurutan `PBB/QUO/2026/09/0001` dan `PBB/QUO/2026/09/0002` tanpa duplikasi. | Passed |
 | **`TC-ERP-QUO-017`** | Audit | Pencatatan Riwayat Perubahan Harga pada Jejak Audit | Sales mengubah harga jual dari Rp 120.000 ke Rp 115.000 | Simpan perubahan draf | `activity_log` mencatat mutasi harga beserta User ID pelaksana dan selisih penurunan margin. | Not Executed |
 
 ---
@@ -80,7 +80,7 @@
 
 ### 3.2 Prosedur Uji TC-ERP-QUO-006 (Inspeksi Dokumen PDF Resmi)
 
-1. **Langkah 1:** Buka quotation berstatus `approved` bernomor `PBB/QUO/2026/092F9C/0001`.
+1. **Langkah 1:** Buka quotation berstatus `approved` bernomor `PBB/QUO/2026/09/0001`.
 2. **Langkah 2:** Klik tombol **"Unduh PDF"**.
 3. **Verifikasi Teknis:**
    - Header memuat Logo PBB, Nomor Dokumen, Tanggal, dan Alamat Rasuna Said lengkap.

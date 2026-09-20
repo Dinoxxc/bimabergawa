@@ -24,14 +24,15 @@
 | `1.6.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi DTOs (Data Transfer Objects), Domain Events, dan Custom Domain Exceptions untuk Fondasi Service Layer Tahap A |
 | `1.7.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan parameter DTOs: penambahan ekstensi BOQ industri (xls, docx, csv, jpeg) dan maxSizeBytes pada FileUploadRequestDTO, field fisik armada logistik pada DeliveryOrderFulfillmentDTO, diskon nominal lump-sum pada CalculateMarginDTO, serta konstanta dan guard validasi tipe dokumen pada DocumentNumberRequestDTO |
 | `1.8.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Harmonisasi arsitektur `DocumentNumberService` berbasis tabel `document_sequences` dengan pesimistis locking (`lockForUpdate()`), `DB::transaction(..., 3)` auto-retry deadlock, integrasi `DocumentNumberRequestDTO`, format resmi `INQ-YYYYMM-XXXX`, revisi penawaran `-R{n}`, dan emisi domain event `DocumentNumberGenerated` |
-| `1.9.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembaruan standar penomoran resmi korporat PBB: `PBB/{TIPE}/{YYYY}/{MMSSSS}/{XXXX}` dengan penyematan cryptographic security salt 4-karakter (anti-tebak/anti-enumerasi eksternal) dan kesinambungan urutan numerik internal kepatuhan audit UU KUP |
+| `1.9.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembaruan standar penomoran resmi korporat PBB pada kasus uji dan arsitektur |
 | `1.9.1` | 20 Sep 2026 | Principal System Architect | Disetujui | Penyeragaman seluruh kode tipe transaksi menjadi tepat 3 huruf (`SO` -> `SOR`, `DO` -> `DOR`) untuk kepatuhan standar format korporat PBB |
+| `1.10.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembersihan format penomoran dokumen menjadi standar korporat bersih `PBB/{TIPE}/{YYYY}/{MM}/{XXXX}` tanpa salt kriptografis |
 
 ---
 
 ## 1. `DocumentNumberService` (Concurrency-Safe Generator)
 
-Menghasilkan nomor unik terurut secara atomik menggunakan tabel terisolasi `document_sequences`, transaksi database dengan pesimistis locking `lockForUpdate()`, mekanisme auto-retry 3x saat terjadi deadlock MySQL (`DB::transaction(..., 3)`), serta penyematan 4-karakter cryptographic security salt (`SSSS`) setelah 2-digit bulan (`MM`) untuk proteksi anti-tebak pihak luar dan kepatuhan format resmi korporat `AGENTS.md` Bagian 3.7:
+Menghasilkan nomor unik terurut secara atomik menggunakan tabel terisolasi `document_sequences`, transaksi database dengan pesimistis locking `lockForUpdate()`, mekanisme auto-retry 3x saat terjadi deadlock MySQL (`DB::transaction(..., 3)`), serta menerapkan standar format korporat B2B Indonesia yang bersih, elegan, dan profesional (`PBB/{TYPE}/YYYY/MM/XXXX`) tanpa karakter salt acak untuk kepatuhan format resmi `AGENTS.md` Bagian 3.7:
 
 ```php
 namespace App\Services;
@@ -74,7 +75,7 @@ class DocumentNumberService
 
     /**
      * Generate nomor dokumen secara concurrency-safe via DocumentNumberRequestDTO atau tipe string.
-     * Menghasilkan format resmi: PBB/{TIPE}/{YYYY}/{MMSSSS}/{XXXX}
+     * Menghasilkan format resmi: PBB/{TIPE}/{YYYY}/{MM}/{XXXX}
      */
     public function generateNextNumber(
         DocumentNumberRequestDTO|string $request,
@@ -137,14 +138,10 @@ class DocumentNumberService
             return (int) $sequenceRecord->current_sequence;
         }, 3);
 
-        // Hasilkan 4-karakter cryptographic security salt deterministik berbasis APP_KEY
-        $saltKey = sprintf('%s/%s/%s/%d', $prefix, $year, $month, $sequenceNumber);
-        $salt = strtoupper(substr(hash_hmac('sha256', $saltKey, config('app.key') ?: 'pbb-salt-seed'), 0, 4));
-
         if ($sequenceNumber > 9999) {
-            $documentNumber = sprintf('PBB/%s/%s/%s%s/%d', $prefix, $year, $month, $salt, $sequenceNumber);
+            $documentNumber = sprintf('PBB/%s/%s/%s/%d', $prefix, $year, $month, $sequenceNumber);
         } else {
-            $documentNumber = sprintf('PBB/%s/%s/%s%s/%04d', $prefix, $year, $month, $salt, $sequenceNumber);
+            $documentNumber = sprintf('PBB/%s/%s/%s/%04d', $prefix, $year, $month, $sequenceNumber);
         }
 
         $resolvedUserId = $effectiveUserId ?? (auth()->check() ? auth()->id() : null);
@@ -203,7 +200,7 @@ class DocumentNumberService
     }
 
     /**
-     * Format revisi penawaran resmi (misal: PBB/QUO/2026/092F9C/0001-R1).
+     * Format revisi penawaran resmi (misal: PBB/QUO/2026/09/0001-R1).
      */
     public function formatQuotationRevision(string $baseQuoNumber, int $revision): string
     {
@@ -216,7 +213,7 @@ class DocumentNumberService
     }
 
     /**
-     * Format surat jalan parsial berdasar sales order (misal: PBB/DOR/2026/092F9C/0001/01).
+     * Format surat jalan parsial berdasar sales order (misal: PBB/DOR/2026/09/0001/01).
      */
     public function formatDeliveryOrderPartial(string $soNumber, int $partialIndex = 1): string
     {

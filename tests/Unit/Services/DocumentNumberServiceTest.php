@@ -34,8 +34,8 @@ class DocumentNumberServiceTest extends TestCase
         $first = $this->service->generateInquiryNumber($date);
         $second = $this->service->generateInquiryNumber($date);
 
-        $this->assertMatchesRegularExpression('/^PBB\/INQ\/2026\/09[A-Z0-9]{4}\/\d{4}$/', $first);
-        $this->assertMatchesRegularExpression('/^PBB\/INQ\/2026\/09[A-Z0-9]{4}\/\d{4}$/', $second);
+        $this->assertMatchesRegularExpression('/^PBB\/INQ\/2026\/09\/\d{4}$/', $first);
+        $this->assertMatchesRegularExpression('/^PBB\/INQ\/2026\/09\/\d{4}$/', $second);
 
         $firstSeq = (int) substr($first, -4);
         $secondSeq = (int) substr($second, -4);
@@ -54,12 +54,12 @@ class DocumentNumberServiceTest extends TestCase
         $inv = $this->service->generateInvoiceNumber($date);
         $com = $this->service->generateCommissionNumber($date);
 
-        $this->assertStringStartsWith('PBB/INQ/2026/09', $inq);
-        $this->assertStringStartsWith('PBB/QUO/2026/09', $quo);
-        $this->assertStringStartsWith('PBB/SOR/2026/09', $so);
-        $this->assertStringStartsWith('PBB/DOR/2026/09', $do);
-        $this->assertStringStartsWith('PBB/INV/2026/09', $inv);
-        $this->assertStringStartsWith('PBB/COM/2026/09', $com);
+        $this->assertStringStartsWith('PBB/INQ/2026/09/', $inq);
+        $this->assertStringStartsWith('PBB/QUO/2026/09/', $quo);
+        $this->assertStringStartsWith('PBB/SOR/2026/09/', $so);
+        $this->assertStringStartsWith('PBB/DOR/2026/09/', $do);
+        $this->assertStringStartsWith('PBB/INV/2026/09/', $inv);
+        $this->assertStringStartsWith('PBB/COM/2026/09/', $com);
     }
 
     public function test_it_supports_generation_via_dto(): void
@@ -72,8 +72,8 @@ class DocumentNumberServiceTest extends TestCase
 
         $number = $this->service->generate($dto);
 
-        $this->assertStringStartsWith('PBB/QUO/2026/09', $number);
-        $this->assertMatchesRegularExpression('/^PBB\/QUO\/2026\/09[A-Z0-9]{4}\/\d{4}$/', $number);
+        $this->assertStringStartsWith('PBB/QUO/2026/09/', $number);
+        $this->assertMatchesRegularExpression('/^PBB\/QUO\/2026\/09\/\d{4}$/', $number);
     }
 
     public function test_monthly_sequence_resets_on_new_period(): void
@@ -93,38 +93,38 @@ class DocumentNumberServiceTest extends TestCase
 
     public function test_it_formats_quotation_revision_numbers(): void
     {
-        $base = 'PBB/QUO/2026/098A1B/0001';
+        $base = 'PBB/QUO/2026/09/0001';
 
         $rev1 = $this->service->formatQuotationRevision($base, 1);
         $rev2 = $this->service->formatQuotationRevision($base, 2);
         $rev0 = $this->service->formatQuotationRevision($base, 0);
 
-        $this->assertSame('PBB/QUO/2026/098A1B/0001-R1', $rev1);
-        $this->assertSame('PBB/QUO/2026/098A1B/0001-R2', $rev2);
-        $this->assertSame('PBB/QUO/2026/098A1B/0001', $rev0);
+        $this->assertSame('PBB/QUO/2026/09/0001-R1', $rev1);
+        $this->assertSame('PBB/QUO/2026/09/0001-R2', $rev2);
+        $this->assertSame('PBB/QUO/2026/09/0001', $rev0);
 
         // If already has revision, cleanly replaces it
-        $rev3 = $this->service->formatQuotationRevision('PBB/QUO/2026/098A1B/0001-R1', 3);
-        $this->assertSame('PBB/QUO/2026/098A1B/0001-R3', $rev3);
+        $rev3 = $this->service->formatQuotationRevision('PBB/QUO/2026/09/0001-R1', 3);
+        $this->assertSame('PBB/QUO/2026/09/0001-R3', $rev3);
     }
 
     public function test_it_formats_delivery_order_partial_from_sales_order(): void
     {
-        $soNumber = 'PBB/SOR/2026/092F9C/0005';
+        $soNumber = 'PBB/SOR/2026/09/0005';
 
         $doPartial1 = $this->service->formatDeliveryOrderPartial($soNumber, 1);
         $doPartial2 = $this->service->formatDeliveryOrderPartial($soNumber, 2);
 
-        $this->assertSame('PBB/DOR/2026/092F9C/0005/01', $doPartial1);
-        $this->assertSame('PBB/DOR/2026/092F9C/0005/02', $doPartial2);
+        $this->assertSame('PBB/DOR/2026/09/0005/01', $doPartial1);
+        $this->assertSame('PBB/DOR/2026/09/0005/02', $doPartial2);
 
         // Direct generateDeliveryOrderNumber with soNumber parameter
         $directDO = $this->service->generateDeliveryOrderNumber($soNumber, 1);
-        $this->assertSame('PBB/DOR/2026/092F9C/0005/01', $directDO);
+        $this->assertSame('PBB/DOR/2026/09/0005/01', $directDO);
 
         // Backward compatibility with legacy /SO/ prefix
-        $legacyDO = $this->service->formatDeliveryOrderPartial('PBB/SO/2026/092F9C/0005', 1);
-        $this->assertSame('PBB/DOR/2026/092F9C/0005/01', $legacyDO);
+        $legacyDO = $this->service->formatDeliveryOrderPartial('PBB/SO/2026/09/0005', 1);
+        $this->assertSame('PBB/DOR/2026/09/0005/01', $legacyDO);
     }
 
     public function test_it_handles_sequence_overflow_above_9999_seamlessly(): void

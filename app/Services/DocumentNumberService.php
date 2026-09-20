@@ -104,14 +104,10 @@ class DocumentNumberService
             return (int) $sequenceRecord->current_sequence;
         }, 3);
 
-        // Hasilkan 4-karakter cryptographic security salt deterministik berbasis APP_KEY
-        $saltKey = sprintf('%s/%s/%s/%d', $prefix, $year, $month, $sequenceNumber);
-        $salt = strtoupper(substr(hash_hmac('sha256', $saltKey, config('app.key') ?: 'pbb-salt-seed'), 0, 4));
-
         if ($sequenceNumber > 9999) {
-            $documentNumber = sprintf('PBB/%s/%s/%s%s/%d', $prefix, $year, $month, $salt, $sequenceNumber);
+            $documentNumber = sprintf('PBB/%s/%s/%s/%d', $prefix, $year, $month, $sequenceNumber);
         } else {
-            $documentNumber = sprintf('PBB/%s/%s/%s%s/%04d', $prefix, $year, $month, $salt, $sequenceNumber);
+            $documentNumber = sprintf('PBB/%s/%s/%s/%04d', $prefix, $year, $month, $sequenceNumber);
         }
 
         $resolvedUserId = $effectiveUserId ?? (auth()->check() ? auth()->id() : null);
@@ -176,7 +172,7 @@ class DocumentNumberService
     }
 
     /**
-     * Format revisi penawaran resmi (misal: PBB/QUO/2026/092F9C/0001-R1).
+     * Format revisi penawaran resmi (misal: PBB/QUO/2026/09/0001-R1).
      */
     public function formatQuotationRevision(string $baseQuotationNumber, int $revision): string
     {
@@ -197,7 +193,7 @@ class DocumentNumberService
     }
 
     /**
-     * Format surat jalan parsial berdasar sales order (misal: PBB/DOR/2026/092F9C/0001/01).
+     * Format surat jalan parsial berdasar sales order (misal: PBB/DOR/2026/09/0001/01).
      */
     public function formatDeliveryOrderPartial(string $soNumber, int $partialIndex = 1): string
     {

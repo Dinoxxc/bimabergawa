@@ -142,16 +142,16 @@ Tabel perbandingan minimalis dengan garis pemisah tipis dan tombol aksi monokrom
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ # Pelacakan Status Pengadaan.                                                                          │
-│ Masukkan nomor RFQ, nomor PO, atau nomor WhatsApp: [ PBB/INQ/2026/092F9C/0012 ] [ [Tombol] LACAK STATUS ]       │
+│ Masukkan nomor RFQ, nomor PO, atau nomor WhatsApp: [ PBB/INQ/2026/09/0012 ] [ [Tombol] LACAK STATUS ]       │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ DETAIL PESANAN: **PBB/INQ/2026/092F9C/0012** (PT. Maju Sentosa - Proyek Karawang)                               │
+│ DETAIL PESANAN: **PBB/INQ/2026/09/0012** (PT. Maju Sentosa - Proyek Karawang)                               │
 │                                                                                                        │
 │ TAHAPAN PROSES:                                                                                        │
 │ [x] Diajukan  --->  [x] Penawaran Terbit  --->  [x] PO Won  --->  [x] Dikirim Sebagian  --->  [ ] Lunas│
 │                                                                                                        │
 │ DOKUMEN & LOGISTIK:                                                                                    │
-│ • Dokumen Penawaran Resmi : [ <u>Unduh Berkas PBB/QUO/2026/092F9C/0008.pdf</u> ]                                │
-│ • Surat Jalan Pengiriman  : **PBB/DOR/2026/092F9C/0015/01** (2 Unit Ebara FSHA)                                  │
+│ • Dokumen Penawaran Resmi : [ <u>Unduh Berkas PBB/QUO/2026/09/0008.pdf</u> ]                                │
+│ • Surat Jalan Pengiriman  : **PBB/DOR/2026/09/0015/01** (2 Unit Ebara FSHA)                                  │
 │ • Ekspedisi & Nomor Resi  : **Dakota Cargo** — `DKT-998822110`                                         │
 │ • Pelacakan Langsung      : [ <u>Buka Pelacakan Live di Website Dakota Cargo -></u> ]                  │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘

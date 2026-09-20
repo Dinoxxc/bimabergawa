@@ -14,5 +14,14 @@ readonly class DeliveryOrderFulfillmentDTO
         public array $items,
         public string $shippingMethod,
         public ?string $driverNotes = null,
+        public ?string $driverName = null,
+        public ?string $vehiclePlateNumber = null,
+        public ?string $courierName = null,
+        public ?string $trackingNumber = null,
+        public ?string $recipientPicName = null,
+        public ?string $recipientPhone = null,
+        public ?string $shippingAddress = null,
+        public ?int $totalPackages = null,
+        public ?float $totalWeightKg = null,
     ) {}
 }

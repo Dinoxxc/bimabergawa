@@ -14,7 +14,8 @@ readonly class FileUploadRequestDTO
         public string $mimeType,
         public int $sizeBytes,
         public string $tmpPath,
-        public array $allowedExtensions = ['pdf', 'xlsx', 'jpg', 'png'],
+        public array $allowedExtensions = ['pdf', 'xlsx', 'xls', 'docx', 'jpg', 'jpeg', 'png', 'csv'],
         public bool $isPublic = false,
+        public int $maxSizeBytes = 10485760,
     ) {}
 }

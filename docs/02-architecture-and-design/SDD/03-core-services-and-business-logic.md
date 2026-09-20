@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.6.0 |
+| **Versi Dokumen** | 1.7.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -22,6 +22,7 @@
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Perhitungan dinamis tarif PPN multi-periode via `SystemSetting` (anti-hardcoded 11%) |
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan penomoran atomik Faktur Penagihan (`INV-YYYYMM-XXXX`) pada `DocumentNumberService` |
 | `1.6.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi DTOs (Data Transfer Objects), Domain Events, dan Custom Domain Exceptions untuk Fondasi Service Layer Tahap A |
+| `1.7.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan parameter DTOs: penambahan ekstensi BOQ industri (xls, docx, csv, jpeg) dan maxSizeBytes pada FileUploadRequestDTO, field fisik armada logistik pada DeliveryOrderFulfillmentDTO, diskon nominal lump-sum pada CalculateMarginDTO, serta konstanta dan guard validasi tipe dokumen pada DocumentNumberRequestDTO |
 
 ---
 
@@ -460,11 +461,35 @@ namespace App\DTOs;
 
 readonly class DocumentNumberRequestDTO
 {
+    public const TYPE_INQUIRY = 'inquiry';
+    public const TYPE_QUOTATION = 'quotation';
+    public const TYPE_SALES_ORDER = 'sales_order';
+    public const TYPE_DELIVERY_ORDER = 'delivery_order';
+    public const TYPE_INVOICE = 'invoice';
+    public const TYPE_COMMISSION = 'commission';
+
+    public const VALID_TYPES = [
+        self::TYPE_INQUIRY,
+        self::TYPE_QUOTATION,
+        self::TYPE_SALES_ORDER,
+        self::TYPE_DELIVERY_ORDER,
+        self::TYPE_INVOICE,
+        self::TYPE_COMMISSION,
+    ];
+
     public function __construct(
-        public string $targetType, // 'inquiry', 'quotation', 'sales_order', 'delivery_order', 'invoice', 'commission_payout'
+        public string $targetType,
         public ?\DateTimeInterface $date = null,
         public ?int $tenantId = null,
-    ) {}
+    ) {
+        if (! in_array($this->targetType, self::VALID_TYPES, true)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Invalid document target type [%s]. Must be one of: %s',
+                $this->targetType,
+                implode(', ', self::VALID_TYPES)
+            ));
+        }
+    }
 }
 ```
 
@@ -479,6 +504,7 @@ readonly class CalculateMarginDTO
         public float $unitPrice,
         public int|float $quantity = 1,
         public float $discountPercent = 0.0,
+        public float $discountAmount = 0.0,
         public float $vatRate = 11.0,
         public float $exchangeRate = 1.0,
         public string $currency = 'IDR',
@@ -511,8 +537,9 @@ readonly class FileUploadRequestDTO
         public string $mimeType,
         public int $sizeBytes,
         public string $tmpPath,
-        public array $allowedExtensions = ['pdf', 'xlsx', 'jpg', 'png'],
+        public array $allowedExtensions = ['pdf', 'xlsx', 'xls', 'docx', 'jpg', 'jpeg', 'png', 'csv'],
         public bool $isPublic = false,
+        public int $maxSizeBytes = 10485760,
     ) {}
 }
 ```
@@ -528,6 +555,15 @@ readonly class DeliveryOrderFulfillmentDTO
         public array $items, // [['sales_order_item_id' => int, 'quantity_delivered' => int]]
         public string $shippingMethod,
         public ?string $driverNotes = null,
+        public ?string $driverName = null,
+        public ?string $vehiclePlateNumber = null,
+        public ?string $courierName = null,
+        public ?string $trackingNumber = null,
+        public ?string $recipientPicName = null,
+        public ?string $recipientPhone = null,
+        public ?string $shippingAddress = null,
+        public ?int $totalPackages = null,
+        public ?float $totalWeightKg = null,
     ) {}
 }
 ```

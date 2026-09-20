@@ -39,16 +39,20 @@ class ServiceFoundationContractsTest extends TestCase
     public function test_document_number_request_dto(): void
     {
         $date = new DateTimeImmutable('2026-09-20');
-        $dto = new DocumentNumberRequestDTO('quotation', $date, 5);
+        $dto = new DocumentNumberRequestDTO(DocumentNumberRequestDTO::TYPE_QUOTATION, $date, 5);
 
-        $this->assertSame('quotation', $dto->targetType);
+        $this->assertSame(DocumentNumberRequestDTO::TYPE_QUOTATION, $dto->targetType);
         $this->assertSame($date, $dto->date);
         $this->assertSame(5, $dto->tenantId);
 
-        $dtoDefault = new DocumentNumberRequestDTO('inquiry');
-        $this->assertSame('inquiry', $dtoDefault->targetType);
+        $dtoDefault = new DocumentNumberRequestDTO(DocumentNumberRequestDTO::TYPE_INQUIRY);
+        $this->assertSame(DocumentNumberRequestDTO::TYPE_INQUIRY, $dtoDefault->targetType);
         $this->assertNull($dtoDefault->date);
         $this->assertNull($dtoDefault->tenantId);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid document target type [invalid_doc_type]');
+        new DocumentNumberRequestDTO('invalid_doc_type');
     }
 
     public function test_calculate_margin_dto(): void
@@ -58,6 +62,7 @@ class ServiceFoundationContractsTest extends TestCase
             unitPrice: 100000.0,
             quantity: 10,
             discountPercent: 5.0,
+            discountAmount: 250000.0,
             vatRate: 12.0,
             exchangeRate: 1.0,
             currency: 'IDR'
@@ -67,9 +72,13 @@ class ServiceFoundationContractsTest extends TestCase
         $this->assertSame(100000.0, $dto->unitPrice);
         $this->assertSame(10, $dto->quantity);
         $this->assertSame(5.0, $dto->discountPercent);
+        $this->assertSame(250000.0, $dto->discountAmount);
         $this->assertSame(12.0, $dto->vatRate);
         $this->assertSame(1.0, $dto->exchangeRate);
         $this->assertSame('IDR', $dto->currency);
+
+        $dtoDefault = new CalculateMarginDTO(costPrice: 50000.0, unitPrice: 70000.0);
+        $this->assertSame(0.0, $dtoDefault->discountAmount);
     }
 
     public function test_parse_sku_request_dto(): void
@@ -89,13 +98,27 @@ class ServiceFoundationContractsTest extends TestCase
             sizeBytes: 204800,
             tmpPath: '/tmp/php12345',
             allowedExtensions: ['xlsx', 'pdf'],
-            isPublic: false
+            isPublic: false,
+            maxSizeBytes: 5242880
         );
 
         $this->assertSame('boq_project.xlsx', $dto->originalName);
         $this->assertSame(204800, $dto->sizeBytes);
         $this->assertFalse($dto->isPublic);
         $this->assertSame(['xlsx', 'pdf'], $dto->allowedExtensions);
+        $this->assertSame(5242880, $dto->maxSizeBytes);
+
+        $dtoDefault = new FileUploadRequestDTO(
+            originalName: 'tender.xls',
+            mimeType: 'application/vnd.ms-excel',
+            sizeBytes: 102400,
+            tmpPath: '/tmp/php999'
+        );
+        $this->assertContains('xls', $dtoDefault->allowedExtensions);
+        $this->assertContains('docx', $dtoDefault->allowedExtensions);
+        $this->assertContains('csv', $dtoDefault->allowedExtensions);
+        $this->assertContains('jpeg', $dtoDefault->allowedExtensions);
+        $this->assertSame(10485760, $dtoDefault->maxSizeBytes);
     }
 
     public function test_delivery_order_fulfillment_dto(): void
@@ -105,13 +128,29 @@ class ServiceFoundationContractsTest extends TestCase
             salesOrderId: 10,
             items: $items,
             shippingMethod: 'Kurir Internal PBB',
-            driverNotes: 'Antar sebelum jam 15:00 WIB'
+            driverNotes: 'Antar sebelum jam 15:00 WIB',
+            driverName: 'Pak Joko Susilo',
+            vehiclePlateNumber: 'B 9123 PBB',
+            courierName: 'Internal Fleet',
+            trackingNumber: null,
+            recipientPicName: 'Ir. Hendra',
+            recipientPhone: '08123456789',
+            shippingAddress: 'Kawasan Industri KIIC Lot C-4, Karawang Barat',
+            totalPackages: 8,
+            totalWeightKg: 240.5
         );
 
         $this->assertSame(10, $dto->salesOrderId);
         $this->assertSame($items, $dto->items);
         $this->assertSame('Kurir Internal PBB', $dto->shippingMethod);
         $this->assertSame('Antar sebelum jam 15:00 WIB', $dto->driverNotes);
+        $this->assertSame('Pak Joko Susilo', $dto->driverName);
+        $this->assertSame('B 9123 PBB', $dto->vehiclePlateNumber);
+        $this->assertSame('Ir. Hendra', $dto->recipientPicName);
+        $this->assertSame('08123456789', $dto->recipientPhone);
+        $this->assertSame('Kawasan Industri KIIC Lot C-4, Karawang Barat', $dto->shippingAddress);
+        $this->assertSame(8, $dto->totalPackages);
+        $this->assertSame(240.5, $dto->totalWeightKg);
     }
 
     public function test_commission_calculation_dto(): void

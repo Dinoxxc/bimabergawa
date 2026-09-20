@@ -355,4 +355,100 @@ class PricingAndMarginCalculatorServiceTest extends TestCase
         $this->assertFalse($ut01Result['requires_director_approval']);
         $this->assertSame(1350000.0, $ut01Result['commission_amount']);
     }
+
+    public function test_empty_items_array_returns_safe_zero_values(): void
+    {
+        $result = PricingAndMarginCalculatorService::calculate(items: []);
+
+        $this->assertSame(0.0, $result['subtotal']);
+        $this->assertSame(0.0, $result['dpp']);
+        $this->assertSame(0.0, $result['total_cost']);
+        $this->assertSame(0.0, $result['gross_profit']);
+        $this->assertSame(0.0, $result['margin_percentage']);
+        $this->assertSame(0.0, $result['grand_total']);
+        $this->assertSame('critical', $result['margin_tier']);
+        $this->assertEmpty($result['items']);
+    }
+
+    public function test_discount_greater_than_subtotal_clamps_dpp_to_zero(): void
+    {
+        $items = [
+            ['quantity' => 1, 'unit_price' => 100000.0, 'cost_price' => 80000.0],
+        ];
+
+        // Diskon 150,000 > Subtotal 100,000
+        $result = PricingAndMarginCalculatorService::calculate(
+            items: $items,
+            discountAmount: 150000.0
+        );
+
+        $this->assertSame(100000.0, $result['subtotal']);
+        $this->assertSame(0.0, $result['dpp']);
+        $this->assertSame(0.0, $result['tax_amount']);
+        $this->assertSame(0.0, $result['grand_total']);
+        $this->assertSame(-80000.0, $result['gross_profit']);
+        $this->assertSame(0.0, $result['margin_percentage']);
+        $this->assertSame('critical', $result['margin_tier']);
+        $this->assertTrue($result['requires_director_approval']);
+    }
+
+    public function test_zero_or_negative_quantity_clamps_to_at_least_one(): void
+    {
+        $itemZero = PricingAndMarginCalculatorService::calculateItem(
+            quantity: 0,
+            unitPrice: 100000.0,
+            costPrice: 80000.0
+        );
+        $this->assertSame(1, $itemZero['quantity']);
+
+        $itemNegative = PricingAndMarginCalculatorService::calculateItem(
+            quantity: -5,
+            unitPrice: 100000.0,
+            costPrice: 80000.0
+        );
+        $this->assertSame(1, $itemNegative['quantity']);
+    }
+
+    public function test_zero_unit_price_item_is_below_cost_and_critical(): void
+    {
+        $item = PricingAndMarginCalculatorService::calculateItem(
+            quantity: 2,
+            unitPrice: 0.0,
+            costPrice: 50000.0
+        );
+
+        $this->assertSame(0.0, $item['subtotal']);
+        $this->assertSame(100000.0, $item['total_cost']);
+        $this->assertSame(-100000.0, $item['gross_profit']);
+        $this->assertTrue($item['is_below_cost']);
+        $this->assertSame('critical', $item['margin_tier']);
+    }
+
+    public function test_invalid_exchange_rate_and_negative_commission_safely_handled(): void
+    {
+        $items = [
+            ['quantity' => 1, 'unit_price' => 100000.0, 'cost_price' => 80000.0],
+        ];
+
+        $result = PricingAndMarginCalculatorService::calculate(
+            items: $items,
+            commissionRate: -5.0, // Negative commission rate
+            exchangeRate: -100.0  // Negative exchange rate
+        );
+
+        $this->assertSame(1.0, $result['exchange_rate_applied']);
+        $this->assertSame(0.0, $result['commission_amount']);
+    }
+
+    public function test_milestone_floating_point_precision_tolerance(): void
+    {
+        // 33.33% + 33.33% + 33.34% = 100.00%
+        $milestones = [
+            ['phase' => 'DP', 'percentage' => 33.33],
+            ['phase' => 'Progress', 'percentage' => 33.33],
+            ['phase' => 'Pelunasan', 'percentage' => 33.34],
+        ];
+
+        $this->assertTrue(PricingAndMarginCalculatorService::validatePaymentMilestones($milestones));
+    }
 }

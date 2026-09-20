@@ -47,7 +47,7 @@ class DocumentNumberService
 {
     /**
      * Membangkitkan nomor urut dokumen transaksi secara atomik dan thread-safe.
-     * Format: TYPE-YYYYMM-XXXX (contoh: QUO-202609-0001)
+     * Format: PBB/{TYPE}/{YYYY}/{MM}/{XXXX} (contoh: PBB/QUO/2026/09/0001)
      */
     public function generateNextNumber(string $type): string
     {
@@ -83,7 +83,7 @@ class DocumentNumberService
                             ]);
                     }
 
-                    return sprintf('%s-%s-%04d', strtoupper($type), $yearMonth, $nextSeq);
+                    return sprintf('PBB/%s/%s/%s/%04d', strtoupper($type), substr($yearMonth, 0, 4), substr($yearMonth, 4, 2), $nextSeq);
                 });
             } catch (Throwable $e) {
                 $attempt++;

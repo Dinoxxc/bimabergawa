@@ -72,7 +72,7 @@ Papan Kanban interaktif untuk melacak dan memproses prospek masuk secara *real-t
 ├─────────────────────┼─────────────────────┼─────────────────────┼───────────────────┼──────────────────┤
 │ ┌─────────────────┐ │ ┌─────────────────┐ │ ┌─────────────────┐ │ ┌───────────────┐ │ ┌──────────────┐ │
 │ │ [STALE >2 Jam]  │ │ │ PT. Jaya Abadi  │ │ │ PT. Semen Prima │ │ │ PT. Indofood  │ │ │ PT. Unilever │ │
-│ │ PT. Maju Sentosa│ │ │ Ref: INQ-2026-04│ │ │ PBB/QUO/2026/09/0012 │ │ │ PO: 450012891 │ │ │ PBB/DOR/2026/09/0001/01 │ │
+│ │ PT. Maju Sentosa│ │ │ PBB/INQ/2026/09/0004│ │ PBB/QUO/2026/09/0012 │ │ │ PO: 450012891 │ │ │ PBB/DOR/2026/09/0001/01 │ │
 │ │ 2x Pompa Ebara  │ │ │ Margin: 18.5%   │ │ │ Rp 145.000.000  │ │ │ Rp 85.000.000 │ │ │ Dakota Cargo │ │
 │ │ Sales: Belum Ada│ │ │ Sales: Budi H.  │ │ │ Jatuh Tempo: H-3│ │ │ TOP: Net 30   │ │ │ Resi: DKT881 │ │
 │ │ [ Klaim Prospek]│ │ │ [ Buat Quote ]  │ │ │ [ Kirim WA / Re]│ │ │ [ Buat DO ]   │ │ │ [ Detail DO ]│ │

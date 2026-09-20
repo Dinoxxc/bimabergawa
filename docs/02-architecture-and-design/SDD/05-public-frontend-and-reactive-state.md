@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-05` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | UI/UX Lead | Ditinjau | Penambahan state manager untuk keranjang RFQ (`Alpine.store('rfqCart')`) & modal bulk paste |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Optimasi client-side caching & synchronisation state perbandingan produk |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
+| `1.4.0` | 20 Sep 2026 | Security & Frontend Architect | Disetujui | Penambahan alur 4 lapis keamanan pelacakan publik: Two-Key Verification, Temporary Signed URL, data masking, & private PDF download |
 
 ---
 
@@ -183,26 +184,48 @@ function processBulkSkuPaste(rawText) {
 
 ---
 
-## 4. Alur Pelacakan Resi Ekspedisi Publik (`/lacak-rfq`)
+## 4. Alur Pelacakan Resi Ekspedisi & Verifikasi Dokumen Publik (`/lacak-rfq`)
 
-Halaman publik `/lacak-rfq` memfasilitasi pengecekan status pengiriman tanpa login:
+Halaman publik `/lacak-rfq` memfasilitasi pengecekan status pesanan dan pengiriman tanpa login dengan pengamanan ketat 4 lapis anti-IDOR:
 
 ```
-[ KLIEN INPUT NOMOR DOKUMEN: RFQ / SO / DO ]
-                     │
-                     ▼
- [ Controller Mengecek Status di Database ]
-                     │
-                     ▼
-  ┌─────────────────────────────────────────────────────────────────────────┐
-  │                    TAMPILAN TIMELINE PELACAKAN                          │
-  ├─────────────────────────────────────────────────────────────────────────┤
-  │ 1. Status Transaksi: Deal / Sales Order Terbit (PBB/SOR/2026/09/0012)          │
-  │ 2. Status Operasional: Shipped (Dalam Pengiriman Ekspedisi)             │
-  │ 3. Vendor Ekspedisi: Baraka Cargo                                       │
-  │ 5. Tombol Aksi: [ Lacak di Website Resmi Ekspedisi -> ]                 │
-  │    (Membuka URL https://barakacargo.co.id/tracking?resi=BRK-88129045)   │
-  └─────────────────────────────────────────────────────────────────────────┘
+                  ┌─────────────────────────────────────────────────────────┐
+                  │              KLIEN / PEMBELI PROYEK B2B                 │
+                  └────────────────────────────┬────────────────────────────┘
+                                               │
+                       ┌───────────────────────┴───────────────────────┐
+                       ▼                                               ▼
+         [ Jalur A: Tautan Resmi Email ]                 [ Jalur B: Form Manual /lacak-rfq ]
+         • URL Temporary Signed Route                    • Form mewajibkan 2 parameter:
+           HMAC-SHA256 (30 hari aktif)                     1. Nomor Dokumen (PBB/INQ/...)
+         • Verifikasi otomatis via server                  2. Kontak PIC (No. WA / Email)
+         • Langsung membuka detail transaksi             • Menolak 100% enumerasi nomor
+                       │                                               │
+                       └───────────────────────┬───────────────────────┘
+                                               ▼
+                         [ PENGECEKAN DATA & REDAKSI SENSITIF ]
+                         • Data sensitif di-mask: Ahm** Fa*** (0812-****-7766)
+                         • Menampilkan linimasa: Inkuiri -> Penawaran -> PO -> Kirim
+                                               │
+                                               ▼
+                         [ AKSES UNDUH DOKUMEN FISIK PDF ]
+                         • Berkas PDF tersimpan di disk privat (storage/app/private/)
+                         • Tombol unduh menghasilkan One-Time Signed Token (15 menit)
+                         • Mencegah perayapan search engine & direct public link sharing
+```
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    TAMPILAN TIMELINE PELACAKAN                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│ 1. Status Transaksi: Deal / Sales Order Terbit (PBB/SOR/2026/09/0012)   │
+│ 2. Kontak Pemohon: PT. Petro Perkasa (PIC: Ahm** Fa***)                 │
+│ 3. Status Operasional: Shipped (Dalam Pengiriman Ekspedisi)             │
+│ 4. Vendor Ekspedisi: Baraka Cargo                                       │
+│ 5. Dokumen Resmi: [ Unduh PDF Penawaran (Tautan Terverifikasi) ]        │
+│ 6. Tombol Aksi: [ Lacak di Website Resmi Ekspedisi -> ]                 │
+│    (Membuka URL https://barakacargo.co.id/tracking?resi=BRK-88129045)   │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---

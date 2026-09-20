@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-IDX` |
-| **Versi Dokumen** | 1.8.0 |
+| **Versi Dokumen** | 1.9.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -23,6 +23,7 @@
 | `1.6.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 15 skenario DOC-PBB-TC-ERP-06 (Faktur, paid_amount, withTrashed, latestOfMany, dan slug restoring), total skenario meningkat menjadi 399+ skenario |
 | `1.7.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 5 skenario mitigasi celah arsitektur pada DOC-PBB-TC-ERP-06 (TC-ERP-INV-016 s.d. TC-ERP-INV-020), total skenario meningkat menjadi 404+ skenario |
 | `1.8.0` | 19 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 2 skenario pada DOC-PBB-TC-INF-01 (TC-INF-MIG-017 SystemSettingSeeder & TC-INF-MIG-018 ProductSampleSeeder), total skenario meningkat menjadi 406+ skenario |
+| `1.9.0` | 20 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 6 skenario DOC-PBB-TC-PUB-03 (Two-Key Verification, Signed URL, anti-IDOR, rate limit, & PDF guard) (TC-PUB-RFQ-017 s.d. TC-PUB-RFQ-022), total skenario meningkat menjadi 412+ skenario |
 
 ---
 
@@ -51,7 +52,7 @@ test-cases/
 ├── 01-public-website/                                 # Domain 1: Public Web & RFQ Cart
 │   ├── 01-company-profile-and-navigation.md           # [DOC-PBB-TC-PUB-01] Profil Perusahaan, Hero, Navbar, Brand Grid, Full Dynamic Site CMS, & Legal Pages
 │   ├── 02-product-catalog-and-search.md               # [DOC-PBB-TC-PUB-02] Katalog Zero Price, Filter Brand/Kategori, Search SKU
-│   ├── 03-rfq-cart-and-inquiry-submission.md          # [DOC-PBB-TC-PUB-03] RFQ Cart Alpine.js, Bulk Parser, Form Inkuiri
+│   ├── 03-rfq-cart-and-inquiry-submission.md          # [DOC-PBB-TC-PUB-03] RFQ Cart Alpine.js, Bulk Parser, Two-Key Tracking & Verifikasi Dokumen Publik
 │   └── 04-whatsapp-direct-inquiry.md                  # [DOC-PBB-TC-PUB-04] Floating WA Button, Prefilled Text, Telemetri
 │
 ├── 02-internal-erp-crm/                               # Domain 2: Internal Commercial ERP
@@ -92,7 +93,7 @@ test-cases/
 | :--- | :--- | :--- | :--- |
 | `DOC-PBB-TC-PUB-01` | Profil Perusahaan & Navigasi | `DOC-PBB-PRD-02`, `DOC-PBB-SRS-02`, `DOC-PBB-UIUX-02` | `App\Http\Controllers\HomeController` |
 | `DOC-PBB-TC-PUB-02` | Katalog & Pencarian SKU | `DOC-PBB-PRD-02`, `DOC-PBB-SRS-02`, `DOC-PBB-SDD-05` | `App\Http\Controllers\CatalogController` |
-| `DOC-PBB-TC-PUB-03` | RFQ Cart & Form Inkuiri | `DOC-PBB-PRD-02`, `DOC-PBB-SRS-03`, `DOC-PBB-SDD-05` | `App\Http\Controllers\PublicInquiryController`, `App\Services\SkuParserService` |
+| `DOC-PBB-TC-PUB-03` | RFQ Cart, Inkuiri & Tracking | `DOC-PBB-PRD-02`, `DOC-PBB-SRS-03`, `DOC-PBB-SDD-05` | `App\Http\Controllers\PublicInquiryController`, `App\Http\Controllers\TrackingController`, `App\Services\SkuParserService` |
 | `DOC-PBB-TC-PUB-04` | Direct WhatsApp Inkuiri | `DOC-PBB-PRD-02`, `DOC-PBB-SRS-02`, `DOC-PBB-API-01` | `App\Http\Controllers\WhatsAppRedirectController` |
 | `DOC-PBB-TC-ERP-01` | Otentikasi & Passwordless OTP | `DOC-PBB-SRS-04`, `DOC-PBB-SDD-03`, `DOC-PBB-SEC-01` | `App\Services\OtpAuthenticationService` |
 | `DOC-PBB-TC-ERP-02` | CRM Inquiries, Linimasa & SLA | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-01`, `DOC-PBB-SDD-04` | `App\Filament\Resources\InquiryResource`, `App\Livewire\InternalCommentsTimeline` |

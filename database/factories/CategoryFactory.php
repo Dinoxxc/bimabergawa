@@ -22,6 +22,7 @@ class CategoryFactory extends Factory
         return [
             'parent_id' => null,
             'name' => ucwords($name),
+            'code' => strtoupper(fake()->lexify('???')),
             'slug' => Str::slug($name),
             'icon_name' => 'heroicon-o-folder',
             'description' => fake()->sentence(),

@@ -5,9 +5,20 @@ declare(strict_types=1);
 namespace App\Observers;
 
 use App\Models\Product;
+use App\Services\SkuGeneratorService;
 
 class ProductObserver
 {
+    /**
+     * Handle the Product "creating" event.
+     */
+    public function creating(Product $product): void
+    {
+        if (empty($product->sku)) {
+            $product->sku = SkuGeneratorService::generate($product);
+        }
+    }
+
     /**
      * Handle the Product "deleting" event.
      */

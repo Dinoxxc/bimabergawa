@@ -21,24 +21,28 @@ class BrandAndCategorySeeder extends Seeder
             // Elektrikal & Tenaga Listrik
             [
                 'name' => 'Schneider Electric',
+                'code' => 'SCH',
                 'description' => 'Distribusi tenaga listrik, MCB, MCCB, ACB, kontaktor TeSys, inverter Altivar, sensor telemecanique, dan relay otomasi.',
                 'logo_path' => 'brands/schneider-electric.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'ABB',
+                'code' => 'ABB',
                 'description' => 'Sakelar pemutus beban, isolator switch, motor starter, miniature circuit breaker, dan sistem proteksi kelistrikan industri berat.',
                 'logo_path' => 'brands/abb.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'Legrand',
+                'code' => 'LEG',
                 'description' => 'Sistem pengkabelan terstruktur, kabel tray, stop kontak industri komersial, box panel industri, dan modul otomasi gedung.',
                 'logo_path' => 'brands/legrand.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'Chint',
+                'code' => 'CHNT',
                 'description' => 'Peralatan distribusi tenaga listrik, modular DIN-rail MCB/MCCB, kontaktor AC, kapasitor bank, dan panel kontrol industri berstandar internasional.',
                 'logo_path' => 'brands/chint.webp',
                 'is_active' => true,
@@ -47,6 +51,7 @@ class BrandAndCategorySeeder extends Seeder
             // Pencahayaan Industri & Komersial
             [
                 'name' => 'Philips Lighting / Signify',
+                'code' => 'PHI',
                 'description' => 'Pencahayaan industri komersial, high-bay LED, lampu sorot stadion/proyek, downlight architectural, dan armatur tahan ledakan.',
                 'logo_path' => 'brands/philips-lighting.webp',
                 'is_active' => true,
@@ -55,24 +60,28 @@ class BrandAndCategorySeeder extends Seeder
             // Mekanikal, Pompa, & Pemipaan
             [
                 'name' => 'Kitz',
+                'code' => 'KITZ',
                 'description' => 'Katup industri berkualitas tinggi, ball valve, butterfly valve, gate valve, globe valve, dan check valve berbahan stainless steel, carbon steel, dan ductile iron.',
                 'logo_path' => 'brands/kitz.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'Grundfos',
+                'code' => 'GRUN',
                 'description' => 'Pompa sentrifugal industri, pompa submersible, booster pump set, dan solusi sirkulasi air efisiensi tinggi untuk manufaktur dan fasilitas komersial.',
                 'logo_path' => 'brands/grundfos.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'Torishima',
+                'code' => 'TORI',
                 'description' => 'Pompa industri berat, end suction pump, high-pressure boiler feed pump, dan sistem pemompaan pembangkit listrik dan instalasi pabrik.',
                 'logo_path' => 'brands/torishima.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'Rucika',
+                'code' => 'RUCK',
                 'description' => 'Sistem perpipaan industri lengkap, pipa PVC-O, HDPE, PPR, pipa baja saluran, serta fitting, flange, dan gasket bertekanan tinggi.',
                 'logo_path' => 'brands/rucika.webp',
                 'is_active' => true,
@@ -81,12 +90,14 @@ class BrandAndCategorySeeder extends Seeder
             // Otomasi Pabrik, Kontrol, & Sensor
             [
                 'name' => 'Omron',
+                'code' => 'OMR',
                 'description' => 'Komponen otomasi pabrik, sensor fotolistrik, proximity sensor, limit switch, PLC (Sysmac), relay industri, dan pengatur suhu digital.',
                 'logo_path' => 'brands/omron.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'Mitsubishi Electric',
+                'code' => 'MEL',
                 'description' => 'Sistem kendali otomasi pabrik, inverter frekuensi (MELSERVO / FREQROL VFD), PLC seri FX/iQ-R, dan modul I/O cerdas.',
                 'logo_path' => 'brands/mitsubishi-electric.webp',
                 'is_active' => true,
@@ -95,18 +106,21 @@ class BrandAndCategorySeeder extends Seeder
             // Peralatan Keselamatan Kerja, Safety & K3 (HSE)
             [
                 'name' => '3M',
+                'code' => '3M',
                 'description' => 'Peralatan keselamatan kerja personal (APD), masker respirator N95/FFP2, kacamata pelindung safety goggles, earplug peredam bising, dan harness keselamatan.',
                 'logo_path' => 'brands/3m.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'Cheetah',
+                'code' => 'CHTA',
                 'description' => 'Sepatu keselamatan kerja industri (Safety Shoes) premium berstandar SNI dan EN ISO dengan toe-cap baja dan sol tahan minyak serta antistatis.',
                 'logo_path' => 'brands/cheetah.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'Krisbow Safety',
+                'code' => 'KRIS',
                 'description' => 'Peralatan keselamatan kerja, helm proyek standar ANSI, rompi safety visibilitas tinggi, APAR powder & CO2, dan rambu K3 lapangan.',
                 'logo_path' => 'brands/krisbow-safety.webp',
                 'is_active' => true,
@@ -115,24 +129,28 @@ class BrandAndCategorySeeder extends Seeder
             // Perkakas Teknik & MRO Pabrik
             [
                 'name' => 'Bosch',
+                'code' => 'BOSC',
                 'description' => 'Perkakas listrik profesional (Power Tools), mesin bor rotary, gerinda tangan, impact wrench, dan aksesori mata teknik industri pemeliharaan pabrik.',
                 'logo_path' => 'brands/bosch.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'Tekiro',
+                'code' => 'TEKI',
                 'description' => 'Perkakas tangan teknis (Hand Tools), kunci pas ring, soket mekanik, tang kombinasi, obeng industri, dan toolbox mekanik bengkel manufaktur.',
                 'logo_path' => 'brands/tekiro.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'Loctite',
+                'code' => 'LOCT',
                 'description' => 'Bahan perekat teknik industri, threadlocker baut mesin, retaining compound, lem struktural, dan cairan sealant gasket pencegah kebocoran pabrik.',
                 'logo_path' => 'brands/loctite.webp',
                 'is_active' => true,
             ],
             [
                 'name' => 'WD-40',
+                'code' => 'WD40',
                 'description' => 'Cairan pelumas serbaguna, pelindung anti-karat, pembersih kontak elektronik, dan penetran pembebas baut macet untuk pemeliharaan mesin MRO.',
                 'logo_path' => 'brands/wd-40.webp',
                 'is_active' => true,
@@ -225,12 +243,24 @@ class BrandAndCategorySeeder extends Seeder
             ],
         ];
 
+        $divisionCodes = [
+            'Distribusi Daya Listrik' => 'ELE',
+            'Otomasi & Kendali Industri' => 'AUT',
+            'Pencahayaan Industri Komersial' => 'LGT',
+            'Infrastruktur Pengkabelan & Panel' => 'INF',
+            'Mekanikal & Pemipaan Industri' => 'MEC',
+            'Keselamatan Kerja & K3 (HSE)' => 'HSE',
+            'Perkakas Teknik & MRO Pabrik' => 'MRO',
+        ];
+
         foreach ($taxonomy as $parentName => $subCategories) {
             $parentTemplate = $specTemplates[$parentName] ?? null;
+            $divisionCode = $divisionCodes[$parentName] ?? 'GEN';
 
             $parent = Category::firstOrCreate(
                 ['name' => $parentName],
                 [
+                    'code' => $divisionCode,
                     'slug' => Str::slug($parentName),
                     'parent_id' => null,
                     'description' => "Kategori induk perlengkapan {$parentName}.",
@@ -242,6 +272,7 @@ class BrandAndCategorySeeder extends Seeder
                 Category::firstOrCreate(
                     ['name' => $subName],
                     [
+                        'code' => $divisionCode,
                         'slug' => Str::slug($subName),
                         'parent_id' => $parent->id,
                         'description' => "Sub-kategori teknis {$subName}.",

@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.7.0 |
+| **Versi Dokumen** | 1.8.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -27,16 +27,17 @@
 | `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan Bagian 4 (5 Evaluasi Arsitektural & Mitigasi Risiko Teknis) serta kolom `paid_amount` pada tabel `invoices` |
 | `1.6.0` | 19 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `units_of_measure` (Master Satuan Dinamis), kolom `uom`, `project_name`, `company_npwp`, `faktur_pajak_number`, `driver_name`, `vehicle_plate_number`, `moq`, `warranty_period`, serta kustomisasi spesifikasi per item (`spec_group`, `spec_unit`, `is_highlight`, `custom_specifications`) untuk kesiapan B2B General Industrial Supplier |
 | `1.7.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema Tahap A: kolom snapshot kurs valas (`exchange_rate_applied`, `base_currency`), `idempotency_key` pada transaksi komersial, `spec_template` JSON pada kategori, dan indeks Fulltext MySQL pada produk |
+| `1.8.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema Dual-Identifier Architecture: kolom `brands.code` (Indexed), `categories.code` (Indexed), dan `products.sku` (Unique Indexed) untuk auto-generated SKU internal PBB |
 
 ---
 
 ## 1. Standar Konvensi Basis Data MySQL 8.0
 
 - **Storage Engine:** `InnoDB` (Dukungan transaksi ACID atomik dan *Row-Level Locking*).
-- **Karakter Set & Collation:** `utf8mb4_unicode_ci` (Mendukung karakter internasional, simbol teknik, dan emoji).
-- **Penamaan Tabel:** Jamak huruf kecil (*snake_case plural*, contoh: `products`, `inquiry_items`, `delivery_orders`).
-- **Kunci Utama (Primary Key):** `unsignedBigInteger('id')->autoIncrement()`.
-- **Kunci Asing (Foreign Keys):** `unsignedBigInteger('nama_singular_id')` dengan *Referential Integrity Constraints*.
+- **Default Collation:** `utf8mb4_unicode_ci` (Mendukung simbol teknis industri, standar internasional, dan bebas emoji).
+- **Foreign Key Constraints:** Penegakan integritas data ketat (`ON DELETE RESTRICT` pada master data; `ON DELETE CASCADE` pada detail item; `ON DELETE SET NULL` pada tracking/assignment opsional).
+- **Naming Convention:** `snake_case` jamak untuk nama tabel (contoh: `products`, `inquiries`), `snake_case` tunggal untuk kolom. Kolom primary key seragam: `id` (BIGINT UNSIGNED AUTO_INCREMENT).
+- **Date & Time Standards:** Seluruh kolom waktu menggunakan format `DATETIME` / `TIMESTAMP` dengan zona waktu resmi `Asia/Jakarta` (WIB, UTC+7).
 
 ---
 
@@ -68,6 +69,7 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 |:---|:---|:---|
 | `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
 | `name` | VARCHAR(150) | Nama Merk/Prinsipal Resmi (contoh: Ebara, Schneider) |
+| `code` | VARCHAR(10) | Nullable, Kode Singkatan Brand (contoh: SCH, ABB, EBR, OMR) (Indexed) |
 | `slug` | VARCHAR(180) | Unique, URL Friendly Slug |
 | `logo_path` | VARCHAR(255) | Path berkas logo WebP |
 | `website_url` | VARCHAR(255) | Nullable, Tautan website resmi prinsipal |
@@ -82,6 +84,7 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
 | `parent_id` | BIGINT UNSIGNED | Nullable, Self-referencing FK ke `categories.id` (ON DELETE SET NULL) |
 | `name` | VARCHAR(150) | Nama Kategori / Sub-Kategori |
+| `code` | VARCHAR(10) | Nullable, Kode Singkatan Divisi Industri (contoh: ELE, MEC, AUT, HSE) (Indexed) |
 | `slug` | VARCHAR(180) | Unique, URL Friendly Slug |
 | `icon_name` | VARCHAR(100) | Nullable, Nama icon Heroicons / SVG |
 | `description` | TEXT | Nullable, Narasi pengantar kategori industri |
@@ -99,6 +102,7 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `name` | VARCHAR(255) | Nama Resmi Produk Industri |
 | `slug` | VARCHAR(255) | Unique, URL Friendly Slug |
 | `model_number` | VARCHAR(150) | Part Number / Tipe Model Pabrikan (Indexed) |
+| `sku` | VARCHAR(50) | Nullable, Unique, Internal SKU PBB (Format: PBB-DIV-BRD-XXXX) |
 | `cost_price` | DECIMAL(15,2) | HPP Modal Internal Prinsipal (**Tersembunyi dari Publik/Agen**) |
 | `description` | LONGTEXT | Deskripsi detail teknis & aplikasi produk |
 | `datasheet_path` | VARCHAR(255) | Nullable, Path file brosur PDF resmi |

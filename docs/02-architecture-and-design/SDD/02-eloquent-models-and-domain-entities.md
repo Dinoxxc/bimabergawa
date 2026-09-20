@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.9.0 |
+| **Versi Dokumen** | 1.10.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -26,6 +26,7 @@
 | `1.7.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan mitigasi 5 celah arsitektur: loop deterministik restoring slug, AgentTenantScope bypass internal & scoping CommissionPayout, global scope agent_comment_visibility pada InternalComment, full-chain withTrashed() transaksi historis, dan helper margin status Quotation |
 | `1.8.0` | 19 Sep 2026 | Principal System Architect | Disetujui | Penambahan Model `UnitOfMeasure` (Master Satuan Dinamis), ekspansi 28 Model Domain, integrasi atribut `uom`, `project_name`, `company_npwp`, `faktur_pajak_number`, `driver_name`, `vehicle_plate_number`, `moq`, `warranty_period`, serta kustomisasi spesifikasi dinamis per item (`custom_specifications`) |
 | `1.9.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Integrasi model Tahap A: `exchange_rate_applied`, `base_currency`, `idempotency_key` (Quotation/SO/Payout), `spec_template` (Category), `UnitOfMeasureObserver`, dan full-chain withTrashed() User->freelanceSales() |
+| `1.10.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Integrasi Dual-Identifier Architecture: penambahan atribut `code` pada Brand dan Category, atribut `sku` pada Product, serta SkuGeneratorService auto-hook pada ProductObserver |
 
 ---
 
@@ -62,7 +63,7 @@ class Product extends Model
 
     protected $fillable = [
         'brand_id', 'category_id', 'successor_product_id', 'name', 'slug',
-        'model_number', 'cost_price', 'currency', 'description', 'datasheet_path',
+        'model_number', 'sku', 'cost_price', 'currency', 'description', 'datasheet_path',
         'availability_status', 'is_featured', 'is_published', 'meta_description'
     ];
 
@@ -128,7 +129,7 @@ use Illuminate\Database\Eloquent\Builder;
 class Brand extends Model
 {
     protected $fillable = [
-        'name', 'slug', 'logo_path', 'website_url',
+        'name', 'code', 'slug', 'logo_path', 'website_url',
         'description', 'is_active', 'sort_order'
     ];
 
@@ -164,7 +165,7 @@ use Illuminate\Database\Eloquent\Builder;
 class Category extends Model
 {
     protected $fillable = [
-        'parent_id', 'name', 'slug', 'icon_name',
+        'parent_id', 'name', 'code', 'slug', 'icon_name',
         'description', 'spec_template', 'sort_order'
     ];
 

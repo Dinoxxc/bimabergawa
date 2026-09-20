@@ -17,12 +17,24 @@ class Category extends Model
     protected $fillable = [
         'parent_id',
         'name',
+        'code',
         'slug',
         'icon_name',
         'description',
         'spec_template',
         'sort_order',
     ];
+
+    public function getEffectiveCode(): string
+    {
+        if (! empty($this->code)) {
+            return strtoupper(trim((string) preg_replace('/[^A-Za-z0-9]/', '', $this->code)));
+        }
+
+        $clean = (string) preg_replace('/[^A-Za-z0-9]/', '', $this->name);
+
+        return strtoupper(substr($clean !== '' ? $clean : 'GEN', 0, 3));
+    }
 
     protected function casts(): array
     {

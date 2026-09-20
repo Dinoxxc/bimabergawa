@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.9.1 |
+| **Versi Dokumen** | 1.11.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -27,6 +27,7 @@
 | `1.9.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembaruan standar penomoran resmi korporat PBB pada kasus uji dan arsitektur |
 | `1.9.1` | 20 Sep 2026 | Principal System Architect | Disetujui | Penyeragaman seluruh kode tipe transaksi menjadi tepat 3 huruf (`SO` -> `SOR`, `DO` -> `DOR`) untuk kepatuhan standar format korporat PBB |
 | `1.10.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembersihan format penomoran dokumen menjadi standar korporat bersih `PBB/{TIPE}/{YYYY}/{MM}/{XXXX}` tanpa salt kriptografis |
+| `1.11.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi SkuGeneratorService untuk auto-generated internal SKU PBB format PBB-[DIV]-[BRAND]-[SEQUENCE], integrasi pencarian SKU internal pada BulkSkuNormalizationService, dan auto-derivation kode fallback |
 
 ---
 
@@ -741,3 +742,41 @@ Seluruh penanganan kesalahan logika bisnis menggunakan custom typed exceptions d
 | `IdempotencyConflictException` | Aksi pengajuan atau transaksi dipanggil berulang dengan `idempotency_key` yang sama saat operasi pertama masih diproses atau sudah selesai. | HTTP 409 Conflict: Permintaan duplikat terdeteksi, operasi sedang diproses atau telah selesai. |
 | `InvalidFileMagicBytesException` | Berkas yang diunggah memalsukan ekstensi file (MIME magic bytes tidak sesuai dengan header biner). | HTTP 422 Unprocessable Entity: Berkas ditolak karena anomali integritas biner / magic bytes. |
 | `InsufficientFulfillmentQuantityException` | Kuantitas pengiriman pada Surat Jalan parsial melebihi sisa kuantitas Sales Order yang belum terkirim. | HTTP 422 Unprocessable Entity: Kuantitas pengiriman melebihi sisa alokasi pesanan penjualan. |
+
+---
+
+## 12. `SkuGeneratorService` (Pembangkitan SKU Internal PBB Otomatis)
+
+Menghasilkan format kode identitas inventaris internal PBB yang seragam, bersih, dan siap cetak barcode/label rak gudang:
+
+```php
+namespace App\Services;
+
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class SkuGeneratorService
+{
+    /**
+     * Membangkitkan internal SKU resmi PBB berformat: PBB-[DIV]-[BRAND]-[SEQUENCE]
+     * Contoh: PBB-ELE-SCH-0001, PBB-MEC-EBR-0012
+     */
+    public static function generate(Product $product): string
+    {
+        // 1. Dapatkan kode divisi dari kategori (atau auto-derive 3 huruf dari nama)
+        $categoryCode = self::resolveCategoryCode($product->category_id ? $product->category : null);
+
+        // 2. Dapatkan kode brand dari principal (atau auto-derive 3-4 huruf dari nama)
+        $brandCode = self::resolveBrandCode($product->brand_id ? $product->brand : null);
+
+        // 3. Hitung sequence nomor urut unik scoped to DIV-BRAND
+        $sequence = self::getNextSequence($categoryCode, $brandCode);
+
+        return sprintf('PBB-%s-%s-%04d', $categoryCode, $brandCode, $sequence);
+    }
+}
+```
+

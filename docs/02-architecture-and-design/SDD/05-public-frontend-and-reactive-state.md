@@ -197,7 +197,7 @@ Halaman publik `/lacak-rfq` memfasilitasi pengecekan status pengiriman tanpa log
   ┌─────────────────────────────────────────────────────────────────────────┐
   │                    TAMPILAN TIMELINE PELACAKAN                          │
   ├─────────────────────────────────────────────────────────────────────────┤
-  │ 1. Status Transaksi: Deal / Sales Order Terbit (SO-202609-0012)          │
+  │ 1. Status Transaksi: Deal / Sales Order Terbit (PBB/SOR/2026/092F9C/0012)          │
   │ 2. Status Operasional: Shipped (Dalam Pengiriman Ekspedisi)             │
   │ 3. Vendor Ekspedisi: Baraka Cargo                                       │
   │ 5. Tombol Aksi: [ Lacak di Website Resmi Ekspedisi -> ]                 │

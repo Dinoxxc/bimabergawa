@@ -176,7 +176,7 @@ class DocumentNumberService
     }
 
     /**
-     * Format revisi penawaran resmi (misal: QUO-202609-0001-R1).
+     * Format revisi penawaran resmi (misal: PBB/QUO/2026/092F9C/0001-R1).
      */
     public function formatQuotationRevision(string $baseQuotationNumber, int $revision): string
     {

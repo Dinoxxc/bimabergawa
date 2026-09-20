@@ -18,7 +18,7 @@ class SalesOrderFactory extends Factory
     public function definition(): array
     {
         return [
-            'order_number' => 'SO-'.date('Ym').'-'.strtoupper(fake()->unique()->bothify('####')),
+            'order_number' => 'PBB/SOR/'.date('Y').'/'.date('m').strtoupper(fake()->bothify('????')).'/'.strtoupper(fake()->unique()->bothify('####')),
             'quotation_id' => Quotation::factory(),
             'customer_po_number' => 'PO-'.strtoupper(fake()->bothify('###-????')),
             'customer_po_date' => now()->subDays(2),

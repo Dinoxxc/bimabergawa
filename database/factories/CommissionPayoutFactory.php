@@ -19,7 +19,7 @@ class CommissionPayoutFactory extends Factory
     public function definition(): array
     {
         return [
-            'payout_number' => 'COM-'.date('Ym').'-'.strtoupper(fake()->unique()->bothify('####')),
+            'payout_number' => 'PBB/COM/'.date('Y').'/'.date('m').strtoupper(fake()->bothify('????')).'/'.strtoupper(fake()->unique()->bothify('####')),
             'freelance_sales_id' => FreelanceSales::factory(),
             'sales_order_id' => SalesOrder::factory(),
             'amount' => fake()->randomFloat(2, 500000, 10000000),

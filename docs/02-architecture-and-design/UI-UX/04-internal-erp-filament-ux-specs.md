@@ -72,7 +72,7 @@ Papan Kanban interaktif untuk melacak dan memproses prospek masuk secara *real-t
 ├─────────────────────┼─────────────────────┼─────────────────────┼───────────────────┼──────────────────┤
 │ ┌─────────────────┐ │ ┌─────────────────┐ │ ┌─────────────────┐ │ ┌───────────────┐ │ ┌──────────────┐ │
 │ │ [STALE >2 Jam]  │ │ │ PT. Jaya Abadi  │ │ │ PT. Semen Prima │ │ │ PT. Indofood  │ │ │ PT. Unilever │ │
-│ │ PT. Maju Sentosa│ │ │ Ref: INQ-2026-04│ │ │ QUO-202609-0012 │ │ │ PO: 450012891 │ │ │ DO-202609-01 │ │
+│ │ PT. Maju Sentosa│ │ │ Ref: INQ-2026-04│ │ │ PBB/QUO/2026/092F9C/0012 │ │ │ PO: 450012891 │ │ │ PBB/DOR/2026/092F9C/0001/01 │ │
 │ │ 2x Pompa Ebara  │ │ │ Margin: 18.5%   │ │ │ Rp 145.000.000  │ │ │ Rp 85.000.000 │ │ │ Dakota Cargo │ │
 │ │ Sales: Belum Ada│ │ │ Sales: Budi H.  │ │ │ Jatuh Tempo: H-3│ │ │ TOP: Net 30   │ │ │ Resi: DKT881 │ │
 │ │ [ Klaim Prospek]│ │ │ [ Buat Quote ]  │ │ │ [ Kirim WA / Re]│ │ │ [ Buat DO ]   │ │ │ [ Detail DO ]│ │
@@ -96,10 +96,10 @@ Formulir pembuatan Surat Penawaran Harga resmi dengan kalkulasi margin keuntunga
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ PEMBUATAN SURAT PENAWARAN HARGA (QUOTATION BUILDER) - QUO-202609-0015                                  │
+│ PEMBUATAN SURAT PENAWARAN HARGA (QUOTATION BUILDER) - PBB/QUO/2026/092F9C/0015                                  │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ Pelanggan : [ PT. Maju Sentosa v ]  Kontak PIC : [ Budi Santoso (081234567890) ]                       │
-│ No. Ref   : [ INQ-202609-0012    ]  Masa Berlaku: [ 14 Hari (s/d 19 Sep 2026)  ]                       │
+│ No. Ref   : [ PBB/INQ/2026/092F9C/0012    ]  Masa Berlaku: [ 14 Hari (s/d 19 Sep 2026)  ]                       │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ RINCIAN ITEM PRODUK (REPEATER LINE ITEMS):                                                             │
 │ ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐ │
@@ -137,9 +137,9 @@ Formulir penerbitan Surat Jalan pengiriman fisik barang tanpa memuat nominal har
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ PENERBITAN SURAT JALAN / DELIVERY ORDER (DO-202609-0018/01) - PARSIAL                                  │
+│ PENERBITAN SURAT JALAN / DELIVERY ORDER (PBB/DOR/2026/092F9C/0018/01) - PARSIAL                                  │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Nomor Sales Order: [ SO-202609-0010 (PT. Maju Sentosa) v ]  Tanggal Pengiriman: [ 05 Sep 2026 ]        │
+│ Nomor Sales Order: [ PBB/SOR/2026/092F9C/0010 (PT. Maju Sentosa) v ]  Tanggal Pengiriman: [ 05 Sep 2026 ]        │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ PILIH BARANG & JUMLAH PENGIRIMAN:                                                                      │
 │ [x] Pompa Ebara FSHA 65-50-200 : Total Order: 2 Unit | Sisa: 2 Unit | Kirim Sekarang: [ 2 ] Unit      │
@@ -318,7 +318,7 @@ Untuk memastikan kelancaran alur kerja operasional dan kepatuhan SLA layanan B2B
 │ NOTIFIKASI ANDA                                             [Tandai Semua Telah Dibaca] [Bersihkan]    │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ [!] BUTUH OTORISASI DIREKTUR                                                         10 Menit Lalu     │
-│ Penawaran QUO-202609-0005 untuk PT. Maju Bersama memiliki Margin Kritis 5.2%.                         │
+│ Penawaran PBB/QUO/2026/092F9C/0005 untuk PT. Maju Bersama memiliki Margin Kritis 5.2%.                         │
 │ [Buka Dokumen Penawaran]                                                                               │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ [i] INKUIRI BARU MASUK DARI WEB PUBLIK                                               45 Menit Lalu     │
@@ -326,11 +326,11 @@ Untuk memastikan kelancaran alur kerja operasional dan kepatuhan SLA layanan B2B
 │ [Tinjau Inkuiri di Kanban]                                                                             │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ [!] PERINGATAN SLA PROSPEK TERTUNDA                                                  2 Jam Lalu        │
-│ Inkuiri INQ-202609-0012 telah melewati batas waktu respon awal 24 jam! Segera hubungi prospek.        │
+│ Inkuiri PBB/INQ/2026/092F9C/0012 telah melewati batas waktu respon awal 24 jam! Segera hubungi prospek.        │
 │ [Ambil Tindakan Follow-Up]                                                                             │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ [v] BARANG TELAH DIBERANGKATKAN                                                      Kemarin, 16:20    │
-│ Surat Jalan DO-202609-0008 dikirim via Dakota Cargo (Resi: DKT-998822110).                            │
+│ Surat Jalan PBB/DOR/2026/092F9C/0008 dikirim via Dakota Cargo (Resi: DKT-998822110).                            │
 │ [Lacak Status Pengiriman]                                                                              │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -366,7 +366,7 @@ Pada panel staf internal, modul inkuiri dilengkapi **Tab Visibilitas Ganda (Dual
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ LINIMASA DISKUSI & KOORDINASI TRANSAKSI (INQ-202609-0012 - PROYEK RS SILOAM)                           │
+│ LINIMASA DISKUSI & KOORDINASI TRANSAKSI (PBB/INQ/2026/092F9C/0012 - PROYEK RS SILOAM)                           │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ TAB VISIBILITAS:  [● CATATAN INTERNAL STAF (4)]    [  PESAN KE MITRA AGEN (2) ]                        │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -407,7 +407,7 @@ Mitra agen freelance **HANYA** memiliki akses diskusi pada modul Inkuiri milikny
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ DISKUSI & KLARIFIKASI DENGAN TIM SALES PBB (INQ-202609-0012)                                          │
+│ DISKUSI & KLARIFIKASI DENGAN TIM SALES PBB (PBB/INQ/2026/092F9C/0012)                                          │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ PIC SALES ANDA: Ahmad Fauzi (WhatsApp: +62 812-9988-7766)                                              │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
@@ -573,9 +573,9 @@ Modul **Invoices** menyediakan antarmuka bagi Finance dan Super Admin untuk mene
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ NO. INVOICE     | NO. SO        | KLIEN / PERUSAHAAN | JATUH TEMPO | GRAND TOTAL   | STATUS PEMBAYARAN │
 ├─────────────────┼───────────────┼────────────────────┼─────────────┼───────────────┼───────────────────┤
-│ INV-202609-0001 │ SO-202609-0001│ PT. Jaya Konstruksi│ 20 Sep 2026 │ Rp 85.000.000 │ [Lunas / Paid]    │
-│ INV-202609-0002 │ SO-202609-0003│ PT. PP Persero     │ 15 Sep 2026 │ Rp 42.500.000 │ [Sebagian: 20 Jt] │
-│ INV-202609-0003 │ SO-202609-0004│ CV. Sentosa Abadi  │ 05 Sep 2026 │ Rp 18.200.000 │ [!] Lewat Tempo   │
+│ PBB/INV/2026/092F9C/0001 │ PBB/SOR/2026/092F9C/0001│ PT. Jaya Konstruksi│ 20 Sep 2026 │ Rp 85.000.000 │ [Lunas / Paid]    │
+│ PBB/INV/2026/092F9C/0002 │ PBB/SOR/2026/092F9C/0003│ PT. PP Persero     │ 15 Sep 2026 │ Rp 42.500.000 │ [Sebagian: 20 Jt] │
+│ PBB/INV/2026/092F9C/0003 │ PBB/SOR/2026/092F9C/0004│ CV. Sentosa Abadi  │ 05 Sep 2026 │ Rp 18.200.000 │ [!] Lewat Tempo   │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ Menampilkan 1-3 dari 3 Faktur                                                     Halaman [ 1 ] dari 1 │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -587,9 +587,9 @@ Modul **Invoices** menyediakan antarmuka bagi Finance dan Super Admin untuk mene
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ VERIFIKASI PENERIMAAN PEMBAYARAN (INV-202609-0002)                                                     │
+│ VERIFIKASI PENERIMAAN PEMBAYARAN (PBB/INV/2026/092F9C/0002)                                                     │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ Total Nilai Tagihan   : Rp 42.500.000 (Termin 1 DP 50% SO-202609-0003)                                │
+│ Total Nilai Tagihan   : Rp 42.500.000 (Termin 1 DP 50% PBB/SOR/2026/092F9C/0003)                                │
 │ Nominal Ditransfer    : [ Rp 20.000.000             ] (Sisa Piutang: Rp 22.500.000)                    │
 │ Rekening Tujuan       : [ Bank BCA - 1234567890 a.n. PT. Panca Bima Bergawa v ]                        │
 │ Tanggal Bayar Aktual  : [ 08 September 2026                 ]                                          │

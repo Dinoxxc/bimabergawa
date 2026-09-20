@@ -43,9 +43,9 @@
 
 | ID Kasus Uji | Kategori | Skenario Pengujian | Prasyarat (Pre-conditions) | Data Input / Aksi | Hasil yang Diharapkan (Expected Result) | Status |
 | :--- | :---: | :--- | :--- | :--- | :--- | :---: |
-| **`TC-ERP-DO-001`** | Positif | Penerbitan Surat Jalan Pengiriman Penuh (*Full Delivery Order*) | Sales Order berstatus `approved` | Buat DO -> Pilih semua item dengan kuantitas penuh | Sistem membuat record `delivery_orders` bernomor `DO-202609-0001`, seluruh item terkirim 100%, status SO menjadi `fulfilled`. | Not Executed |
-| **`TC-ERP-DO-002`** | Positif | Penerbitan Surat Jalan Parsial Tahap 1 (*Partial DO Batch 1*) | Pesanan SO memuat 100 pcs SKU `SCH-MCB-16A` | Buat Partial DO dengan Qty Kirim = 40 pcs | `DO-202609-0001` terbit dengan 40 pcs. Field `remaining_qty` pada SO berkurang menjadi 60 pcs, status SO menjadi `partially_delivered`. | Not Executed |
-| **`TC-ERP-DO-003`** | Positif | Penerbitan Surat Jalan Parsial Tahap 2 & Penutupan SO | Sisa pesanan pada SO = 60 pcs | Buat Partial DO ke-2 dengan Qty Kirim = 60 pcs | `DO-202609-0002` terbit dengan 60 pcs. Sisa pesanan menjadi 0 pcs, status SO otomatis terkunci menjadi `fulfilled` (selesai). | Not Executed |
+| **`TC-ERP-DO-001`** | Positif | Penerbitan Surat Jalan Pengiriman Penuh (*Full Delivery Order*) | Sales Order berstatus `approved` | Buat DO -> Pilih semua item dengan kuantitas penuh | Sistem membuat record `delivery_orders` bernomor `PBB/DOR/2026/092F9C/0001`, seluruh item terkirim 100%, status SO menjadi `fulfilled`. | Not Executed |
+| **`TC-ERP-DO-002`** | Positif | Penerbitan Surat Jalan Parsial Tahap 1 (*Partial DO Batch 1*) | Pesanan SO memuat 100 pcs SKU `SCH-MCB-16A` | Buat Partial DO dengan Qty Kirim = 40 pcs | `PBB/DOR/2026/092F9C/0001` terbit dengan 40 pcs. Field `remaining_qty` pada SO berkurang menjadi 60 pcs, status SO menjadi `partially_delivered`. | Not Executed |
+| **`TC-ERP-DO-003`** | Positif | Penerbitan Surat Jalan Parsial Tahap 2 & Penutupan SO | Sisa pesanan pada SO = 60 pcs | Buat Partial DO ke-2 dengan Qty Kirim = 60 pcs | `PBB/DOR/2026/092F9C/0002` terbit dengan 60 pcs. Sisa pesanan menjadi 0 pcs, status SO otomatis terkunci menjadi `fulfilled` (selesai). | Not Executed |
 | **`TC-ERP-DO-004`** | Positif | Pengisian Informasi Ekspedisi & Armada Pengiriman | Form pembuatan Surat Jalan aktif | Input: Nama Kurir/Driver, No. Polisi Kendaraan, No. Resi | Data ekspedisi tersimpan lengkap pada tabel `delivery_orders`, tercantum pada cetakan berkas Surat Jalan. | Not Executed |
 | **`TC-ERP-DO-005`** | Positif | Pembuatan Berkas PDF Surat Jalan Resmi (Tanpa Informasi Harga) | DO berstatus `approved` | Klik tombol "Cetak Surat Jalan (DO)" | Sistem menghasilkan PDF Surat Jalan: Kop resmi PBB Rasuna Said, alamat pengiriman, nomor PO klien, daftar SKU & Qty fisik, blok tanda tangan penerima/driver, 0 informasi harga rupiah. | Not Executed |
 | **`TC-ERP-DO-006`** | Positif | Pembaruan Status Pengiriman (*In-Transit -> Delivered*) | DO sedang dalam perjalanan | Staf Logistik mengubah status menjadi `delivered` | Status DO berubah menjadi `delivered`, field `delivered_at` terisi waktu saat ini, notifikasi pengiriman selesai dikirim ke PIC Sales. | Not Executed |
@@ -57,7 +57,7 @@
 | **`TC-ERP-DO-012`** | Keamanan | Pencegahan Manipulasi Status Pengiriman oleh Pihak Luar | Request modifikasi status pengiriman | Pengguna tanpa autentikasi/role logistik mengirim request | Sistem menolak aksi dengan status HTTP 401 Unauthorized / HTTP 403 Forbidden. | Not Executed |
 | **`TC-ERP-DO-013`** | Audit | Pencatatan Lengkap Penerbitan dan Serah Terima pada Log | DO diterbitkan dan bukti POD diunggah | Periksa tabel `activity_log` | Tercatat: Pembuat Surat Jalan, Nomor Kendaraan, Waktu Serah Terima, dan File Bukti POD. | Not Executed |
 | **`TC-ERP-DO-014`** | Batas Nilai | Penanganan Surat Jalan dengan Lebih dari 50 Baris SKU | Transaksi proyek suplai gedung bertingkat | Buat DO dengan 60 jenis produk | DomPDF menghasilkan dokumen Surat Jalan multi-halaman dengan penomoran "Halaman 1 dari 2", tabel terpotong rapi tanpa tumpang tindih. | Not Executed |
-| **`TC-ERP-DO-015`** | Konkurensi | Penomoran Dokumen Surat Jalan Bebas Tabrakan (*Unique DO Numbering*) | 2 staf gudang menerbitkan Surat Jalan secara serentak | Klik tombol simpan DO di detik yang sama | `DocumentNumberService` menggunakan transaksi atomik, menghasilkan nomor berurutan `DO-202609-0001` dan `DO-202609-0002` tanpa duplikasi. | Not Executed |
+| **`TC-ERP-DO-015`** | Konkurensi | Penomoran Dokumen Surat Jalan Bebas Tabrakan (*Unique DO Numbering*) | 2 staf gudang menerbitkan Surat Jalan secara serentak | Klik tombol simpan DO di detik yang sama | `DocumentNumberService` menggunakan transaksi atomik, menghasilkan nomor berurutan `PBB/DOR/2026/092F9C/0001` dan `PBB/DOR/2026/092F9C/0002` tanpa duplikasi. | Not Executed |
 | **`TC-ERP-DO-016`** | Retur / Anomali | Penanganan Pengembalian Barang (*Returned / Delivery Failed*) | Pengiriman gagal karena lokasi proyek tutup | Staf mengubah status DO menjadi `delivery_failed` | Sisa kuantitas pesanan pada SO otomatis dikembalikan (*restored*) ke status siap kirim ulang, alasan kegagalan wajib dicatat. | Not Executed |
 
 ---
@@ -66,13 +66,13 @@
 
 ### 3.1 Prosedur Uji TC-ERP-DO-002 (Penerbitan Partial Delivery Order)
 
-1. **Langkah 1:** Buka Sales Order disetujui bernomor `SO-202609-0001` (Kuantitas Item: 100 pcs SKU `SCH-MCB-16A`).
+1. **Langkah 1:** Buka Sales Order disetujui bernomor `PBB/SOR/2026/092F9C/0001` (Kuantitas Item: 100 pcs SKU `SCH-MCB-16A`).
 2. **Langkah 2:** Klik aksi **"Buat Surat Jalan Parsial"**.
 3. **Langkah 3:** Pada tabel repeater item, ubah kolom `qty_to_ship` dari 100 menjadi `40`.
 4. **Langkah 4:** Masukkan data driver: "Budi Santoso - B 9123 PBB".
 5. **Langkah 5:** Klik **"Terbitkan Surat Jalan"**.
 6. **Verifikasi Teknis:**
-   - Surat Jalan `DO-202609-0001` terbit dengan 40 pcs.
+   - Surat Jalan `PBB/DOR/2026/092F9C/0001` terbit dengan 40 pcs.
    - Kolom `sales_order_items.remaining_qty` terupdate menjadi `60`.
    - Status Sales Order berubah menjadi `partially_delivered`.
 

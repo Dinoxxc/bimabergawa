@@ -40,7 +40,7 @@
 |              |                          | `$store.rfqCart` menampilkan counter & quick list.       |
 | FR-RFQ-05    | Bulk RFQ Guest Submit    | Form review /rfq kirim payload POST /rfq/submit,         |
 |              |                          | transaksi database multi-baris di `inquiry_items`.       |
-| FR-RFQ-06    | Concurrency-Safe Number  | Menghasilkan nomor unik 'INQ-YYYYMM-XXXX' dengan locking |
+| FR-RFQ-06    | Concurrency-Safe Number  | Menghasilkan nomor unik 'PBB/INQ/YYYY/MMSSSS/XXXX' dengan locking |
 |              |                          | database transaction (`lockForUpdate()`).                |
 | FR-RFQ-07    | Form Anti-Spam Pipeline  | Memvalidasi Honeypot, Time-trap (>2s), dan Cloudflare     |
 |              |                          | Turnstile token sebelum memproses insert database.        |
@@ -103,7 +103,7 @@ $request->validate([
 - **Event yang Dipicu via JavaScript:**
   1. `dataLayer.push({'event': 'view_item', 'ecommerce': {'items': [...]}})`
   2. `dataLayer.push({'event': 'add_to_rfq_cart', 'ecommerce': {'items': [...]}})`
-  3. `dataLayer.push({'event': 'submit_rfq_conversion', 'inquiry_number': 'INQ-202609-0001'})`
+  3. `dataLayer.push({'event': 'submit_rfq_conversion', 'inquiry_number': 'PBB/INQ/2026/092F9C/0001'})`
   4. `dataLayer.push({'event': 'click_whatsapp_sales', 'product_sku': 'FSHA-50'})`
 
 ### FR-TEL-04: Dynamic XML Sitemap Generator (`/sitemap.xml`)

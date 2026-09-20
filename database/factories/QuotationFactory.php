@@ -25,7 +25,7 @@ class QuotationFactory extends Factory
         $margin = round((($subtotal - $totalCost) / $subtotal) * 100, 2);
 
         return [
-            'quotation_number' => 'QUO-'.date('Ym').'-'.strtoupper(fake()->unique()->bothify('####')),
+            'quotation_number' => 'PBB/QUO/'.date('Y').'/'.date('m').strtoupper(fake()->bothify('????')).'/'.strtoupper(fake()->unique()->bothify('####')),
             'revision_number' => 0,
             'inquiry_id' => Inquiry::factory(),
             'user_id' => User::factory(),

@@ -102,7 +102,7 @@ Scenario: Menambah produk ke keranjang RFQ dan submit tanpa login
   When Pengunjung membuka halaman "/rfq", mengisi estimasi kuantiti per item, dan mengirimkan form kontak
   Then Sistem menyimpan 1 record di tabel "inquiries" (type: "bulk_cart") dan 3 record di "inquiry_items"
   And Membersihkan localStorage browser pengunjung
-  And Menampilkan nomor unik "INQ-YYYYMM-XXXX"
+  And Menampilkan nomor unik "PBB/INQ/YYYY/MMSSSS/XXXX"
 
 Scenario: Bot otomatis mengirimkan form RFQ dengan honeypot terisi
   Given Bot crawler otomatis mengirimkan payload POST ke "/rfq/submit" dengan mengisi field tersembunyi "website_url_hp"
@@ -138,7 +138,7 @@ Scenario: Sales membuat Quotation PDF dari inquiry
   Given Sales membuka inquiry berstatus "contacted" di panel Filament ERP
   When Sales mengklik "Buat Surat Penawaran", memasukkan harga satuan, diskon 5%, dan memilih TOP "30 Hari"
   Then Sistem menghitung Subtotal, Diskon, DPP, PPN 11%, dan Grand Total secara otomatis
-  And Merender berkas PDF resmi berkop surat dengan nomor "QUO-YYYYMM-XXXX"
+  And Merender berkas PDF resmi berkop surat dengan nomor "PBB/QUO/YYYY/MMSSSS/XXXX"
   And Mengubah status inquiry menjadi "quotation_sent"
 ```
 
@@ -169,7 +169,7 @@ Scenario: Sales mengajukan diskon melebihi 10%
 Scenario: Konversi Quotation Deal menjadi Sales Order dan Input Resi Ekspedisi
   Given Klien menyetujui penawaran dan mengirimkan PO fisik resmi
   When Sales mengupdate status menjadi "deal" dan menginput nomor PO fisik klien
-  Then Sistem otomatis menerbitkan record "sales_orders" dengan nomor "SO-YYYYMM-XXXX"
+  Then Sistem otomatis menerbitkan record "sales_orders" dengan nomor "PBB/SOR/YYYY/MMSSSS/XXXX"
   And Mengunci data penawaran agar tidak dapat diedit lagi
   When Tim logistik menyerahkan barang ke ekspedisi dan menginput nama ekspedisi "Indah Logistik", nomor resi, serta URL tracking
   Then Klien dapat memantau resi tersebut langsung di halaman "/lacak-rfq"
@@ -324,7 +324,7 @@ Scenario: Admin memperbarui Syarat & Ketentuan transaksi di panel ERP
 ```gherkin
 Scenario: Pembeli melacak status RFQ yang penawarannya sudah terbit
   Given Pembeli membuka halaman "/lacak-rfq"
-  When Pembeli menginputkan nomor RFQ "INQ-202609-0001" dan nomor WhatsApp "081234567890"
+  When Pembeli menginputkan nomor RFQ "PBB/INQ/2026/092F9C/0001" dan nomor WhatsApp "081234567890"
   And Mengklik "Lacak Status Penawaran"
   Then Sistem memvalidasi data dan menampilkan riwayat status
   And Menampilkan tahapan aktif "Penawaran Resmi Siap" beserta tombol "Unduh Surat Penawaran Resmi (PDF)"

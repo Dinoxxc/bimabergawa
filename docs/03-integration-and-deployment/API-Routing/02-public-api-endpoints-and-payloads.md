@@ -88,11 +88,11 @@ X-CSRF-TOKEN: [csrf_token_string]
   "status_code": 201,
   "message": "Permintaan penawaran resmi berhasil didaftarkan.",
   "data": {
-    "inquiry_number": "RFQ-202609-0021",
+    "inquiry_number": "INQ-202609-0021",
     "total_items": 2,
     "company_name": "PT. Petro Perkasa Indonesia",
     "submitted_at": "2026-09-05T18:45:00+07:00",
-    "tracking_url": "https://bimabergawa.com/lacak-rfq?ref=RFQ-202609-0021"
+    "tracking_url": "https://bimabergawa.com/lacak-rfq?ref=INQ-202609-0021"
   }
 }
 ```
@@ -124,7 +124,7 @@ X-CSRF-TOKEN: [csrf_token_string]
   "status_code": 201,
   "message": "Permintaan harga produk berhasil dikirim. Sales PIC kami akan segera menghubungi Anda via WhatsApp.",
   "data": {
-    "inquiry_number": "RFQ-202609-0022"
+    "inquiry_number": "INQ-202609-0022"
   }
 }
 ```
@@ -202,7 +202,7 @@ X-CSRF-TOKEN: [csrf_token_string]
 **Payload Request (JSON):**
 ```json
 {
-  "query": "RFQ-202609-0021"
+  "query": "INQ-202609-0021"
 }
 ```
 
@@ -211,7 +211,7 @@ X-CSRF-TOKEN: [csrf_token_string]
 {
   "success": true,
   "data": {
-    "inquiry_number": "RFQ-202609-0021",
+    "inquiry_number": "INQ-202609-0021",
     "company_name": "PT. Petro Perkasa Indonesia",
     "project_location": "Cilegon, Banten",
     "status": "deal",

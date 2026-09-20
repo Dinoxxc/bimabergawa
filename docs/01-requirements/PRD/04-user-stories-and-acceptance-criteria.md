@@ -102,7 +102,7 @@ Scenario: Menambah produk ke keranjang RFQ dan submit tanpa login
   When Pengunjung membuka halaman "/rfq", mengisi estimasi kuantiti per item, dan mengirimkan form kontak
   Then Sistem menyimpan 1 record di tabel "inquiries" (type: "bulk_cart") dan 3 record di "inquiry_items"
   And Membersihkan localStorage browser pengunjung
-  And Menampilkan nomor unik "RFQ-YYYYMM-XXXX"
+  And Menampilkan nomor unik "INQ-YYYYMM-XXXX"
 
 Scenario: Bot otomatis mengirimkan form RFQ dengan honeypot terisi
   Given Bot crawler otomatis mengirimkan payload POST ke "/rfq/submit" dengan mengisi field tersembunyi "website_url_hp"
@@ -324,7 +324,7 @@ Scenario: Admin memperbarui Syarat & Ketentuan transaksi di panel ERP
 ```gherkin
 Scenario: Pembeli melacak status RFQ yang penawarannya sudah terbit
   Given Pembeli membuka halaman "/lacak-rfq"
-  When Pembeli menginputkan nomor RFQ "RFQ-202609-0001" dan nomor WhatsApp "081234567890"
+  When Pembeli menginputkan nomor RFQ "INQ-202609-0001" dan nomor WhatsApp "081234567890"
   And Mengklik "Lacak Status Penawaran"
   Then Sistem memvalidasi data dan menampilkan riwayat status
   And Menampilkan tahapan aktif "Penawaran Resmi Siap" beserta tombol "Unduh Surat Penawaran Resmi (PDF)"

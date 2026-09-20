@@ -115,7 +115,7 @@ Platform publik melayani seluruh interaksi calon pembeli korporat, memadukan pro
    - **Fitur Bulk SKU Quick-Paste (Fast BoQ Ingestion):** Kotak input textarea di `/rfq` untuk copy-paste puluhan part number sekaligus; sistem otomatis mencocokkan SKU ke database dan memasukkan item ke keranjang.
    - **Unduh Bundle Datasheet ZIP:** Tombol 1-klik untuk mengunduh kompilasi PDF datasheet dari seluruh barang yang ada di keranjang penawaran.
    - Halaman `/rfq` memuat tabel ringkasan barang terpilih, input kuantiti unit, catatan spesifikasi kustom, dan form pengajuan penawaran resmi (*Guest Model* tanpa perlu registrasi).
-   - Setelah sukses dikirim, `localStorage` otomatis dibersihkan dan nomor registrasi `RFQ-YYYYMM-XXXX` diterbitkan.
+   - Setelah sukses dikirim, `localStorage` otomatis dibersihkan dan nomor registrasi `INQ-YYYYMM-XXXX` diterbitkan.
 4. **Sistem Proteksi Anti-Spam Berlapis (Multi-Layer Form Shield):**
    - Seluruh formulir penawaran (Single Modal & Bulk RFQ) dilindungi oleh:
      - **Invisible Honeypot Field:** Field jebakan yang jika terisi oleh bot perayap otomatis membatalkan penyimpanan tanpa menimbulkan error visual.
@@ -226,7 +226,7 @@ Website menyediakan halaman-halaman statis-dinamis resmi untuk transparansi tata
 ### 2.12 Modul 12: Fitur Produktivitas & Pengalaman Pengguna Pengadaan (B2B UX Enhancements)
 1. **Pelacak Status Penawaran Mandiri (Self-Service RFQ Tracker - `/lacak-rfq`):**
    - Fasilitas bagi pembeli korporat (Guest) untuk memantau progres penawaran tanpa harus login.
-   - **Input:** Nomor RFQ (contoh: `RFQ-202609-0001`) dan Nomor WhatsApp pemohon (untuk otentikasi ringan).
+   - **Input:** Nomor RFQ (contoh: `INQ-202609-0001`) dan Nomor WhatsApp pemohon (untuk otentikasi ringan).
    - **Output:** Tampilan visual timeline tahapan: *Inquiry Diterima -> Sedang Dihitung Tim Sales -> Penawaran Resmi Terbit (Tombol Unduh PDF) -> PO Disetujui (Deal) -> Pesanan Diproses / Indent -> Barang Dikirim (Nama Ekspedisi, Nomor Resi Resmi & Tautan Langsung Cek Resi Ekspedisi)*.
 2. **Alat Pembanding Spesifikasi Teknis Side-by-Side (`/compare` / Floating Tray):**
    - Memungkinkan pembeli dan engineer membandingkan hingga 4 produk SKU sejenis dalam kategori yang sama.

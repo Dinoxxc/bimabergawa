@@ -135,7 +135,7 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | Nama Kolom | Tipe Data | Keterangan & Atribut |
 |:---|:---|:---|
 | `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
-| `inquiry_number` | VARCHAR(30) | Unique, Format `RFQ-YYYYMM-XXXX` |
+| `inquiry_number` | VARCHAR(30) | Unique, Format `INQ-YYYYMM-XXXX` |
 | `assigned_user_id` | BIGINT UNSIGNED | Nullable, FK ke `users.id` (Sales PIC terdisposisi) |
 | `freelance_sales_id`| BIGINT UNSIGNED | Nullable, FK ke `freelance_sales.id` (Agen Perujuk) |
 | `customer_name` | VARCHAR(150) | Nama PIC Pembeli Korporat |

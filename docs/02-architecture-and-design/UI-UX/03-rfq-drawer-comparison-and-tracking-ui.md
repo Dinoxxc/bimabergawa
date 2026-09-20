@@ -142,9 +142,9 @@ Tabel perbandingan minimalis dengan garis pemisah tipis dan tombol aksi monokrom
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ # Pelacakan Status Pengadaan.                                                                          │
-│ Masukkan nomor RFQ, nomor PO, atau nomor WhatsApp: [ RFQ-202609-0012 ] [ [Tombol] LACAK STATUS ]       │
+│ Masukkan nomor RFQ, nomor PO, atau nomor WhatsApp: [ INQ-202609-0012 ] [ [Tombol] LACAK STATUS ]       │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ DETAIL PESANAN: **RFQ-202609-0012** (PT. Maju Sentosa - Proyek Karawang)                               │
+│ DETAIL PESANAN: **INQ-202609-0012** (PT. Maju Sentosa - Proyek Karawang)                               │
 │                                                                                                        │
 │ TAHAPAN PROSES:                                                                                        │
 │ [x] Diajukan  --->  [x] Penawaran Terbit  --->  [x] PO Won  --->  [x] Dikirim Sebagian  --->  [ ] Lunas│

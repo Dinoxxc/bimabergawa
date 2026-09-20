@@ -32,7 +32,7 @@ stateDiagram-v2
 
     state Fase_1_Penangkapan_Prospek {
         [*] --> Ingestion_Dual_Track: Single RFQ Modal / Bulk Cart / Offline Lead
-        Ingestion_Dual_Track --> Inquiry_New: Terbit RFQ-YYYYMM-XXXX
+        Ingestion_Dual_Track --> Inquiry_New: Terbit INQ-YYYYMM-XXXX
         Inquiry_New --> Inquiry_Contacted: Sales Hubungi via WhatsApp/Telepon
     }
 

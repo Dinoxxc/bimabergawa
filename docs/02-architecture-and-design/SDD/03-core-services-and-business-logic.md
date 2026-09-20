@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.7.0 |
+| **Versi Dokumen** | 1.8.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -23,83 +23,142 @@
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan penomoran atomik Faktur Penagihan (`INV-YYYYMM-XXXX`) pada `DocumentNumberService` |
 | `1.6.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi DTOs (Data Transfer Objects), Domain Events, dan Custom Domain Exceptions untuk Fondasi Service Layer Tahap A |
 | `1.7.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan parameter DTOs: penambahan ekstensi BOQ industri (xls, docx, csv, jpeg) dan maxSizeBytes pada FileUploadRequestDTO, field fisik armada logistik pada DeliveryOrderFulfillmentDTO, diskon nominal lump-sum pada CalculateMarginDTO, serta konstanta dan guard validasi tipe dokumen pada DocumentNumberRequestDTO |
+| `1.8.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Harmonisasi arsitektur `DocumentNumberService` berbasis tabel `document_sequences` dengan pesimistis locking (`lockForUpdate()`), `DB::transaction(..., 3)` auto-retry deadlock, integrasi `DocumentNumberRequestDTO`, format resmi `INQ-YYYYMM-XXXX`, revisi penawaran `-R{n}`, dan emisi domain event `DocumentNumberGenerated` |
 
 ---
 
 ## 1. `DocumentNumberService` (Concurrency-Safe Generator)
 
-Menghasilkan nomor unik terurut secara atomik menggunakan `DB::transaction()` dan pesimistis locking `lockForUpdate()` untuk mencegah *race condition* akibat pengiriman form bersamaan:
+Menghasilkan nomor unik terurut secara atomik menggunakan tabel terisolasi `document_sequences`, transaksi database dengan pesimistis locking `lockForUpdate()`, dan mekanisme auto-retry 3x saat terjadi deadlock MySQL (`DB::transaction(..., 3)`) untuk menjamin zero *race condition* dan kepatuhan format `AGENTS.md` Bagian 3.7:
 
 ```php
 namespace App\Services;
 
+use App\DTOs\DocumentNumberRequestDTO;
+use App\Events\DocumentNumberGenerated;
+use App\Models\DocumentSequence;
+use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
-use App\Models\Inquiry;
-use App\Models\Quotation;
-use App\Models\SalesOrder;
+use InvalidArgumentException;
 
 class DocumentNumberService
 {
-    public static function generateInquiryNumber(): string
-    {
-        return DB::transaction(function () {
-            $prefix = 'RFQ-' . date('Ym') . '-';
-            $last = Inquiry::where('inquiry_number', 'LIKE', "{$prefix}%")
-                ->lockForUpdate()
-                ->orderByDesc('id')
-                ->first();
+    /**
+     * Peta awalan dokumen standar resmi PT. Panca Bima Bergawa.
+     */
+    public const PREFIX_MAP = [
+        DocumentNumberRequestDTO::TYPE_INQUIRY        => 'INQ',
+        DocumentNumberRequestDTO::TYPE_QUOTATION      => 'QUO',
+        DocumentNumberRequestDTO::TYPE_SALES_ORDER    => 'SO',
+        DocumentNumberRequestDTO::TYPE_DELIVERY_ORDER => 'DO',
+        DocumentNumberRequestDTO::TYPE_INVOICE        => 'INV',
+        DocumentNumberRequestDTO::TYPE_COMMISSION     => 'COM',
+    ];
 
-            $sequence = $last ? (int) substr($last->inquiry_number, -4) + 1 : 1;
-            return $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
-        });
+    /**
+     * Generate nomor dokumen secara concurrency-safe via DocumentNumberRequestDTO.
+     */
+    public function generate(DocumentNumberRequestDTO $dto): string
+    {
+        return $this->generateForType($dto->targetType, $dto->date);
     }
 
-    public static function generateQuotationNumber(): string
+    /**
+     * Generate nomor dokumen terurut atomik berdasarkan tipe dokumen dan tanggal transaksi.
+     */
+    public function generateForType(string $targetType, ?DateTimeInterface $date = null): string
     {
-        return DB::transaction(function () {
-            $prefix = 'QUO-' . date('Ym') . '-';
-            $last = Quotation::where('quotation_number', 'LIKE', "{$prefix}%")
+        if (! isset(self::PREFIX_MAP[$targetType])) {
+            throw new InvalidArgumentException("Tipe dokumen tidak valid: [{$targetType}]");
+        }
+
+        $prefix = self::PREFIX_MAP[$targetType];
+        $yearMonth = ($date ?? now())->format('Ym');
+
+        $sequenceNumber = DB::transaction(function () use ($prefix, $yearMonth) {
+            // Pessimistic lock pada sequence row untuk kombinasi prefix dan periode tahun-bulan
+            $sequenceRecord = DocumentSequence::where('document_type', $prefix)
+                ->where('year_month', $yearMonth)
                 ->lockForUpdate()
-                ->orderByDesc('id')
                 ->first();
 
-            $sequence = $last ? (int) substr($last->quotation_number, -4) + 1 : 1;
-            return $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
-        });
+            if (! $sequenceRecord) {
+                // Inisialisasi awal sequence untuk periode baru
+                $sequenceRecord = DocumentSequence::create([
+                    'document_type'    => $prefix,
+                    'year_month'       => $yearMonth,
+                    'current_sequence' => 0,
+                ]);
+
+                // Re-lock record yang baru dibuat
+                $sequenceRecord = DocumentSequence::where('id', $sequenceRecord->id)
+                    ->lockForUpdate()
+                    ->first();
+            }
+
+            $sequenceRecord->increment('current_sequence');
+
+            return $sequenceRecord->current_sequence;
+        }, 3);
+
+        $documentNumber = sprintf('%s-%s-%04d', $prefix, $yearMonth, $sequenceNumber);
+
+        // Dispatch domain event untuk audit trail telemetri
+        DocumentNumberGenerated::dispatch($targetType, $documentNumber, auth()->id());
+
+        return $documentNumber;
     }
 
-    public static function generateSalesOrderNumber(): string
+    public function generateInquiryNumber(?DateTimeInterface $date = null): string
     {
-        return DB::transaction(function () {
-            $prefix = 'SO-' . date('Ym') . '-';
-            $last = SalesOrder::where('order_number', 'LIKE', "{$prefix}%")
-                ->lockForUpdate()
-                ->orderByDesc('id')
-                ->first();
-
-            $sequence = $last ? (int) substr($last->order_number, -4) + 1 : 1;
-            return $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
-        });
+        return $this->generateForType(DocumentNumberRequestDTO::TYPE_INQUIRY, $date);
     }
 
-    public static function generateInvoiceNumber(): string
+    public function generateQuotationNumber(?DateTimeInterface $date = null): string
     {
-        return DB::transaction(function () {
-            $prefix = 'INV-' . date('Ym') . '-';
-            $last = \App\Models\Invoice::where('invoice_number', 'LIKE', "{$prefix}%")
-                ->lockForUpdate()
-                ->orderByDesc('id')
-                ->first();
-
-            $sequence = $last ? (int) substr($last->invoice_number, -4) + 1 : 1;
-            return $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
-        });
+        return $this->generateForType(DocumentNumberRequestDTO::TYPE_QUOTATION, $date);
     }
 
-    public static function generateDeliveryOrderNumber(string $soNumber, int $partialIndex = 1): string
+    public function generateSalesOrderNumber(?DateTimeInterface $date = null): string
     {
-        $cleanSo = str_replace('SO-', 'DO-', $soNumber);
-        return $cleanSo . '/' . str_pad($partialIndex, 2, '0', STR_PAD_LEFT);
+        return $this->generateForType(DocumentNumberRequestDTO::TYPE_SALES_ORDER, $date);
+    }
+
+    public function generateInvoiceNumber(?DateTimeInterface $date = null): string
+    {
+        return $this->generateForType(DocumentNumberRequestDTO::TYPE_INVOICE, $date);
+    }
+
+    public function generateCommissionNumber(?DateTimeInterface $date = null): string
+    {
+        return $this->generateForType(DocumentNumberRequestDTO::TYPE_COMMISSION, $date);
+    }
+
+    public function generateDeliveryOrderNumber(?DateTimeInterface $date = null): string
+    {
+        return $this->generateForType(DocumentNumberRequestDTO::TYPE_DELIVERY_ORDER, $date);
+    }
+
+    /**
+     * Format revisi penawaran resmi (misal: QUO-202609-0001-R1).
+     */
+    public function formatQuotationRevision(string $baseQuoNumber, int $revision): string
+    {
+        $cleanBase = preg_replace('/-R\d+$/i', '', trim($baseQuoNumber));
+        if ($revision <= 0) {
+            return $cleanBase;
+        }
+
+        return sprintf('%s-R%d', $cleanBase, $revision);
+    }
+
+    /**
+     * Format surat jalan parsial berdasar sales order (misal: DO-202609-0001/01).
+     */
+    public function formatDeliveryOrderPartial(string $soNumber, int $partialIndex = 1): string
+    {
+        $cleanSo = preg_replace('/^SO-/i', 'DO-', trim($soNumber));
+        return sprintf('%s/%02d', $cleanSo, max(1, $partialIndex));
     }
 }
 ```

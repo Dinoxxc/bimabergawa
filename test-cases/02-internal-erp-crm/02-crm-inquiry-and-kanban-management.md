@@ -75,12 +75,12 @@
 
 1. **Langkah 1:** Login ke `https://app.bimabergawa.com` sebagai pengguna peran `Sales PIC`.
 2. **Langkah 2:** Navigasikan ke menu **CRM -> Inquiries** -> Pilih tab **Kanban**.
-3. **Langkah 3:** Pilih satu kartu inkuiri bernomor `INQ-202609-0001` pada kolom *New Lead*.
+3. **Langkah 3:** Pilih satu kartu inkuiri bernomor `PBB/INQ/2026/092F9C/0001` pada kolom *New Lead*.
 4. **Langkah 4:** Drag kartu tersebut dan letakkan pada kolom *Contacted*.
 5. **Verifikasi Teknis:**
    - Permintaan asynchronous Livewire/Filament terkirim ke server.
    - Status inkuiri di tabel database `inquiries` berubah dari `lead` menjadi `contacted`.
-   - Kolom `activity_log` mencatat: "Inquiry INQ-202609-0001 status changed from lead to contacted by User #2".
+   - Kolom `activity_log` mencatat: "Inquiry PBB/INQ/2026/092F9C/0001 status changed from lead to contacted by User #2".
 
 ### 3.2 Prosedur Uji TC-ERP-CRM-004 (Verifikasi Peringatan SLA Stale)
 

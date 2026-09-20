@@ -88,7 +88,7 @@ Route::domain(config('app.public_domain', 'bimabergawa.com'))->group(function ()
 | `/insights` | `GET` | `category`, `page` | `pages.insights.index` | Paginate 9 artikel per halaman |
 | `/insights/{slug}`| `GET` | `slug` (String, e.g. `efisiensi-pompa`) | `pages.insights.show` | SEO JSON-LD Article Schema |
 | `/rfq` | `GET` | - | `pages.rfq.index` | Alpine.js reactive state dari `localStorage` |
-| `/lacak-rfq` | `GET` | `ref` (Opsional, e.g. `RFQ-202609-0012`) | `pages.tracking.index` | Lookup status pesanan & resi pengiriman |
+| `/lacak-rfq` | `GET` | `ref` (Opsional, e.g. `PBB/INQ/2026/092F9C/0012`) | `pages.tracking.index` | Lookup status pesanan & resi pengiriman |
 | `/gabung-mitra` | `GET` | `ref` (Kode referral opsional) | `pages.partner.create` | Form upload KTP & rekening bank |
 
 ---

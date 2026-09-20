@@ -30,7 +30,7 @@
 +----------+----------------------------+--------------------------------------------------------+
 | Kode BR  | Kategori                   | Pernyataan Aturan Bisnis Baku                          |
 +----------+----------------------------+--------------------------------------------------------+
-| BR-DOC-01| Penomoran Inquiry          | Nomor Inquiry berformat 'RFQ-YYYYMM-XXXX' terurut      |
+| BR-DOC-01| Penomoran Inquiry          | Nomor Inquiry berformat 'INQ-YYYYMM-XXXX' terurut      |
 |          |                            | secara otomatis dan dijamin unik (concurrency-safe).   |
 | BR-DOC-02| Penomoran Quotation        | Nomor Penawaran berformat 'QUO-YYYYMM-XXXX' dengan     |
 |          |                            | pelacakan versi revisi (Rev 0, 1, 2) & PDF Watermark.  |

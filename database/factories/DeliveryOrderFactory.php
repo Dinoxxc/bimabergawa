@@ -18,7 +18,7 @@ class DeliveryOrderFactory extends Factory
     public function definition(): array
     {
         return [
-            'delivery_number' => 'DO-'.date('Ym').'-'.strtoupper(fake()->unique()->bothify('####')).'/01',
+            'delivery_number' => 'PBB/DOR/'.date('Y').'/'.date('m').strtoupper(fake()->bothify('????')).'/'.strtoupper(fake()->unique()->bothify('####')).'/01',
             'sales_order_id' => SalesOrder::factory(),
             'courier_name' => fake()->randomElement(['Baraka Sarana Tama', 'Dakota Cargo', 'JNE Trucking', 'Armada Internal PBB']),
             'driver_name' => fake()->name(),

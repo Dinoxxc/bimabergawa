@@ -108,14 +108,14 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
 - Tarif PPN aktif dikelola secara mandiri oleh Super Admin / Direksi Finance melalui tabel `system_settings` di panel ERP (`app.bimabergawa.com`) tanpa ketergantungan pada perubahan teknis file `.env`.
 - Setiap rekaman transaksi quotation, sales order, dan invoice wajib mencatat persentase PPN saat transaksi diterbitkan (`vat_rate_applied = $activeVatRate`). Dilarang keras menghitung ulang PPN transaksi historis dari konfigurasi global saat membaca data masa lalu guna menjamin kepatuhan audit pajak 10 tahun UU KUP.
 
-### 3.7 Penomoran Dokumen Bebas Race Condition (Atomic Concurrency Lock)
-- Penomoran dokumen transaksi wajib melalui `DocumentNumberService` menggunakan transaksi database atomik (`SELECT ... FOR UPDATE`) dengan auto-retry 3x saat terjadi deadlock MySQL. Standar format resmi:
-  - Inkuiri: `INQ-YYYYMM-XXXX` (Contoh: `INQ-202609-0001`)
-  - Penawaran: `QUO-YYYYMM-XXXX` (Revisi: `QUO-YYYYMM-XXXX-R1`)
-  - Sales Order: `SO-YYYYMM-XXXX`
-  - Surat Jalan: `DO-YYYYMM-XXXX`
-  - Faktur Tagihan (Invoice): `INV-YYYYMM-XXXX`
-  - Faktur Komisi: `COM-YYYYMM-XXXX`
+### 3.7 Penomoran Dokumen Bebas Race Condition & Terlindungi (Atomic Concurrency Lock & Obfuscated Salt)
+- Penomoran dokumen transaksi wajib melalui `DocumentNumberService` menggunakan transaksi database atomik (`SELECT ... FOR UPDATE`) dengan auto-retry 3x saat terjadi deadlock MySQL, serta menyematkan 4-karakter cryptographic security salt (`SSSS`) setelah 2-digit bulan (`MM`) untuk proteksi anti-tebak/anti-enumerasi pihak luar tanpa merusak urutan numerik internal. Standar format resmi:
+  - Inkuiri: `PBB/INQ/YYYY/MMSSSS/XXXX` (Contoh: `PBB/INQ/2026/092F9C/0001`)
+  - Penawaran: `PBB/QUO/YYYY/MMSSSS/XXXX` (Revisi: `PBB/QUO/2026/092F9C/0001-R1`)
+  - Sales Order: `PBB/SOR/YYYY/MMSSSS/XXXX` (Contoh: `PBB/SOR/2026/092F9C/0001`)
+  - Surat Jalan: `PBB/DOR/YYYY/MMSSSS/XXXX` (Parsial: `PBB/DOR/2026/092F9C/0001/01`)
+  - Faktur Tagihan (Invoice): `PBB/INV/YYYY/MMSSSS/XXXX` (Contoh: `PBB/INV/2026/092F9C/0001`)
+  - Faktur Komisi: `PBB/COM/YYYY/MMSSSS/XXXX` (Contoh: `PBB/COM/2026/092F9C/0001`)
 
 ### 3.8 Enkripsi Data Pribadi Sensitif At-Rest (UU PDP No. 27/2022)
 - Kolom NIK KTP (`nik_ktp`), NPWP (`npwp_number`), dan nomor rekening perbankan (`bank_account_number`) pada model `AgentProfile` wajib dienkripsi pada level basis data menggunakan Eloquent `$casts = ['encrypted']` (kunci enkripsi `APP_KEY`).
@@ -279,13 +279,13 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 - [x] `chore/01-environment-and-multidomain-config` : Konfigurasi `.env.example`, `.env`, multi-domain routing, dan koneksi MySQL 8.0.
 
 ### Fase 1: Core Database & Model Layer
-- [x] `feature/core-01-database-migrations` : Skema tabel migrasi MySQL 8.0 InnoDB (23 tabel domain: `brands`, `categories`, `products`, `product_specifications`, `product_images`, `inquiries`, `inquiry_items`, `inquiry_telemetries`, `quotations`, `quotation_payment_terms`, `quotation_items`, `sales_orders`, `delivery_orders`, `delivery_order_items`, `invoices`, `invoice_items`, `commission_tiers`, `freelance_sales`, `commission_payouts`, `document_sequences`, `article_categories`, `articles`, `system_settings`, `notifications`, `internal_comments`, `activity_logs`) dilengkapi Soft Deletes dan multi-currency. *(Rujukan: test-cases/06-integration-and-infrastructure/01-database-seeders-and-migration-rollback.md)*
-- [x] `feature/core-02-eloquent-models-and-scopes` : 27 Model Eloquent domain, relasi ORM historis full-chain (`withTrashed`), `latestOfMany`, enkripsi data pribadi UU PDP `$casts = ['encrypted']`, Global Scope `AgentTenantScope` (dengan bypass staf internal & isolasi `CommissionPayout`), proteksi komentar internal `agent_comment_visibility`, `ProductObserver` resolusi slug deterministik deleting/restoring, dan `Relation::enforceMorphMap()`. *(Rujukan: test-cases/05-security-and-non-functional/04-data-privacy-and-audit-logging.md, test-cases/03-agent-commission-portal/02-agent-inquiry-and-tenant-isolation.md, test-cases/02-internal-erp-crm/06-commercial-invoicing-and-audit-trail.md)*
+- [x] `feature/core-01-database-migrations` : Skema tabel migrasi MySQL 8.0 InnoDB (28 tabel domain: `brands`, `categories`, `products`, `product_specifications`, `product_images`, `inquiries`, `inquiry_items`, `inquiry_telemetries`, `quotations`, `quotation_payment_terms`, `quotation_items`, `sales_orders`, `delivery_orders`, `delivery_order_items`, `invoices`, `invoice_items`, `commission_tiers`, `freelance_sales`, `commission_payouts`, `document_sequences`, `article_categories`, `articles`, `system_settings`, `notifications`, `internal_comments`, `activity_logs`) dilengkapi Soft Deletes dan multi-currency. *(Rujukan: test-cases/06-integration-and-infrastructure/01-database-seeders-and-migration-rollback.md)*
+- [x] `feature/core-02-eloquent-models-and-scopes` : 28 Model Eloquent domain, relasi ORM historis full-chain (`withTrashed`), `latestOfMany`, enkripsi data pribadi UU PDP `$casts = ['encrypted']`, Global Scope `AgentTenantScope` (dengan bypass staf internal & isolasi `CommissionPayout`), proteksi komentar internal `agent_comment_visibility`, `ProductObserver` resolusi slug deterministik deleting/restoring, dan `Relation::enforceMorphMap()`. *(Rujukan: test-cases/05-security-and-non-functional/04-data-privacy-and-audit-logging.md, test-cases/03-agent-commission-portal/02-agent-inquiry-and-tenant-isolation.md, test-cases/02-internal-erp-crm/06-commercial-invoicing-and-audit-trail.md)*
 - [x] `feature/core-03-seeders-and-factories` : Seeder 5 Spatie Roles & Permissions, 18 Prinsipal Global + taksonomi multi-divisi industri (Elektrikal, Mekanikal, Otomasi, Safety K3, MRO), Master Satuan Dinamis (`units_of_measure`), kustomisasi spesifikasi per item, 28 Model Factories, dan integritas data pengadaan pabrik. *(Rujukan: test-cases/06-integration-and-infrastructure/01-database-seeders-and-migration-rollback.md)*
 - [x] `feature/core-03b-service-foundation-and-b2b-contracts` : Fondasi kontrak Service Layer (Typed DTO, Domain Events, Custom Exceptions), migrasi aditif non-destruktif (valas hedging, idempotency key, category spec template, fulltext product index), dan preset termin pembayaran B2B. *(Rujukan: docs/02-architecture-and-design/SDD/03-core-services-and-business-logic.md)*
 
 ### Fase 2: Core Service Layer (Logika Bisnis Terisolasi)
-- [ ] `feature/core-04-service-document-number` : `DocumentNumberService` Atomic Lock `SELECT ... FOR UPDATE` + 3x retry saat deadlock (`INQ`, `QUO`, `SO`, `DO`, `COM`). *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
+- [x] `feature/core-04-service-document-number` : `DocumentNumberService` Atomic Lock `SELECT ... FOR UPDATE` + 3x retry saat deadlock (`INQ`, `QUO`, `SO`, `DO`, `INV`, `COM`), integrasi `DocumentNumberRequestDTO`, emisi domain event `DocumentNumberGenerated`, format revisi penawaran `-R{n}`, partial DO, dan proteksi overflow > 9999. *(Rujukan: test-cases/05-security-and-non-functional/02-concurrency-and-race-condition.md)*
 - [ ] `feature/core-05-service-quotation-margin` : `PricingAndMarginCalculatorService` Live Margin HPP Guard formula + snapshot PPN dinamis via `SystemSettingService`. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
 - [ ] `feature/core-06-service-sku-parser` : `SkuParserService` Regex textarea RFQ parser & `BulkSkuNormalizationService`. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md)*
 - [ ] `feature/core-07-service-secure-upload` : `SecureFileUploadService` biner kernel `finfo` magic bytes & UUID v4 storage privat. *(Rujukan: test-cases/05-security-and-non-functional/03-file-upload-security.md)*

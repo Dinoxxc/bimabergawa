@@ -177,10 +177,10 @@ class ServiceFoundationContractsTest extends TestCase
         $this->assertSame(5.5, $criticalEx->marginPercent);
         $this->assertStringContainsString('5.50%', $criticalEx->getMessage());
 
-        $dupEx = new DuplicateDocumentNumberException('QUO-202609-0001', 'quotation');
+        $dupEx = new DuplicateDocumentNumberException('PBB/QUO/2026/092F9C/0001', 'quotation');
         $this->assertSame(409, $dupEx->getCode());
-        $this->assertSame('QUO-202609-0001', $dupEx->documentNumber);
-        $this->assertStringContainsString('QUO-202609-0001', $dupEx->getMessage());
+        $this->assertSame('PBB/QUO/2026/092F9C/0001', $dupEx->documentNumber);
+        $this->assertStringContainsString('PBB/QUO/2026/092F9C/0001', $dupEx->getMessage());
 
         $idempEx = new IdempotencyConflictException('key-abc-123', 'quotation_submit');
         $this->assertSame(409, $idempEx->getCode());
@@ -202,11 +202,11 @@ class ServiceFoundationContractsTest extends TestCase
     {
         Event::fake();
 
-        DocumentNumberGenerated::dispatch('quotation', 'QUO-202609-0001', 1);
+        DocumentNumberGenerated::dispatch('quotation', 'PBB/QUO/2026/092F9C/0001', 1);
         QuotationCalculated::dispatch(1, 10000000.0, 18.5, 1100000.0);
         QuotationApproved::dispatch(1, 2, now());
-        SalesOrderConfirmed::dispatch(1, 'SO-202609-0001', 11100000.0);
-        DeliveryOrderDispatched::dispatch(1, 'DO-202609-0001', 'Kurir Internal');
+        SalesOrderConfirmed::dispatch(1, 'PBB/SOR/2026/092F9C/0001', 11100000.0);
+        DeliveryOrderDispatched::dispatch(1, 'PBB/DOR/2026/092F9C/0001/01', 'Kurir Internal');
         CommissionPayoutRequested::dispatch(1, 3, 500000.0, 'BCA 1234567890');
 
         Event::assertDispatched(DocumentNumberGenerated::class);

@@ -32,12 +32,12 @@ stateDiagram-v2
 
     state Fase_1_Penangkapan_Prospek {
         [*] --> Ingestion_Dual_Track: Single RFQ Modal / Bulk Cart / Offline Lead
-        Ingestion_Dual_Track --> Inquiry_New: Terbit RFQ-YYYYMM-XXXX
+        Ingestion_Dual_Track --> Inquiry_New: Terbit PBB/INQ/YYYY/MMSSSS/XXXX
         Inquiry_New --> Inquiry_Contacted: Sales Hubungi via WhatsApp/Telepon
     }
 
     state Fase_2_Penyusunan_Penawaran {
-        Inquiry_Contacted --> Quotation_Draft: 1-Click Convert (QUO-YYYYMM-XXXX)
+        Inquiry_Contacted --> Quotation_Draft: 1-Click Convert (PBB/QUO/YYYY/MMSSSS/XXXX)
         Quotation_Draft --> Kalkulasi_Margin: Input Harga Satuan, Diskon & HPP
         
         state Margin_Gate <<choice>>
@@ -55,12 +55,12 @@ stateDiagram-v2
     }
 
     state Fase_3_Sales_Order_dan_Pengiriman {
-        Quotation_Approved --> SalesOrder_Issued: Input Nomor PO Fisik (SO-YYYYMM-XXXX)
+        Quotation_Approved --> SalesOrder_Issued: Input Nomor PO Fisik (PBB/SOR/YYYY/MMSSSS/XXXX)
         SalesOrder_Issued --> Quotation_Locked: Lock Dokumen Quote (Read-Only)
         SalesOrder_Issued --> Komisi_Payable: Status Hak Komisi Agen = Payable
         
         SalesOrder_Issued --> Proses_Logistik: Barang Ready / Indent Prinsipal
-        Proses_Logistik --> Partial_DO_Issued: Terbitkan DO-YYYYMM-XXXX/01 (Tanpa Harga)
+        Proses_Logistik --> Partial_DO_Issued: Terbitkan PBB/DOR/YYYY/MMSSSS/XXXX/01 (Tanpa Harga)
         Partial_DO_Issued --> Ekspedisi_Shipped: Input Vendor Ekspedisi, Resi AWB & URL Tracking
         Ekspedisi_Shipped --> Order_Completed: Barang Diterima Gudang Klien (Upload POD)
     }
@@ -137,12 +137,12 @@ Generator PDF (`Barryvdh\DomPDF\Facade\Pdf`) menyematkan lapisan keamanan visual
 ## 5. Arsitektur Surat Jalan Ekspedisi & Partial Delivery Order
 
 ```
-[ SALES ORDER (SO-202609-0012) ] - Total: 15 Unit Pompa Ebara
+[ SALES ORDER (PBB/SOR/2026/092F9C/0012) ] - Total: 15 Unit Pompa Ebara
                       │
        ┌──────────────┴──────────────┐
        ▼                             ▼
 [ PENGIRIMAN TAHAP 1 ]         [ PENGIRIMAN TAHAP 2 ]
-DO-202609-0012/01 (10 Unit)    DO-202609-0012/02 (5 Unit)
+PBB/DOR/2026/092F9C/0012/01 (10 Unit)    PBB/DOR/2026/092F9C/0012/02 (5 Unit)
 - Ekspedisi: Baraka Cargo      - Ekspedisi: Indah Logistik
 - Resi: BRK-881290             - Resi: IND-992011
 - Resi Tracking URL            - Resi Tracking URL

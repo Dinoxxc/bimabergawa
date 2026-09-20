@@ -39,8 +39,8 @@ graph TD
 
 | ID Uji | Target Komponen | Skenario Beban Simultan | Kriteria Keberhasilan (*Pass Criteria*) |
 | :--- | :--- | :--- | :--- |
-| **CT-01** | `DocumentNumberService` | 50 thread paralel meminta nomor `QUO` pada detik yang sama. | Dihasilkan 50 nomor unik berurutan (`QUO-202609-0001` s/d `0050`) tanpa ada nomor ganda. |
-| **CT-02** | `DocumentNumberService` | 50 thread paralel meminta nomor `SO` pada detik yang sama. | Dihasilkan 50 nomor unik berurutan (`SO-202609-0001` s/d `0050`) tanpa kegagalan deadlock. |
+| **CT-01** | `DocumentNumberService` | 50 thread paralel meminta nomor `QUO` pada detik yang sama. | Dihasilkan 50 nomor unik berurutan (`PBB/QUO/2026/092F9C/0001` s/d `0050`) tanpa ada nomor ganda. |
+| **CT-02** | `DocumentNumberService` | 50 thread paralel meminta nomor `SO` pada detik yang sama. | Dihasilkan 50 nomor unik berurutan (`PBB/SOR/2026/092F9C/0001` s/d `0050`) tanpa kegagalan deadlock. |
 | **CT-03** | `POST /rfq/submit` | 100 pengguna publik mengirim formulir RFQ secara simultan. | 100 record tersimpan rapi pada `inquiries`, tidak ada HTTP 500 error. |
 | **CT-04** | `CatalogImport` | 2 admin menjalankan import Excel 1.000 SKU secara bersamaan. | Proses berjalan antre tanpa melampaui batas $512\text{ MB}$ RAM server. |
 

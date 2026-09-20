@@ -99,8 +99,8 @@ docs/02-architecture-and-design/SAD/
 
 | Aspek Arsitektur | Kebutuhan Terkait (BRD / PRD / SRS) | Berkas Dokumentasi SAD |
 |:---|:---|:---|
-| **Topologi & Hosting** | NFR-PERF, Batasan Hostinger Premium | [01-topology-and-infrastructure-environment.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SAD/01-topology-and-infrastructure-environment.md) |
-| **Struktur Kode & Layanan** | FR-COMPRO, FR-CAT, FR-BULK | [02-application-structure-and-component-layers.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SAD/02-application-structure-and-component-layers.md) |
-| **Keamanan & Isolasi** | NFR-SEC, BR-SEC-01, FR-AUTH, FR-AGENT-01 | [03-security-subdomain-isolation-and-auth.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SAD/03-security-subdomain-isolation-and-auth.md) |
-| **Alur Komersial & Dokumen** | BR-PRC-01..04, FR-QUOTE, FR-SO | [04-commercial-state-machine-and-data-pipelines.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SAD/04-commercial-state-machine-and-data-pipelines.md) |
-| **Otomasi & Pemeliharaan** | BR-BCK-01, BR-NOT-01, FR-SYS, FR-NOT | [05-automation-cron-backup-and-notifications.md](file:///e:/Project/bimabergawa/docs/02-architecture-and-design/SAD/05-automation-cron-backup-and-notifications.md) |
+| **Topologi & Hosting** | NFR-PERF, Batasan Hostinger Premium | [01-topology-and-infrastructure-environment.md](01-topology-and-infrastructure-environment.md) |
+| **Struktur Kode & Layanan** | FR-COMPRO, FR-CAT, FR-BULK | [02-application-structure-and-component-layers.md](02-application-structure-and-component-layers.md) |
+| **Keamanan & Isolasi** | NFR-SEC, BR-SEC-01, FR-AUTH, FR-AGENT-01 | [03-security-subdomain-isolation-and-auth.md](03-security-subdomain-isolation-and-auth.md) |
+| **Alur Komersial & Dokumen** | BR-PRC-01..04, FR-QUOTE, FR-SO | [04-commercial-state-machine-and-data-pipelines.md](04-commercial-state-machine-and-data-pipelines.md) |
+| **Otomasi & Pemeliharaan** | BR-BCK-01, BR-NOT-01, FR-SYS, FR-NOT | [05-automation-cron-backup-and-notifications.md](05-automation-cron-backup-and-notifications.md) |

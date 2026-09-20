@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-PUB-03` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Test Automation Engineer | Ditinjau | Penambahan uji Bulk SKU Parser regex & validasi lampiran BOQ |
 | `1.2.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan rate limiting anti-spam & inspeksi magic byte |
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi 16 skenario uji mendalam & standardisasi status Not Executed |
+| `1.4.0` | 20 Sep 2026 | Security & QA Architect | Disetujui | Penambahan 6 skenario uji keamanan 4 lapis pelacak pengadaan publik (Two-Key Verification, Signed URL, anti-IDOR, rate limit, & PDF guard) (TC-PUB-RFQ-017 s.d. 022) |
 
 ---
 
@@ -59,6 +60,12 @@
 | **`TC-PUB-RFQ-014`** | Keamanan | Perlindungan Anti-Spam Honeypot | Bot otomatis mengisi form | Field tersembunyi `website_url` (honeypot) terisi nilai | Server menolak permintaan secara senyap (*silent drop*) tanpa menyimpan data ke tabel `inquiries` dan mengembalikan respons sukses palsu. | Not Executed |
 | **`TC-PUB-RFQ-015`** | Keamanan | Penegakan Batas Permintaan (*Rate Limiting Form Submission*) | Pengguna/bot mengirim submit form berulang | Pengiriman > 3 kali dalam 10 menit dari IP sama | HTTP 429 Too Many Requests. Sistem mengunci form sementara dan menampilkan sisa waktu tunggu cooldown. | Not Executed |
 | **`TC-PUB-RFQ-016`** | Konkurensi | Pencegahan Double-Submit pada Tombol Kirim (*Idempotency*) | Pengguna mengklik tombol "Kirim Inkuiri" 2x cepat | Double click cepat pada tombol submit dalam jeda 100ms | Tombol langsung berstatus `disabled` dengan indikator loading saat klik pertama, hanya tepat 1 inkuiri yang tercatat di database (*no duplicate records*). | Not Executed |
+| **`TC-PUB-RFQ-017`** | Positif | Pelacakan Mandiri via Two-Key Verification Valid (`POST /lacak-rfq/search`) | Inkuiri `PBB/INQ/2026/09/0021` terdaftar dengan no WA `081234567890` | Input No Dokumen & No WA yang cocok | HTTP 200 OK. Menampilkan linimasa progres pengadaan, status transaksi, resi kurir, dan data PIC ter-masking (Ahm** Fa***) tanpa mengekspos harga nominal. | Not Executed |
+| **`TC-PUB-RFQ-018`** | Keamanan | Penolakan Pelacakan dengan Kontak Tidak Cocok (Anti-IDOR / Anti-Enumeration) | Penyerang menebak nomor dokumen valid `PBB/INQ/2026/09/0021` | Input No Dokumen benar tetapi No WA/Email acak | HTTP 404 / 422 Unprocessable Entity. Menolak akses dengan pesan seragam "Kombinasi nomor dokumen dan kontak verifikasi tidak cocok". Menutup 100% celah enumerasi data pihak lain. | Not Executed |
+| **`TC-PUB-RFQ-019`** | Positif | Akses Instan Pelacakan via Cryptographic Temporary Signed URL Email | Klien menerima email notifikasi resmi RFQ | Klik tautan ber-signature HMAC-SHA256 dari inbox email | HTTP 200 OK. Membuka detail tahapan pengadaan secara langsung tanpa perlu menginput kontak verifikasi manual di form. | Not Executed |
+| **`TC-PUB-RFQ-020`** | Keamanan | Penolakan Signed URL yang Dirusak (*Tampered*) atau Kedaluwarsa | Klien membuka link email yang diubah parameternya atau > 30 hari | Akses URL dengan parameter `signature` tidak valid | HTTP 403 Forbidden. Sistem menolak akses instan dan mengarahkan pengguna ke form verifikasi dua kunci manual. | Not Executed |
+| **`TC-PUB-RFQ-021`** | Keamanan | Pengunduhan Berkas PDF Penawaran via Signed Token Privat | Klien terverifikasi di portal pelacakan | Klik "Unduh PDF Penawaran Resmi" | HTTP 200 Stream PDF dari `storage/app/private/documents/` menggunakan one-time token (15 menit). Akses direct file via `public/storage/` terblokir 403. | Not Executed |
+| **`TC-PUB-RFQ-022`** | Keamanan | Penegakan Rate Limiting & Anti-Brute Force pada Pencarian Pelacakan | Bot melakukan looping nomor dokumen | Request > 5 kali per menit dari IP sama pada `/lacak-rfq/search` | HTTP 429 Too Many Requests. Sistem mengunci endpoint pencarian dan memicu Cloudflare Turnstile CAPTCHA. | Not Executed |
 
 ---
 
@@ -93,3 +100,14 @@
 4. **Verifikasi Teknis:**
    - Client-side state `isSubmitting = true` mencegah pengiriman kedua.
    - Hanya 1 baris inkuiri baru yang tercatat pada database MySQL `inquiries`.
+
+### 3.3 Prosedur Uji TC-PUB-RFQ-018 (Uji Penolakan Akses Tracking Tanpa Kontak Cocok / Anti-IDOR)
+
+1. **Langkah 1:** Buka `https://bimabergawa.com/lacak-rfq`.
+2. **Langkah 2:** Masukkan Nomor Dokumen valid: `PBB/INQ/2026/09/0021`.
+3. **Langkah 3:** Masukkan Kontak Verifikasi salah: `089999999999` (bukan nomor kontak pemohon asli).
+4. **Langkah 4:** Klik tombol **"Verifikasi & Lacak Status"**.
+5. **Verifikasi Teknis:**
+   - Server merespons dengan HTTP 422 / 404 pesan seragam: "Kombinasi nomor dokumen dan kontak verifikasi tidak cocok".
+   - Tidak ada rincian data klien, status PO, nama proyek, atau berkas penawaran yang dibocorkan ke penyerang.
+   - Rate limiter mencatat 1 kali percobaan gagal dari alamat IP tersebut.

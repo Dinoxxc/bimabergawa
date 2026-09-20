@@ -32,7 +32,7 @@ Pengujian fungsionalitas logika murni pada layer Domain Services dan Utility Mod
 | **UT-02** | `CommercialCalculationService` | Menghitung penawaran dengan margin rendah ($8.5\%$) atau diskon $>10\%$. | Margin: $8.5\%$, Flag `requires_director_approval` bernilai `true`. |
 | **UT-03** | `CommercialCalculationService` | Validasi termin pembayaran milestone dengan total bobot $90\%$ atau $110\%$. | Melempar eksepsi `InvalidArgumentException` ("Total termin wajib 100%"). |
 | **UT-04** | `BulkSkuNormalizationService` | Memasukkan part number bervariasi (`FSHA 65-50-200/5.5`, `fsha-65-50-200`, `FSHA  65 50 200`). | Seluruh variasi berhasil me-resolve model produk Ebara FSHA 65-50-200. |
-| **UT-05** | `DocumentNumberService` | Permintaan nomor dokumen pada bulan September 2026. | Menghasilkan string terformat `PBB/QUO/2026/092F9C/0001` dengan atomic lock. |
+| **UT-05** | `DocumentNumberService` | Permintaan nomor dokumen pada bulan September 2026. | Menghasilkan string terformat `PBB/QUO/2026/09/0001` dengan atomic lock. |
 
 ### Contoh Kode Uji Pest PHP (`tests/Unit/CommercialCalculationTest.php`)
 

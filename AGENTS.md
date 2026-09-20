@@ -108,14 +108,14 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
 - Tarif PPN aktif dikelola secara mandiri oleh Super Admin / Direksi Finance melalui tabel `system_settings` di panel ERP (`app.bimabergawa.com`) tanpa ketergantungan pada perubahan teknis file `.env`.
 - Setiap rekaman transaksi quotation, sales order, dan invoice wajib mencatat persentase PPN saat transaksi diterbitkan (`vat_rate_applied = $activeVatRate`). Dilarang keras menghitung ulang PPN transaksi historis dari konfigurasi global saat membaca data masa lalu guna menjamin kepatuhan audit pajak 10 tahun UU KUP.
 
-### 3.7 Penomoran Dokumen Bebas Race Condition & Terlindungi (Atomic Concurrency Lock & Obfuscated Salt)
-- Penomoran dokumen transaksi wajib melalui `DocumentNumberService` menggunakan transaksi database atomik (`SELECT ... FOR UPDATE`) dengan auto-retry 3x saat terjadi deadlock MySQL, serta menyematkan 4-karakter cryptographic security salt (`SSSS`) setelah 2-digit bulan (`MM`) untuk proteksi anti-tebak/anti-enumerasi pihak luar tanpa merusak urutan numerik internal. Standar format resmi:
-  - Inkuiri: `PBB/INQ/YYYY/MMSSSS/XXXX` (Contoh: `PBB/INQ/2026/092F9C/0001`)
-  - Penawaran: `PBB/QUO/YYYY/MMSSSS/XXXX` (Revisi: `PBB/QUO/2026/092F9C/0001-R1`)
-  - Sales Order: `PBB/SOR/YYYY/MMSSSS/XXXX` (Contoh: `PBB/SOR/2026/092F9C/0001`)
-  - Surat Jalan: `PBB/DOR/YYYY/MMSSSS/XXXX` (Parsial: `PBB/DOR/2026/092F9C/0001/01`)
-  - Faktur Tagihan (Invoice): `PBB/INV/YYYY/MMSSSS/XXXX` (Contoh: `PBB/INV/2026/092F9C/0001`)
-  - Faktur Komisi: `PBB/COM/YYYY/MMSSSS/XXXX` (Contoh: `PBB/COM/2026/092F9C/0001`)
+### 3.7 Penomoran Dokumen Bebas Race Condition & Standar Korporat Bersih (Atomic Concurrency Lock)
+- Penomoran dokumen transaksi wajib melalui `DocumentNumberService` menggunakan transaksi database atomik (`SELECT ... FOR UPDATE`) dengan auto-retry 3x saat terjadi deadlock MySQL, menerapkan format korporat B2B Indonesia yang bersih, elegan, dan profesional (`PBB/{TYPE}/YYYY/MM/XXXX`) tanpa karakter salt acak. Standar format resmi:
+  - Inkuiri: `PBB/INQ/YYYY/MM/XXXX` (Contoh: `PBB/INQ/2026/09/0001`)
+  - Penawaran: `PBB/QUO/YYYY/MM/XXXX` (Revisi: `PBB/QUO/2026/09/0001-R1`)
+  - Sales Order: `PBB/SOR/YYYY/MM/XXXX` (Contoh: `PBB/SOR/2026/09/0001`)
+  - Surat Jalan: `PBB/DOR/YYYY/MM/XXXX` (Parsial: `PBB/DOR/2026/09/0001/01`)
+  - Faktur Tagihan (Invoice): `PBB/INV/YYYY/MM/XXXX` (Contoh: `PBB/INV/2026/09/0001`)
+  - Faktur Komisi: `PBB/COM/YYYY/MM/XXXX` (Contoh: `PBB/COM/2026/09/0001`)
 
 ### 3.8 Enkripsi Data Pribadi Sensitif At-Rest (UU PDP No. 27/2022)
 - Kolom NIK KTP (`nik_ktp`), NPWP (`npwp_number`), dan nomor rekening perbankan (`bank_account_number`) pada model `AgentProfile` wajib dienkripsi pada level basis data menggunakan Eloquent `$casts = ['encrypted']` (kunci enkripsi `APP_KEY`).
@@ -285,8 +285,8 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 - [x] `feature/core-03b-service-foundation-and-b2b-contracts` : Fondasi kontrak Service Layer (Typed DTO, Domain Events, Custom Exceptions), migrasi aditif non-destruktif (valas hedging, idempotency key, category spec template, fulltext product index), dan preset termin pembayaran B2B. *(Rujukan: docs/02-architecture-and-design/SDD/03-core-services-and-business-logic.md)*
 
 ### Fase 2: Core Service Layer (Logika Bisnis Terisolasi)
-- [x] `feature/core-04-service-document-number` : `DocumentNumberService` format resmi `PBB/{TYPE3}/{YYYY}/{MMSSSS}/{XXXX}` ber-salt kriptografis, Atomic Lock `SELECT ... FOR UPDATE` + 3x retry saat deadlock (`INQ`, `QUO`, `SOR`, `DOR`, `INV`, `COM`), integrasi `DocumentNumberRequestDTO`, emisi domain event `DocumentNumberGenerated`, format revisi penawaran `-R{n}`, partial DO, dan proteksi overflow > 9999. *(Rujukan: test-cases/05-security-and-non-functional/02-concurrency-and-race-condition.md)*
-- [ ] `feature/core-05-service-quotation-margin` : `PricingAndMarginCalculatorService` Live Margin HPP Guard formula + snapshot PPN dinamis via `SystemSettingService`. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
+- [x] `feature/core-04-service-document-number` : `DocumentNumberService` format resmi korporat `PBB/{TYPE3}/{YYYY}/{MM}/{XXXX}`, Atomic Lock `SELECT ... FOR UPDATE` + 3x retry saat deadlock (`INQ`, `QUO`, `SOR`, `DOR`, `INV`, `COM`), integrasi `DocumentNumberRequestDTO`, emisi domain event `DocumentNumberGenerated`, format revisi penawaran `-R{n}`, partial DO, dan proteksi overflow > 9999. *(Rujukan: test-cases/05-security-and-non-functional/02-concurrency-and-race-condition.md)*
+- [/] `feature/core-05-service-quotation-margin` : `PricingAndMarginCalculatorService` Live Margin HPP Guard formula + snapshot PPN dinamis via `SystemSettingService`. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
 - [ ] `feature/core-06-service-sku-parser` : `SkuParserService` Regex textarea RFQ parser & `BulkSkuNormalizationService`. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md)*
 - [ ] `feature/core-07-service-secure-upload` : `SecureFileUploadService` biner kernel `finfo` magic bytes & UUID v4 storage privat. *(Rujukan: test-cases/05-security-and-non-functional/03-file-upload-security.md)*
 - [ ] `feature/core-08-service-fulfillment-and-commission` : `DeliveryOrderFulfillmentService` pelacakan `remaining_qty` & `CommissionPayoutService` ledger mutasi komisi. *(Rujukan: test-cases/02-internal-erp-crm/04-delivery-order.md)*

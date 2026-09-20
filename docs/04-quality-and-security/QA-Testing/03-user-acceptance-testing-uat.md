@@ -37,7 +37,7 @@ Pengujian UAT mencakup seluruh perjalanan pengguna (*End-to-End Journey*) berdas
 
 | ID UAT | Persona Pengguna | Langkah Skenario Pengujian | Hasil Aktual yang Divalidasi | Status |
 | :--- | :--- | :--- | :--- | :---: |
-| **UAT-01** | Insinyur Pabrik / Buyer | Membuka katalog, menempel 5 SKU di modal *Bulk SKU Parser*, dan mengirim form RFQ. | Berhasil mendaftarkan nomor `PBB/INQ/2026/09SSSS/XXXX` dan data tersimpan di keranjang. | **Lolos** |
+| **UAT-01** | Insinyur Pabrik / Buyer | Membuka katalog, menempel 5 SKU di modal *Bulk SKU Parser*, dan mengirim form RFQ. | Berhasil mendaftarkan nomor `PBB/INQ/2026/09/0001` dan data tersimpan di keranjang. | **Lolos** |
 | **UAT-02** | Buyer Publik | Membuka `/lacak-rfq`, memasukkan nomor RFQ, dan memantau status pesanan. | Menampilkan progres tahapan pengadaan dan tombol unduh berkas PDF penawaran. | **Lolos** |
 | **UAT-03** | Sales PIC Internal | Membuka Kanban ERP, mengklaim prospek masuk, dan membuat Surat Penawaran. | Kalkulator Live Margin menghitung HPP otomatis dan mencetak PDF Kop Surat resmi. | **Lolos** |
 | **UAT-04** | Sales PIC Internal | Mengklik tombol *"Kirim Quotation via WhatsApp"* di panel Filament. | Membuka WhatsApp Web dengan pesan pengantar resmi dan tautan berkas PDF. | **Lolos** |

@@ -23,7 +23,7 @@ class InvoiceFactory extends Factory
         $grandTotal = $subtotal + $tax;
 
         return [
-            'invoice_number' => 'PBB/INV/'.date('Y').'/'.date('m').strtoupper(fake()->bothify('????')).'/'.strtoupper(fake()->unique()->bothify('####')),
+            'invoice_number' => 'PBB/INV/'.date('Y').'/'.date('m').'/'.strtoupper(fake()->unique()->bothify('####')),
             'faktur_pajak_number' => '010.032-26.'.fake()->numerify('########'),
             'sales_order_id' => SalesOrder::factory(),
             'quotation_id' => Quotation::factory(),

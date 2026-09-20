@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-UIUX-03` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Interaction Specialist | Ditinjau | Penambahan modal Bulk SKU Parser & halaman pelacakan status pengadaan |
 | `1.2.0` | 05 Sep 2026 | Principal Design Architect | Disetujui | Redesain ke gaya Monochrome Minimalist & form onboarding mitra freelance |
 | `1.3.0` | 05 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Pembersihan total seluruh karakter emoji ke Icon formal dan penyelarasan copy B2B |
+| `1.4.0` | 20 Sep 2026 | Security & UI/UX Architect | Disetujui | Penyesuaian antarmuka pelacakan publik Two-Key Verification (Nomor Dokumen + Kontak PIC), banner Signed URL email, & unduh PDF privat |
 
 ---
 
@@ -137,21 +138,28 @@ Tabel perbandingan minimalis dengan garis pemisah tipis dan tombol aksi monokrom
 
 ---
 
-## 5. Halaman Pelacakan Ekspedisi Mandiri (`/lacak-rfq`)
+## 5. Halaman Pelacakan Ekspedisi & Verifikasi Mandiri (`/lacak-rfq`)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ # Pelacakan Status Pengadaan.                                                                          │
-│ Masukkan nomor RFQ, nomor PO, atau nomor WhatsApp: [ PBB/INQ/2026/092F9C/0012 ] [ [Tombol] LACAK STATUS ]       │
+│ # Pelacakan Status Pengadaan Mandiri.                                                                  │
+│                                                                                                        │
+│ [Info Banner]: Menerima email konfirmasi resmi PBB? Klik tautan di email Anda untuk akses instan.      │
+│                                                                                                        │
+│ 1. Nomor Dokumen Pengadaan : [ PBB/INQ/2026/09/0012                  ] (Nomor RFQ atau No. PO Klien)  │
+│ 2. Kontak Verifikasi PIC   : [ 081234567890                          ] (Nomor WhatsApp atau Email PIC)│
+│                                                                                                        │
+│                                    [ [Tombol] VERIFIKASI & LACAK STATUS ]                              │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ DETAIL PESANAN: **PBB/INQ/2026/092F9C/0012** (PT. Maju Sentosa - Proyek Karawang)                               │
+│ DETAIL PESANAN: **PBB/INQ/2026/09/0012** (PT. Maju Sentosa - Proyek Karawang)                          │
+│ PIC PEMOHON   : Ir. Hendra S***** (0812-****-7890)                                                     │
 │                                                                                                        │
 │ TAHAPAN PROSES:                                                                                        │
 │ [x] Diajukan  --->  [x] Penawaran Terbit  --->  [x] PO Won  --->  [x] Dikirim Sebagian  --->  [ ] Lunas│
 │                                                                                                        │
-│ DOKUMEN & LOGISTIK:                                                                                    │
-│ • Dokumen Penawaran Resmi : [ <u>Unduh Berkas PBB/QUO/2026/092F9C/0008.pdf</u> ]                                │
-│ • Surat Jalan Pengiriman  : **PBB/DOR/2026/092F9C/0015/01** (2 Unit Ebara FSHA)                                  │
+│ DOKUMEN RESMI & LOGISTIK:                                                                              │
+│ • Dokumen Penawaran Resmi : [ <u>Unduh Berkas PDF Resmi (Tautan Terverifikasi) -></u> ]               │
+│ • Surat Jalan Pengiriman  : **PBB/DOR/2026/09/0015/01** (2 Unit Ebara FSHA)                            │
 │ • Ekspedisi & Nomor Resi  : **Dakota Cargo** — `DKT-998822110`                                         │
 │ • Pelacakan Langsung      : [ <u>Buka Pelacakan Live di Website Dakota Cargo -></u> ]                  │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘

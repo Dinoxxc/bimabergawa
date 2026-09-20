@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-API-02` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | API Architect | Ditinjau | Penambahan skema endpoint parser BOQ & pelacakan pesanan |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan skema error 422 & batasan rate limiting per IP |
 | `1.3.0` | 05 Sep 2026 | Principal Integration Engineer | Disetujui | Pemisahan dokumen mandiri payload API, validasi data, & zero emoji |
+| `1.4.0` | 20 Sep 2026 | Security & API Architect | Disetujui | Penambahan skema Two-Key Verification (doc_number + contact_verification), Signed URL, dan rute unduh dokumen privat |
 
 ---
 
@@ -88,11 +89,11 @@ X-CSRF-TOKEN: [csrf_token_string]
   "status_code": 201,
   "message": "Permintaan penawaran resmi berhasil didaftarkan.",
   "data": {
-    "inquiry_number": "PBB/INQ/2026/092F9C/0021",
+    "inquiry_number": "PBB/INQ/2026/09/0021",
     "total_items": 2,
     "company_name": "PT. Petro Perkasa Indonesia",
     "submitted_at": "2026-09-05T18:45:00+07:00",
-    "tracking_url": "https://bimabergawa.com/lacak-rfq?ref=PBB/INQ/2026/092F9C/0021"
+    "tracking_url": "https://bimabergawa.com/lacak-rfq?ref=PBB/INQ/2026/09/0021"
   }
 }
 ```
@@ -124,7 +125,7 @@ X-CSRF-TOKEN: [csrf_token_string]
   "status_code": 201,
   "message": "Permintaan harga produk berhasil dikirim. Sales PIC kami akan segera menghubungi Anda via WhatsApp.",
   "data": {
-    "inquiry_number": "PBB/INQ/2026/092F9C/0022"
+    "inquiry_number": "PBB/INQ/2026/09/0022"
   }
 }
 ```
@@ -196,38 +197,42 @@ X-CSRF-TOKEN: [csrf_token_string]
 ---
 
 ### 2.4 Pelacakan Status Pengadaan Mandiri (`POST /lacak-rfq/search`)
-- **Fungsi:** Mengambil status real-time pesanan pengadaan dan nomor resi ekspedisi untuk klien publik.
-- **Rate Limit:** 15 request / menit per IP (`throttle:15,1`).
+- **Fungsi:** Mengambil status real-time pesanan pengadaan dan nomor resi ekspedisi untuk klien publik dengan verifikasi dua kunci (Two-Key Verification) guna mencegah serangan IDOR dan enumerasi nomor sekuensial.
+- **Rate Limit:** 5 request / menit per IP (`throttle:5,1`) dengan challenge CAPTCHA setelah 3 kali kegagalan.
+- **Akses Alternatif:** Tautan langsung via email menggunakan Cryptographic Temporary Signed URL (`GET /lacak-rfq?ref=PBB/INQ/2026/09/0021&expires=...&signature=...`).
 
 **Payload Request (JSON):**
 ```json
 {
-  "query": "PBB/INQ/2026/092F9C/0021"
+  "doc_number": "PBB/INQ/2026/09/0021",
+  "contact_verification": "081234567890"
 }
 ```
+*Catatan:* `contact_verification` dapat berupa Nomor WhatsApp terdaftar (misal: `081234567890`) atau Alamat Email terdaftar (misal: `purchasing@petroperkasa.co.id`).
 
 **Respon Sukses (200 OK):**
 ```json
 {
   "success": true,
   "data": {
-    "inquiry_number": "PBB/INQ/2026/092F9C/0021",
+    "inquiry_number": "PBB/INQ/2026/09/0021",
     "company_name": "PT. Petro Perkasa Indonesia",
+    "pic_masked": "Ahm** Fa*** (0812-****-7766)",
     "project_location": "Cilegon, Banten",
     "status": "deal",
     "progress_step": 4,
     "total_steps": 5,
     "quotation": {
-      "quotation_number": "PBB/QUO/2026/092F9C/0018",
-      "pdf_url": "https://bimabergawa.com/documents/quotes/PBB/QUO/2026/092F9C/0018.pdf"
+      "quotation_number": "PBB/QUO/2026/09/0018",
+      "pdf_download_url": "https://bimabergawa.com/documents/download/quotation/PBB-QUO-2026-09-0018?token=8f9a2b...&expires=1726913245"
     },
     "sales_order": {
-      "so_number": "PBB/SOR/2026/092F9C/0015",
+      "so_number": "PBB/SOR/2026/09/0015",
       "customer_po": "PO-PPI-2026-09"
     },
     "deliveries": [
       {
-        "do_number": "PBB/DOR/2026/092F9C/0018/01",
+        "do_number": "PBB/DOR/2026/09/0018/01",
         "sent_date": "2026-09-05",
         "courier_name": "Dakota Cargo",
         "tracking_number": "DKT-998822110",
@@ -240,6 +245,21 @@ X-CSRF-TOKEN: [csrf_token_string]
   }
 }
 ```
+
+**Respon Gagal / IDOR Blocked (404 Not Found / 422 Unprocessable Entity):**
+```json
+{
+  "success": false,
+  "message": "Kombinasi nomor dokumen dan kontak verifikasi tidak ditemukan atau tidak cocok."
+}
+```
+
+---
+
+### 2.4b Pengunduhan Dokumen Aman Privat (`GET /documents/download/{type}/{token}`)
+- **Fungsi:** Mengalirkan (*stream/download*) berkas PDF penawaran resmi dari private storage (`storage/app/private/documents/`) setelah memvalidasi token dan signature kriptografis.
+- **Masa Kedaluwarsa Token:** 15 menit (*One-Time / Short-Lived Access Token*).
+- **Proteksi:** Memblokir akses langsung publik, mencegah bot search engine mengindeks penawaran harga, dan mengembalikan HTTP 403 Forbidden jika signature tidak valid.
 
 ---
 

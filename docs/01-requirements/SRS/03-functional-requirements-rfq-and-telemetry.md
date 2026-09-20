@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SRS-03` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Telemetry Engineer | Ditinjau | Penambahan spesifikasi telemetri UTM, referrer, & click-stream |
 | `1.2.0` | 05 Sep 2026 | Engineering Lead | Disetujui | Finalisasi parser bulk SKU multi-baris & sanitasi input pengajuan penawaran |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
+| `1.4.0` | 20 Sep 2026 | Security & System Architect | Disetujui | Penambahan spesifikasi 4 lapis keamanan pelacak pengadaan publik (/lacak-rfq): Two-Key Verification (No. Dokumen + WA/Email), Signed URL email, private PDF download guard, dan rate limiting |
 
 ---
 
@@ -40,13 +41,14 @@
 |              |                          | `$store.rfqCart` menampilkan counter & quick list.       |
 | FR-RFQ-05    | Bulk RFQ Guest Submit    | Form review /rfq kirim payload POST /rfq/submit,         |
 |              |                          | transaksi database multi-baris di `inquiry_items`.       |
-| FR-RFQ-06    | Concurrency-Safe Number  | Menghasilkan nomor unik 'PBB/INQ/YYYY/MMSSSS/XXXX' dengan locking |
+| FR-RFQ-06    | Concurrency-Safe Number  | Menghasilkan nomor unik 'PBB/INQ/YYYY/MM/XXXX' dengan locking |
 |              |                          | database transaction (`lockForUpdate()`).                |
 | FR-RFQ-07    | Form Anti-Spam Pipeline  | Memvalidasi Honeypot, Time-trap (>2s), dan Cloudflare     |
 |              |                          | Turnstile token sebelum memproses insert database.        |
-| FR-RFQ-08    | Self-Service RFQ Tracker | Rute GET /lacak-rfq verifikasi nomor RFQ + WA pemohon     |
-|              |                          | render status, unduh Quote PDF, serta info resi & tautan  |
-|              |                          | langsung tracking resmi pihak ekspedisi.                  |
+| FR-RFQ-08    | Two-Key & Signed Tracker | Rute /lacak-rfq verifikasi 2 kunci (Nomor Dokumen + WA/   |
+|              |                          | Email PIC) atau bypass instan via Cryptographic Temporary |
+|              |                          | Signed URL email, render status tahapan, tautan unduh aman|
+|              |                          | PDF penawaran privat, serta info resi resmi ekspedisi.    |
 +--------------+--------------------------+----------------------------------------------------------+
 
 ```
@@ -72,6 +74,49 @@ $request->validate([
 // Anti-Spam Layer 1 & 2: Honeypot & Submission Timer
 // Menggunakan Spatie Honeypot: request diabaikan jika field jebakan terisi atau durasi < 2 detik
 ```
+
+### 1.2 Spesifikasi Teknis Pelacak Pengadaan & Pengamanan Dokumen Publik (FR-RFQ-08)
+
+Mencegah serangan *Insecure Direct Object Reference* (IDOR) dan spionase komersial akibat nomor dokumen berurutan (*sequential*), sistem menerapkan arsitektur pertahanan 4 lapis:
+
+1. **Verifikasi Dua Kunci Form Publik (`Two-Key Verification`):**
+   - Form pencarian publik `POST /lacak-rfq/search` mewajibkan 2 parameter valid:
+     ```php
+     $request->validate([
+         'doc_number'           => ['required', 'string', 'max:50'],
+         'contact_verification' => ['required', 'string', 'max:150'], // No. WA atau Email resmi PIC
+     ]);
+     ```
+   - Kueri pencocokan database wajib mengevaluasi kedua kunci:
+     ```php
+     $inquiry = Inquiry::where('inquiry_number', $request->doc_number)
+         ->where(function ($query) use ($request) {
+             $query->where('phone_wa', $request->contact_verification)
+                   ->orWhere('email', $request->contact_verification);
+         })->firstOrFail();
+     ```
+   - Jika kombinasi nomor dokumen dan kontak tidak cocok, sistem mengembalikan respon HTTP 404/422 dengan pesan seragam (*generic rejection*) untuk mencegah *enumeration attack*.
+
+2. **Akses Instan Tautan Email (Cryptographic Temporary Signed URL):**
+   - Tautan pelacakan yang dikirimkan via email konfirmasi RFQ menggunakan signature HMAC-SHA256:
+     ```php
+     $trackingUrl = URL::temporarySignedRoute(
+         'tracking.index',
+         now()->addDays(30),
+         ['ref' => $inquiry->inquiry_number]
+     );
+     ```
+   - Pengunjung yang mengakses tautan bertanda tangan valid (`$request->hasValidSignature()`) langsung dapat memantau status tanpa perlu menginput kontak verifikasi ulang.
+
+3. **Isolasi Berkas PDF Dokumen (Private Storage + Signed Download Route):**
+   - Berkas fisik PDF Quotation, Sales Order, dan Invoice tersimpan di disk privat (`storage/app/private/documents/`).
+   - Rute unduh publik `GET /documents/download/{type}/{token}` divalidasi melalui controller perantara dengan masa kedaluwarsa token 15 menit. Dilarang keras menyediakan direct URL file terbuka di `public/storage/`.
+
+4. **Proteksi Anti-Brute Force & Rate Limiting:**
+   - Rute `POST /lacak-rfq/search` diproteksi middleware `throttle:5,1` (maksimal 5 kali percobaan per menit per alamat IP).
+   - Apabila gagal 3 kali berturut-turut, sistem memunculkan tantangan Cloudflare Turnstile CAPTCHA.
+
+---
 
 ---
 
@@ -103,7 +148,7 @@ $request->validate([
 - **Event yang Dipicu via JavaScript:**
   1. `dataLayer.push({'event': 'view_item', 'ecommerce': {'items': [...]}})`
   2. `dataLayer.push({'event': 'add_to_rfq_cart', 'ecommerce': {'items': [...]}})`
-  3. `dataLayer.push({'event': 'submit_rfq_conversion', 'inquiry_number': 'PBB/INQ/2026/092F9C/0001'})`
+  3. `dataLayer.push({'event': 'submit_rfq_conversion', 'inquiry_number': 'PBB/INQ/2026/09/0001'})`
   4. `dataLayer.push({'event': 'click_whatsapp_sales', 'product_sku': 'FSHA-50'})`
 
 ### FR-TEL-04: Dynamic XML Sitemap Generator (`/sitemap.xml`)

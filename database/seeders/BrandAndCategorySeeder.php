@@ -189,13 +189,52 @@ class BrandAndCategorySeeder extends Seeder
             ],
         ];
 
+        $specTemplates = [
+            'Distribusi Daya Listrik' => [
+                ['name' => 'Rated Current (In)', 'unit' => 'A', 'type' => 'number'],
+                ['name' => 'Breaking Capacity (Icu)', 'unit' => 'kA', 'type' => 'number'],
+                ['name' => 'Poles', 'unit' => '', 'type' => 'select'],
+            ],
+            'Otomasi & Kendali Industri' => [
+                ['name' => 'Power Rating', 'unit' => 'kW', 'type' => 'number'],
+                ['name' => 'Input Voltage', 'unit' => 'V', 'type' => 'string'],
+                ['name' => 'Control Protocol', 'unit' => '', 'type' => 'string'],
+            ],
+            'Pencahayaan Industri Komersial' => [
+                ['name' => 'Luminous Flux', 'unit' => 'lm', 'type' => 'number'],
+                ['name' => 'Power Consumption', 'unit' => 'W', 'type' => 'number'],
+                ['name' => 'Color Temperature', 'unit' => 'K', 'type' => 'number'],
+            ],
+            'Infrastruktur Pengkabelan & Panel' => [
+                ['name' => 'Material / Finish', 'unit' => '', 'type' => 'string'],
+                ['name' => 'Protection Degree (IP)', 'unit' => '', 'type' => 'string'],
+                ['name' => 'Dimension', 'unit' => 'mm', 'type' => 'string'],
+            ],
+            'Mekanikal & Pemipaan Industri' => [
+                ['name' => 'Pressure Rating', 'unit' => 'bar', 'type' => 'string'],
+                ['name' => 'Nominal Diameter (DN)', 'unit' => 'mm', 'type' => 'number'],
+                ['name' => 'Body Material', 'unit' => '', 'type' => 'string'],
+            ],
+            'Keselamatan Kerja & K3 (HSE)' => [
+                ['name' => 'Safety Standard', 'unit' => '', 'type' => 'string'],
+                ['name' => 'Protection Level', 'unit' => '', 'type' => 'string'],
+            ],
+            'Perkakas Teknik & MRO Pabrik' => [
+                ['name' => 'Material / Grade', 'unit' => '', 'type' => 'string'],
+                ['name' => 'Drive / Size', 'unit' => '', 'type' => 'string'],
+            ],
+        ];
+
         foreach ($taxonomy as $parentName => $subCategories) {
+            $parentTemplate = $specTemplates[$parentName] ?? null;
+
             $parent = Category::firstOrCreate(
                 ['name' => $parentName],
                 [
                     'slug' => Str::slug($parentName),
                     'parent_id' => null,
                     'description' => "Kategori induk perlengkapan {$parentName}.",
+                    'spec_template' => $parentTemplate,
                 ]
             );
 
@@ -206,6 +245,7 @@ class BrandAndCategorySeeder extends Seeder
                         'slug' => Str::slug($subName),
                         'parent_id' => $parent->id,
                         'description' => "Sub-kategori teknis {$subName}.",
+                        'spec_template' => $parentTemplate,
                     ]
                 );
             }

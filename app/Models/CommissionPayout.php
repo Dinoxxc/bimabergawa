@@ -24,6 +24,7 @@ class CommissionPayout extends Model
         'transfer_proof_path',
         'notes',
         'paid_at',
+        'idempotency_key',
     ];
 
     protected function casts(): array

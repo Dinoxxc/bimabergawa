@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.6.0 |
+| **Versi Dokumen** | 1.7.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -26,6 +26,7 @@
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan softDeletes pada tabel kritis, berkas PO klien, catatan evaluasi direksi, multi-currency, modul faktur penagihan (`invoices`, `invoice_items`), dan audit log sistem (`activity_logs`) |
 | `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan Bagian 4 (5 Evaluasi Arsitektural & Mitigasi Risiko Teknis) serta kolom `paid_amount` pada tabel `invoices` |
 | `1.6.0` | 19 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `units_of_measure` (Master Satuan Dinamis), kolom `uom`, `project_name`, `company_npwp`, `faktur_pajak_number`, `driver_name`, `vehicle_plate_number`, `moq`, `warranty_period`, serta kustomisasi spesifikasi per item (`spec_group`, `spec_unit`, `is_highlight`, `custom_specifications`) untuk kesiapan B2B General Industrial Supplier |
+| `1.7.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema Tahap A: kolom snapshot kurs valas (`exchange_rate_applied`, `base_currency`), `idempotency_key` pada transaksi komersial, `spec_template` JSON pada kategori, dan indeks Fulltext MySQL pada produk |
 
 ---
 
@@ -84,6 +85,7 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `slug` | VARCHAR(180) | Unique, URL Friendly Slug |
 | `icon_name` | VARCHAR(100) | Nullable, Nama icon Heroicons / SVG |
 | `description` | TEXT | Nullable, Narasi pengantar kategori industri |
+| `spec_template` | JSON | Nullable, Template atribut spesifikasi standar per kategori industri |
 | `sort_order` | INT | Default: 0 |
 | `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
 
@@ -200,7 +202,10 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `is_approved_by_director`| BOOLEAN | Default: false (Approval jika margin < 15% / diskon > 10%) |
 | `status` | ENUM | `draft`, `sent`, `approved`, `expired`, `rejected` |
 | `currency` | VARCHAR(3) | Default: 'IDR' (Mata uang penawaran resmi) |
+| `exchange_rate_applied` | DECIMAL(12,4) | Default: 1.0000, Nilai kurs valas snapshot saat penawaran terbit |
+| `base_currency` | VARCHAR(3) | Default: 'IDR', Mata uang dasar konversi valas |
 | `director_notes` | TEXT | Nullable, Catatan evaluasi/instruksi persetujuan atau penolakan Direktur |
+| `idempotency_key` | VARCHAR(64) | Nullable, Unique, Token kunci idempotensi pencegah submit berulang |
 | `pdf_path` | VARCHAR(255) | Nullable, Path berkas PDF tersimpan |
 | `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Timestamps & Soft Deletes (`deleted_at` nullable) |
 
@@ -226,6 +231,8 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `quantity` | INT | Jumlah unit |
 | `unit_price` | DECIMAL(15,2) | Harga penawaran satuan |
 | `cost_price` | DECIMAL(15,2) | HPP Modal Satuan Internal |
+| `exchange_rate_applied` | DECIMAL(12,4) | Default: 1.0000, Nilai kurs valas snapshot item |
+| `base_currency` | VARCHAR(3) | Default: 'IDR', Mata uang dasar item |
 | `discount_percent`| DECIMAL(5,2) | Potongan per item (%) |
 | `total_price` | DECIMAL(15,2) | `(unit_price * qty) - diskon` |
 
@@ -242,6 +249,7 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `total_amount` | DECIMAL(15,2) | Nilai total pesanan |
 | `currency` | VARCHAR(3) | Default: 'IDR' (Mata uang pesanan penjualan) |
 | `customer_po_file_path` | VARCHAR(255) | Nullable, Path unggahan berkas fisik scan/PDF PO resmi dari klien |
+| `idempotency_key` | VARCHAR(64) | Nullable, Unique, Token kunci idempotensi pesanan penjualan |
 | `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Timestamps & Soft Deletes (`deleted_at` nullable) |
 
 #### Tabel: `delivery_orders` (Partial Shipment Ekspedisi)
@@ -312,7 +320,9 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `amount` | DECIMAL(15,2) | Nominal Hak Komisi (Rp) |
 | `status` | ENUM | `pending_payment`, `payable`, `paid` |
 | `transfer_proof_path`| VARCHAR(255)| Nullable, Scan slip bukti transfer bank kantor |
+| `notes` | TEXT | Nullable, Catatan verifikasi transaksi |
 | `paid_at` | TIMESTAMP | Nullable, Waktu transfer diselesaikan |
+| `idempotency_key` | VARCHAR(64) | Nullable, Unique, Token kunci idempotensi pencairan komisi |
 
 ---
 
@@ -473,6 +483,14 @@ CREATE INDEX idx_invoices_sales_order ON invoices (sales_order_id);
 CREATE INDEX idx_activity_subject ON activity_logs (subject_type, subject_id);
 CREATE INDEX idx_activity_causer ON activity_logs (causer_type, causer_id);
 CREATE INDEX idx_activity_created ON activity_logs (created_at);
+
+-- 9. Fulltext Index Katalog Produk Teknik
+CREATE FULLTEXT INDEX idx_products_fulltext ON products (name, model_number, description);
+
+-- 10. Unique Idempotency Keys Transaksi
+CREATE UNIQUE INDEX uq_quotations_idempotency ON quotations (idempotency_key);
+CREATE UNIQUE INDEX uq_sales_orders_idempotency ON sales_orders (idempotency_key);
+CREATE UNIQUE INDEX uq_commission_payouts_idempotency ON commission_payouts (idempotency_key);
 ```
 
 ---
@@ -535,4 +553,18 @@ Berdasarkan audit kelayakan komersial menyeluruh pada tahap fondasi awal (*Early
   ]);
   ```
   Langkah ini mereduksi ukuran penyimpanan indeks string komposit hingga 75% dan mencegah kegagalan *Out of Memory* pada server LiteSpeed.
+
+### 4.6 Skema Fondasi Service Layer & Proteksi Transaksi B2B (Tahap A)
+Menjelang implementasi Service Layer di Fase 2, skema basis data diperkaya dengan kolom-kolom pendukung integritas transaksi tingkat lanjut:
+1. **Snapshot Valas & Hedging Margin:**
+   - Kolom `exchange_rate_applied DECIMAL(12,4) DEFAULT 1.0000` dan `base_currency VARCHAR(3) DEFAULT 'IDR'` pada tabel `quotations` dan `quotation_items`.
+   - Mengunci nilai konversi kurs valas impor saat penawaran harga diterbitkan sehingga kalkulasi Live Margin HPP Guard tetap akurat meski terjadi fluktuasi kurs selama 14 hari masa berlaku penawaran.
+2. **Idempotency Key Transaksi Kritis:**
+   - Kolom `idempotency_key VARCHAR(64) NULL UNIQUE` pada tabel `quotations`, `sales_orders`, dan `commission_payouts`.
+   - Menjamin bahwa operasi komersial tidak terduplikasi saat terjadi gangguan jaringan atau pengiriman ulang data (*double-submit*).
+3. **Template Spesifikasi Teknis Kategori (`spec_template`):**
+   - Kolom `spec_template JSON NULL` pada tabel `categories` untuk menyimpan preset rekomendasi atribut teknis per kategori industri (Katup, MCB, Pompa, APD K3, Perkakas Bengkel).
+4. **Indeks Pencarian Cepat Produk (`idx_products_fulltext`):**
+   - Indeks `FULLTEXT idx_products_fulltext (name, model_number, description)` pada tabel `products` untuk mendukung pencarian katalog berkecepatan tinggi pada RFQ drawer dan Quotation Builder.
+
 

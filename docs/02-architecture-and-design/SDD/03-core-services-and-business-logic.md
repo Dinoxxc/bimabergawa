@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.4.0 |
+| **Versi Dokumen** | 1.7.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -16,11 +16,13 @@
 | Versi | Tanggal | Penulis / Peran | Status | Ringkasan Perubahan |
 | :---: | :---: | :--- | :---: | :--- |
 | `1.0.0` | 01 Sep 2026 | Senior Software Engineer | Draf Awal | Implementasi `DocumentNumberService` dengan atomic lock & DomPDF |
-| `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan penomoran atomik Faktur Penagihan (`INV-YYYYMM-XXXX`) pada `DocumentNumberService` |
 | `1.1.0` | 03 Sep 2026 | Backend Lead | Ditinjau | Penambahan `LiveMarginCalculator` & generator PDF Delivery Order tanpa harga |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Validasi watermarking dinamis DomPDF (`DRAFT` vs `OFFICIAL`) |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
 | `1.4.0` | 06 Sep 2026 | Principal System Architect | Disetujui | Perhitungan dinamis tarif PPN multi-periode via `SystemSetting` (anti-hardcoded 11%) |
+| `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan penomoran atomik Faktur Penagihan (`INV-YYYYMM-XXXX`) pada `DocumentNumberService` |
+| `1.6.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi DTOs (Data Transfer Objects), Domain Events, dan Custom Domain Exceptions untuk Fondasi Service Layer Tahap A |
+| `1.7.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan parameter DTOs: penambahan ekstensi BOQ industri (xls, docx, csv, jpeg) dan maxSizeBytes pada FileUploadRequestDTO, field fisik armada logistik pada DeliveryOrderFulfillmentDTO, diskon nominal lump-sum pada CalculateMarginDTO, serta konstanta dan guard validasi tipe dokumen pada DocumentNumberRequestDTO |
 
 ---
 
@@ -445,3 +447,168 @@ class SystemSettingService
 }
 ```
 
+
+
+---
+
+## 9. Standard B2B Data Transfer Objects (`app/DTOs/`)
+
+Untuk memastikan integritas tipe data yang ketat (`declare(strict_types=1);`), immutabilitas data antar-lapisan, dan memfasilitasi refactoring modular, seluruh parameter kompleks antar-lapisan (Controller, Service, Event, Listener) diwajibkan menggunakan PHP 8.3 `readonly class` DTOs:
+
+### 9.1 `DocumentNumberRequestDTO`
+```php
+namespace App\DTOs;
+
+readonly class DocumentNumberRequestDTO
+{
+    public const TYPE_INQUIRY = 'inquiry';
+    public const TYPE_QUOTATION = 'quotation';
+    public const TYPE_SALES_ORDER = 'sales_order';
+    public const TYPE_DELIVERY_ORDER = 'delivery_order';
+    public const TYPE_INVOICE = 'invoice';
+    public const TYPE_COMMISSION = 'commission';
+
+    public const VALID_TYPES = [
+        self::TYPE_INQUIRY,
+        self::TYPE_QUOTATION,
+        self::TYPE_SALES_ORDER,
+        self::TYPE_DELIVERY_ORDER,
+        self::TYPE_INVOICE,
+        self::TYPE_COMMISSION,
+    ];
+
+    public function __construct(
+        public string $targetType,
+        public ?\DateTimeInterface $date = null,
+        public ?int $tenantId = null,
+    ) {
+        if (! in_array($this->targetType, self::VALID_TYPES, true)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Invalid document target type [%s]. Must be one of: %s',
+                $this->targetType,
+                implode(', ', self::VALID_TYPES)
+            ));
+        }
+    }
+}
+```
+
+### 9.2 `CalculateMarginDTO`
+```php
+namespace App\DTOs;
+
+readonly class CalculateMarginDTO
+{
+    public function __construct(
+        public float $costPrice,
+        public float $unitPrice,
+        public int|float $quantity = 1,
+        public float $discountPercent = 0.0,
+        public float $discountAmount = 0.0,
+        public float $vatRate = 11.0,
+        public float $exchangeRate = 1.0,
+        public string $currency = 'IDR',
+    ) {}
+}
+```
+
+### 9.3 `ParseSkuRequestDTO`
+```php
+namespace App\DTOs;
+
+readonly class ParseSkuRequestDTO
+{
+    public function __construct(
+        public string $rawContent,
+        public string $delimiter = "\n",
+        public bool $strictBrandCheck = false,
+    ) {}
+}
+```
+
+### 9.4 `FileUploadRequestDTO`
+```php
+namespace App\DTOs;
+
+readonly class FileUploadRequestDTO
+{
+    public function __construct(
+        public string $originalName,
+        public string $mimeType,
+        public int $sizeBytes,
+        public string $tmpPath,
+        public array $allowedExtensions = ['pdf', 'xlsx', 'xls', 'docx', 'jpg', 'jpeg', 'png', 'csv'],
+        public bool $isPublic = false,
+        public int $maxSizeBytes = 10485760,
+    ) {}
+}
+```
+
+### 9.5 `DeliveryOrderFulfillmentDTO`
+```php
+namespace App\DTOs;
+
+readonly class DeliveryOrderFulfillmentDTO
+{
+    public function __construct(
+        public int $salesOrderId,
+        public array $items, // [['sales_order_item_id' => int, 'quantity_delivered' => int]]
+        public string $shippingMethod,
+        public ?string $driverNotes = null,
+        public ?string $driverName = null,
+        public ?string $vehiclePlateNumber = null,
+        public ?string $courierName = null,
+        public ?string $trackingNumber = null,
+        public ?string $recipientPicName = null,
+        public ?string $recipientPhone = null,
+        public ?string $shippingAddress = null,
+        public ?int $totalPackages = null,
+        public ?float $totalWeightKg = null,
+    ) {}
+}
+```
+
+### 9.6 `CommissionCalculationDTO`
+```php
+namespace App\DTOs;
+
+readonly class CommissionCalculationDTO
+{
+    public function __construct(
+        public int $salesOrderId,
+        public int $agentId,
+        public float $subtotalEligible,
+        public float $tierRatePercent,
+        public float $calculatedAmount,
+    ) {}
+}
+```
+
+---
+
+## 10. Standard Domain Events (`app/Events/`)
+
+Sistem menggunakan Domain Events untuk decoupling aksi sekunder (notifikasi, audit trail, pembuatan dokumen turunan, telemetri):
+
+| Nama Domain Event | Payload Utama | Trigger / Asal Kejadian | Aksi Turunan Listener |
+| :--- | :--- | :--- | :--- |
+| `DocumentNumberGenerated` | `targetType`, `documentNumber`, `userId` | `DocumentNumberService` | Audit log penomoran dokumen |
+| `QuotationCalculated` | `quotationId`, `subtotal`, `marginPercent`, `vatAmount` | `QuotationCalculationService` | Evaluasi ambang batas approval direksi |
+| `QuotationApproved` | `quotationId`, `approverUserId`, `approvedAt` | Modul Approval Direksi | Status transition & notifikasi sales PIC |
+| `SalesOrderConfirmed` | `salesOrderId`, `soNumber`, `grandTotal` | Penerimaan PO Klien | Reservasi stok & penyiapan draf Delivery Order |
+| `DeliveryOrderDispatched` | `deliveryOrderId`, `doNumber`, `shippingMethod` | Modul Logistik Fisik | Notifikasi pengiriman ke klien & sales |
+| `CommissionPayoutRequested` | `payoutId`, `agentId`, `amount`, `bankTarget` | Pengajuan Pencairan Agen | Notifikasi tim Finance untuk verifikasi struk |
+
+---
+
+## 11. Custom Domain Exceptions (`app/Exceptions/`)
+
+Seluruh penanganan kesalahan logika bisnis menggunakan custom typed exceptions dengan pesan kesalahan yang terstandardisasi dan informatif:
+
+| Nama Custom Exception | Skenario Pemicu | HTTP / UI Feedback |
+| :--- | :--- | :--- |
+| `CriticalMarginException` | Margin penawaran di bawah ambang batas kritis (< 8.00%) tanpa eskalasi approval direktur resmi. | HTTP 422 Unprocessable Entity: Menolak penerbitan quotation tanpa token approval direktur. |
+| `DuplicateDocumentNumberException` | Terdeteksi tabrakan nomor dokumen setelah retry transaksi atomik maksimal 3 kali. | HTTP 409 Conflict: Sistem gagal mendapatkan slot urutan atomik, coba beberapa saat lagi. |
+| `IdempotencyConflictException` | Aksi pengajuan atau transaksi dipanggil berulang dengan `idempotency_key` yang sama saat operasi pertama masih diproses atau sudah selesai. | HTTP 409 Conflict: Permintaan duplikat terdeteksi, operasi sedang diproses atau telah selesai. |
+| `InvalidFileMagicBytesException` | Berkas yang diunggah memalsukan ekstensi file (MIME magic bytes tidak sesuai dengan header biner). | HTTP 422 Unprocessable Entity: Berkas ditolak karena anomali integritas biner / magic bytes. |
+| `InsufficientFulfillmentQuantityException` | Kuantitas pengiriman pada Surat Jalan parsial melebihi sisa kuantitas Sales Order yang belum terkirim. | HTTP 422 Unprocessable Entity: Kuantitas pengiriman melebihi sisa alokasi pesanan penjualan. |

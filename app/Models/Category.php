@@ -20,6 +20,7 @@ class Category extends Model
         'slug',
         'icon_name',
         'description',
+        'spec_template',
         'sort_order',
     ];
 
@@ -27,6 +28,7 @@ class Category extends Model
     {
         return [
             'sort_order' => 'integer',
+            'spec_template' => 'array',
         ];
     }
 

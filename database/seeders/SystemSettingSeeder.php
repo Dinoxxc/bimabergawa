@@ -36,6 +36,13 @@ class SystemSettingSeeder extends Seeder
             ['key' => 'commercial_tax.company_bank_account_number', 'value' => '500-123-4567', 'group' => 'commercial_tax', 'type' => 'string', 'is_public' => true],
             ['key' => 'commercial_tax.company_bank_account_name', 'value' => 'PT. Panca Bima Bergawa', 'group' => 'commercial_tax', 'type' => 'string', 'is_public' => true],
             ['key' => 'commercial_tax.company_pkp_status', 'value' => 'Pengusaha Kena Pajak (PKP) Terdaftar KPP Pratama Jakarta Setiabudi', 'group' => 'commercial_tax', 'type' => 'string', 'is_public' => true],
+            ['key' => 'commercial_tax.payment_terms_presets', 'value' => json_encode([
+                ['term_name' => 'Cash in Advance (100% CBD)', 'percentage' => 100, 'trigger_event' => 'order_confirmation', 'due_days' => 0],
+                ['term_name' => 'DP 50% saat PO, Pelunasan 50% sebelum kirim', 'percentage' => 50, 'trigger_event' => 'order_confirmation', 'due_days' => 0],
+                ['term_name' => 'Pelunasan 50% sebelum pengiriman', 'percentage' => 50, 'trigger_event' => 'ready_to_ship', 'due_days' => 7],
+                ['term_name' => 'Net 30 Hari (Corporate Credit)', 'percentage' => 100, 'trigger_event' => 'invoice_received', 'due_days' => 30],
+                ['term_name' => 'Net 14 Hari', 'percentage' => 100, 'trigger_event' => 'delivery_completed', 'due_days' => 14],
+            ]), 'group' => 'commercial_tax', 'type' => 'json', 'is_public' => false],
 
             // CRM & Sales SLA (group: crm_sales)
             ['key' => 'crm_sales.inquiry_stale_hours', 'value' => '24', 'group' => 'crm_sales', 'type' => 'integer', 'is_public' => false],

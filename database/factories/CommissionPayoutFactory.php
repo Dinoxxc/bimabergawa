@@ -28,6 +28,7 @@ class CommissionPayoutFactory extends Factory
             'transfer_proof_path' => null,
             'notes' => fake()->sentence(),
             'paid_at' => null,
+            'idempotency_key' => fake()->optional()->uuid(),
         ];
     }
 }

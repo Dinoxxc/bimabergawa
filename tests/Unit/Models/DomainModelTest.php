@@ -30,13 +30,14 @@ use App\Models\QuotationItem;
 use App\Models\QuotationPaymentTerm;
 use App\Models\SalesOrder;
 use App\Models\SystemSetting;
+use App\Models\UnitOfMeasure;
 use App\Models\User;
 use PHPUnit\Framework\TestCase;
 
 class DomainModelTest extends TestCase
 {
     /**
-     * Test all 27 models can be instantiated with fillable properties.
+     * Test all 28 models can be instantiated with fillable properties.
      */
     public function test_all_domain_models_can_be_instantiated(): void
     {
@@ -68,9 +69,10 @@ class DomainModelTest extends TestCase
             Invoice::class,
             InvoiceItem::class,
             ActivityLog::class,
+            UnitOfMeasure::class,
         ];
 
-        $this->assertCount(27, $models);
+        $this->assertCount(28, $models);
 
         foreach ($models as $modelClass) {
             $instance = new $modelClass;

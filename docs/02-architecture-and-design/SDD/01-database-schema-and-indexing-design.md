@@ -85,6 +85,7 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `slug` | VARCHAR(180) | Unique, URL Friendly Slug |
 | `icon_name` | VARCHAR(100) | Nullable, Nama icon Heroicons / SVG |
 | `description` | TEXT | Nullable, Narasi pengantar kategori industri |
+| `spec_template` | JSON | Nullable, Template atribut spesifikasi standar per kategori industri |
 | `sort_order` | INT | Default: 0 |
 | `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
 
@@ -201,7 +202,10 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `is_approved_by_director`| BOOLEAN | Default: false (Approval jika margin < 15% / diskon > 10%) |
 | `status` | ENUM | `draft`, `sent`, `approved`, `expired`, `rejected` |
 | `currency` | VARCHAR(3) | Default: 'IDR' (Mata uang penawaran resmi) |
+| `exchange_rate_applied` | DECIMAL(12,4) | Default: 1.0000, Nilai kurs valas snapshot saat penawaran terbit |
+| `base_currency` | VARCHAR(3) | Default: 'IDR', Mata uang dasar konversi valas |
 | `director_notes` | TEXT | Nullable, Catatan evaluasi/instruksi persetujuan atau penolakan Direktur |
+| `idempotency_key` | VARCHAR(64) | Nullable, Unique, Token kunci idempotensi pencegah submit berulang |
 | `pdf_path` | VARCHAR(255) | Nullable, Path berkas PDF tersimpan |
 | `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Timestamps & Soft Deletes (`deleted_at` nullable) |
 
@@ -227,6 +231,8 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `quantity` | INT | Jumlah unit |
 | `unit_price` | DECIMAL(15,2) | Harga penawaran satuan |
 | `cost_price` | DECIMAL(15,2) | HPP Modal Satuan Internal |
+| `exchange_rate_applied` | DECIMAL(12,4) | Default: 1.0000, Nilai kurs valas snapshot item |
+| `base_currency` | VARCHAR(3) | Default: 'IDR', Mata uang dasar item |
 | `discount_percent`| DECIMAL(5,2) | Potongan per item (%) |
 | `total_price` | DECIMAL(15,2) | `(unit_price * qty) - diskon` |
 
@@ -243,6 +249,7 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `total_amount` | DECIMAL(15,2) | Nilai total pesanan |
 | `currency` | VARCHAR(3) | Default: 'IDR' (Mata uang pesanan penjualan) |
 | `customer_po_file_path` | VARCHAR(255) | Nullable, Path unggahan berkas fisik scan/PDF PO resmi dari klien |
+| `idempotency_key` | VARCHAR(64) | Nullable, Unique, Token kunci idempotensi pesanan penjualan |
 | `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Timestamps & Soft Deletes (`deleted_at` nullable) |
 
 #### Tabel: `delivery_orders` (Partial Shipment Ekspedisi)
@@ -313,7 +320,9 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `amount` | DECIMAL(15,2) | Nominal Hak Komisi (Rp) |
 | `status` | ENUM | `pending_payment`, `payable`, `paid` |
 | `transfer_proof_path`| VARCHAR(255)| Nullable, Scan slip bukti transfer bank kantor |
+| `notes` | TEXT | Nullable, Catatan verifikasi transaksi |
 | `paid_at` | TIMESTAMP | Nullable, Waktu transfer diselesaikan |
+| `idempotency_key` | VARCHAR(64) | Nullable, Unique, Token kunci idempotensi pencairan komisi |
 
 ---
 
@@ -474,6 +483,14 @@ CREATE INDEX idx_invoices_sales_order ON invoices (sales_order_id);
 CREATE INDEX idx_activity_subject ON activity_logs (subject_type, subject_id);
 CREATE INDEX idx_activity_causer ON activity_logs (causer_type, causer_id);
 CREATE INDEX idx_activity_created ON activity_logs (created_at);
+
+-- 9. Fulltext Index Katalog Produk Teknik
+CREATE FULLTEXT INDEX idx_products_fulltext ON products (name, model_number, description);
+
+-- 10. Unique Idempotency Keys Transaksi
+CREATE UNIQUE INDEX uq_quotations_idempotency ON quotations (idempotency_key);
+CREATE UNIQUE INDEX uq_sales_orders_idempotency ON sales_orders (idempotency_key);
+CREATE UNIQUE INDEX uq_commission_payouts_idempotency ON commission_payouts (idempotency_key);
 ```
 
 ---

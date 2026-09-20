@@ -165,13 +165,14 @@ class Category extends Model
 {
     protected $fillable = [
         'parent_id', 'name', 'slug', 'icon_name',
-        'description', 'sort_order'
+        'description', 'spec_template', 'sort_order'
     ];
 
     protected function casts(): array
     {
         return [
             'sort_order' => 'integer',
+            'spec_template' => 'array',
         ];
     }
 
@@ -386,8 +387,9 @@ class Quotation extends Model
         'delivery_terms', 'validity_days', 'expires_at', 'subtotal',
         'discount_amount', 'dpp', 'vat_rate_applied', 'tax_amount',
         'grand_total', 'currency', 'total_cost', 'gross_profit_margin',
-        'is_approved_by_director', 'status', 'pdf_path', 'approved_by',
-        'approved_at', 'director_notes'
+        'exchange_rate_applied', 'base_currency', 'is_approved_by_director',
+        'status', 'pdf_path', 'approved_by', 'approved_at', 'director_notes',
+        'idempotency_key'
     ];
 
     protected function casts(): array
@@ -404,6 +406,7 @@ class Quotation extends Model
             'grand_total' => 'decimal:2',
             'total_cost' => 'decimal:2',
             'gross_profit_margin' => 'decimal:2',
+            'exchange_rate_applied' => 'decimal:4',
             'is_approved_by_director' => 'boolean',
             'approved_by' => 'integer',
             'approved_at' => 'datetime',
@@ -503,7 +506,8 @@ class QuotationItem extends Model
     protected $fillable = [
         'quotation_id', 'product_id', 'item_name', 'model_number',
         'lead_time', 'quantity', 'unit_price', 'cost_price',
-        'discount_percent', 'total_price'
+        'discount_percent', 'total_price', 'exchange_rate_applied',
+        'base_currency'
     ];
 
     protected function casts(): array
@@ -514,6 +518,7 @@ class QuotationItem extends Model
             'cost_price' => 'decimal:2',
             'discount_percent' => 'decimal:2',
             'total_price' => 'decimal:2',
+            'exchange_rate_applied' => 'decimal:4',
         ];
     }
 
@@ -548,7 +553,8 @@ class SalesOrder extends Model
         'order_number', 'quotation_id', 'customer_po_number',
         'customer_po_date', 'customer_po_file_path', 'status',
         'vat_rate_applied', 'total_amount', 'currency',
-        'is_approved_by_director', 'approved_by', 'approved_at'
+        'is_approved_by_director', 'approved_by', 'approved_at',
+        'idempotency_key'
     ];
 
     protected function casts(): array
@@ -870,7 +876,7 @@ class CommissionPayout extends Model
     protected $fillable = [
         'payout_number', 'freelance_sales_id', 'sales_order_id',
         'amount', 'type', 'status', 'transfer_proof_path',
-        'notes', 'paid_at'
+        'notes', 'paid_at', 'idempotency_key'
     ];
 
     protected function casts(): array
@@ -888,7 +894,7 @@ class CommissionPayout extends Model
 
     public function salesOrder(): BelongsTo
     {
-        return $this->belongsTo(SalesOrder::class);
+        return $this->belongsTo(SalesOrder::class)->withTrashed();
     }
 
     public function comments(): MorphMany

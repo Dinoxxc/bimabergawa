@@ -21,6 +21,7 @@ class BrandFactory extends Factory
 
         return [
             'name' => $name,
+            'code' => strtoupper(fake()->lexify('???')),
             'slug' => Str::slug($name),
             'logo_path' => 'brands/'.Str::slug($name).'.webp',
             'website_url' => fake()->url(),

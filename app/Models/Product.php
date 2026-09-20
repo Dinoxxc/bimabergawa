@@ -23,6 +23,7 @@ class Product extends Model
         'name',
         'slug',
         'model_number',
+        'sku',
         'cost_price',
         'currency',
         'uom',

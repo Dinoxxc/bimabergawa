@@ -110,7 +110,18 @@ class BulkSkuNormalizationService
             return $product;
         }
 
-        // 2. Case-insensitive match pada model_number
+        // 2. Exact match langsung pada internal SKU PBB (PBB-DIV-BRD-XXXX)
+        $product = Product::where(function ($q) use ($cleanInput) {
+            $q->where('sku', $cleanInput)
+                ->orWhereRaw('LOWER(sku) = ?', [strtolower($cleanInput)]);
+        })
+            ->when($brandId !== null, fn ($q) => $q->where('brand_id', $brandId))
+            ->first();
+        if ($product !== null) {
+            return $product;
+        }
+
+        // 3. Case-insensitive match pada model_number
         $product = Product::whereRaw('LOWER(model_number) = ?', [strtolower($cleanInput)])
             ->when($brandId !== null, fn ($q) => $q->where('brand_id', $brandId))
             ->first();
@@ -118,10 +129,13 @@ class BulkSkuNormalizationService
             return $product;
         }
 
-        // 3. Pencocokan bentuk normalisasi (underscore ke strip, spasi sekitar strip, uppercase)
+        // 4. Pencocokan bentuk normalisasi (underscore ke strip, spasi sekitar strip, uppercase)
         $normalized = self::normalize($cleanInput);
         if ($normalized !== '' && $normalized !== $cleanInput) {
-            $product = Product::where('model_number', $normalized)
+            $product = Product::where(function ($q) use ($normalized) {
+                $q->where('model_number', $normalized)
+                    ->orWhere('sku', $normalized);
+            })
                 ->when($brandId !== null, fn ($q) => $q->where('brand_id', $brandId))
                 ->first();
             if ($product !== null) {
@@ -129,13 +143,18 @@ class BulkSkuNormalizationService
             }
         }
 
-        // 4. Pencocokan karakter alfanumerik murni (mengabaikan spasi, strip, slash, pagar, titik, underscore)
+        // 4b. Pencocokan karakter alfanumerik murni (mengabaikan spasi, strip, slash, pagar, titik, underscore)
         $cleanAlphaNum = self::cleanForComparison($cleanInput);
         if ($cleanAlphaNum !== '') {
-            $product = Product::whereRaw(
-                "UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(model_number, ' ', ''), '-', ''), '/', ''), '#', ''), '.', ''), '_', '')) = ?",
-                [$cleanAlphaNum]
-            )
+            $product = Product::where(function ($q) use ($cleanAlphaNum) {
+                $q->whereRaw(
+                    "UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(model_number, ' ', ''), '-', ''), '/', ''), '#', ''), '.', ''), '_', '')) = ?",
+                    [$cleanAlphaNum]
+                )->orWhereRaw(
+                    "UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(sku, ' ', ''), '-', ''), '/', ''), '#', ''), '.', ''), '_', '')) = ?",
+                    [$cleanAlphaNum]
+                );
+            })
                 ->when($brandId !== null, fn ($q) => $q->where('brand_id', $brandId))
                 ->first();
 
@@ -188,7 +207,7 @@ class BulkSkuNormalizationService
             $matchType = 'none';
 
             if ($product !== null) {
-                $matchType = ($product->model_number === $rawInputString) ? 'exact' : 'tolerant';
+                $matchType = ($product->model_number === $rawInputString || $product->sku === $rawInputString) ? 'exact' : 'tolerant';
             }
 
             $results->push([

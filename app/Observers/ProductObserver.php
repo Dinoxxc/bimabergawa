@@ -5,9 +5,42 @@ declare(strict_types=1);
 namespace App\Observers;
 
 use App\Models\Product;
+use App\Services\BulkSkuNormalizationService;
+use App\Services\SkuGeneratorService;
 
 class ProductObserver
 {
+    /**
+     * Handle the Product "creating" event.
+     */
+    public function creating(Product $product): void
+    {
+        if (empty($product->sku)) {
+            $product->sku = SkuGeneratorService::generate($product);
+        } else {
+            $product->sku = BulkSkuNormalizationService::normalize($product->sku);
+        }
+    }
+
+    /**
+     * Handle the Product "updating" event.
+     */
+    public function updating(Product $product): void
+    {
+        if (empty($product->sku)) {
+            $originalSku = $product->getOriginal('sku');
+            if (! empty($originalSku)) {
+                // Cegah penghapusan tidak sengaja, pulihkan SKU awal
+                $product->sku = (string) $originalSku;
+            } else {
+                // Produk warisan lama tanpa SKU (null) dibangkitkan otomatis
+                $product->sku = SkuGeneratorService::generate($product);
+            }
+        } elseif ($product->isDirty('sku')) {
+            $product->sku = BulkSkuNormalizationService::normalize($product->sku);
+        }
+    }
+
     /**
      * Handle the Product "deleting" event.
      */

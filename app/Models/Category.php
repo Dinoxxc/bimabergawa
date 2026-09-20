@@ -17,12 +17,35 @@ class Category extends Model
     protected $fillable = [
         'parent_id',
         'name',
+        'code',
         'slug',
         'icon_name',
         'description',
         'spec_template',
         'sort_order',
     ];
+
+    public function getEffectiveCode(): string
+    {
+        if (! empty($this->code)) {
+            $cleanCode = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $this->code));
+            if ($cleanCode !== '') {
+                return substr($cleanCode, 0, 10);
+            }
+        }
+
+        // Wariskan kode divisi dari kategori induk jika ada
+        if ($this->parent_id !== null) {
+            $parent = $this->parent ?? Category::find($this->parent_id);
+            if ($parent !== null) {
+                return $parent->getEffectiveCode();
+            }
+        }
+
+        $cleanName = (string) preg_replace('/[^A-Za-z0-9]/', '', $this->name ?? '');
+
+        return strtoupper(substr($cleanName !== '' ? $cleanName : 'GEN', 0, 3));
+    }
 
     protected function casts(): array
     {

@@ -15,6 +15,7 @@ class Brand extends Model
 
     protected $fillable = [
         'name',
+        'code',
         'slug',
         'logo_path',
         'website_url',
@@ -22,6 +23,20 @@ class Brand extends Model
         'is_active',
         'sort_order',
     ];
+
+    public function getEffectiveCode(): string
+    {
+        if (! empty($this->code)) {
+            $cleanCode = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $this->code));
+            if ($cleanCode !== '') {
+                return substr($cleanCode, 0, 10);
+            }
+        }
+
+        $cleanName = (string) preg_replace('/[^A-Za-z0-9]/', '', $this->name ?? '');
+
+        return strtoupper(substr($cleanName !== '' ? $cleanName : 'GEN', 0, 4));
+    }
 
     protected function casts(): array
     {

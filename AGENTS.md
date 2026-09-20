@@ -112,8 +112,8 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
 - Penomoran dokumen transaksi wajib melalui `DocumentNumberService` menggunakan transaksi database atomik (`SELECT ... FOR UPDATE`) dengan auto-retry 3x saat terjadi deadlock MySQL, serta menyematkan 4-karakter cryptographic security salt (`SSSS`) setelah 2-digit bulan (`MM`) untuk proteksi anti-tebak/anti-enumerasi pihak luar tanpa merusak urutan numerik internal. Standar format resmi:
   - Inkuiri: `PBB/INQ/YYYY/MMSSSS/XXXX` (Contoh: `PBB/INQ/2026/092F9C/0001`)
   - Penawaran: `PBB/QUO/YYYY/MMSSSS/XXXX` (Revisi: `PBB/QUO/2026/092F9C/0001-R1`)
-  - Sales Order: `PBB/SO/YYYY/MMSSSS/XXXX` (Contoh: `PBB/SO/2026/092F9C/0001`)
-  - Surat Jalan: `PBB/DO/YYYY/MMSSSS/XXXX` (Parsial: `PBB/DO/2026/092F9C/0001/01`)
+  - Sales Order: `PBB/SOR/YYYY/MMSSSS/XXXX` (Contoh: `PBB/SOR/2026/092F9C/0001`)
+  - Surat Jalan: `PBB/DOR/YYYY/MMSSSS/XXXX` (Parsial: `PBB/DOR/2026/092F9C/0001/01`)
   - Faktur Tagihan (Invoice): `PBB/INV/YYYY/MMSSSS/XXXX` (Contoh: `PBB/INV/2026/092F9C/0001`)
   - Faktur Komisi: `PBB/COM/YYYY/MMSSSS/XXXX` (Contoh: `PBB/COM/2026/092F9C/0001`)
 

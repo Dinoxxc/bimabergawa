@@ -205,8 +205,8 @@ class ServiceFoundationContractsTest extends TestCase
         DocumentNumberGenerated::dispatch('quotation', 'PBB/QUO/2026/092F9C/0001', 1);
         QuotationCalculated::dispatch(1, 10000000.0, 18.5, 1100000.0);
         QuotationApproved::dispatch(1, 2, now());
-        SalesOrderConfirmed::dispatch(1, 'PBB/SO/2026/092F9C/0001', 11100000.0);
-        DeliveryOrderDispatched::dispatch(1, 'PBB/DO/2026/092F9C/0001/01', 'Kurir Internal');
+        SalesOrderConfirmed::dispatch(1, 'PBB/SOR/2026/092F9C/0001', 11100000.0);
+        DeliveryOrderDispatched::dispatch(1, 'PBB/DOR/2026/092F9C/0001/01', 'Kurir Internal');
         CommissionPayoutRequested::dispatch(1, 3, 500000.0, 'BCA 1234567890');
 
         Event::assertDispatched(DocumentNumberGenerated::class);

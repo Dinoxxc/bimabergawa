@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-SEC-02` |
-| **Versi Dokumen** | 1.5.0 |
+| **Versi Dokumen** | 1.5.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Security/QA Reference |
 
@@ -21,6 +21,7 @@
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi 16 skenario uji mendalam & standardisasi status Not Executed |
 | `1.4.0` | 20 Sep 2026 | Principal QA Architect | Disetujui | Verifikasi dan eksekusi pengujian otomatis skenario penomoran dokumen konkurensi (TC-SEC-CON-001, 002, 003, 006, 007, 008, 010, 011, 014) via DocumentNumberServiceTest & ConcurrencyDocumentNumberTest dengan status Passed |
 | `1.5.0` | 20 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan ekspektasi nomor dokumen resmi korporat PBB: `PBB/{TIPE}/{YYYY}/{MMSSSS}/{XXXX}` ber-salt kriptografis pada kasus uji konkurensi |
+| `1.5.1` | 20 Sep 2026 | Principal QA Architect | Disetujui | Penyeragaman seluruh kode tipe dokumen menjadi 3 huruf (`SO` -> `SOR`, `DO` -> `DOR`) pada matriks uji konkurensi |
 
 ---
 
@@ -46,8 +47,8 @@
 | ID Kasus Uji | Kategori | Skenario Pengujian | Prasyarat (Pre-conditions) | Data Input / Aksi | Hasil yang Diharapkan (Expected Result) | Status |
 | :--- | :---: | :--- | :--- | :--- | :--- | :---: |
 | **`TC-SEC-CON-001`** | Konkurensi | Penomoran Quotation Serentak (*Concurrent Quotation Numbering*) | 10 Sales membuat penawaran baru di detik yang sama | Eksekusi 10 thread request paralel secara bersamaan | `DocumentNumberService` menerbitkan 10 nomor berurutan unik: `PBB/QUO/2026/09SSSS/0001` s.d. `0010` tanpa nomor lompat atau duplikat. | Passed |
-| **`TC-SEC-CON-002`** | Konkurensi | Penomoran Sales Order Serentak (*Concurrent SO Numbering*) | 10 Sales menyetujui quotation menjadi SO secara bersamaan | Eksekusi 10 transaksi konversi SO serentak | Diterbitkan 10 nomor SO unik: `PBB/SO/2026/09SSSS/0001` s.d. `0010`, tabel `sales_orders` konsisten 100%. | Passed |
-| **`TC-SEC-CON-003`** | Konkurensi | Penomoran Surat Jalan Serentak (*Concurrent DO Numbering*) | 10 Staf Gudang menerbitkan Surat Jalan serentak | Eksekusi 10 pembuatan DO serentak | Diterbitkan 10 nomor DO unik: `PBB/DO/2026/09SSSS/0001` s.d. `0010` tanpa terjadi kegagalan transaksi. | Passed |
+| **`TC-SEC-CON-002`** | Konkurensi | Penomoran Sales Order Serentak (*Concurrent SO Numbering*) | 10 Sales menyetujui quotation menjadi SO secara bersamaan | Eksekusi 10 transaksi konversi SO serentak | Diterbitkan 10 nomor SO unik: `PBB/SOR/2026/09SSSS/0001` s.d. `0010`, tabel `sales_orders` konsisten 100%. | Passed |
+| **`TC-SEC-CON-003`** | Konkurensi | Penomoran Surat Jalan Serentak (*Concurrent DO Numbering*) | 10 Staf Gudang menerbitkan Surat Jalan serentak | Eksekusi 10 pembuatan DO serentak | Diterbitkan 10 nomor DO unik: `PBB/DOR/2026/09SSSS/0001` s.d. `0010` tanpa terjadi kegagalan transaksi. | Passed |
 | **`TC-SEC-CON-004`** | Konkurensi | Pengurangan Kuantitas Sisa Pesanan Serentak pada Partial DO | Sisa pesanan SO = 50 pcs | 2 Staf Gudang menerbitkan DO parsial (masing-masing 30 pcs) serentak | Staf pertama berhasil menerbitkan DO (30 pcs, sisa jadi 20 pcs). Staf kedua ditolak/gagal karena kuantitas minta (30) > sisa baru (20). | Not Executed |
 | **`TC-SEC-CON-005`** | Konkurensi | Pencegahan Penarikan Saldo Komisi Ganda Serentak (*Double Payout Lock*) | Saldo komisi agen = Rp 1.000.000 | 2 request pencairan dana (masing-masing Rp 1.000.000) dikirim bersamaan | Atomic Lock memastikan hanya 1 request yang diproses; request kedua ditolak dengan pesan saldo tidak mencukupi. Saldo tidak pernah minus. | Not Executed |
 | **`TC-SEC-CON-006`** | Konkurensi | Transisi Bulan Baru pada Format Penomoran (*Monthly Sequence Reset*) | Tanggal sistem berganti dari 30 September ke 01 Oktober | Buat Quotation pertama di bulan Oktober | Nomor dokumen otomatis me-reset urutan awal dan menyematkan kode bulan baru: `PBB/QUO/2026/10SSSS/0001`. | Passed |
@@ -88,7 +89,7 @@
 
 ### 3.2 Prosedur Uji TC-SEC-CON-004 (Uji Balap Partial Delivery Order)
 
-1. **Langkah 1:** Sales Order bernomor `SO-202609-0001` memiliki sisa pesanan 50 unit.
+1. **Langkah 1:** Sales Order bernomor `PBB/SOR/2026/092F9C/0001` memiliki sisa pesanan 50 unit.
 2. **Langkah 2:** Eksekusi 2 thread pengiriman serentak masing-masing meminta alokasi 30 unit.
 3. **Verifikasi Teknis:**
    - Thread 1 mengeksekusi `SELECT remaining_qty FROM sales_order_items WHERE id = 1 FOR UPDATE`.

@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.9.0 |
+| **Versi Dokumen** | 1.9.1 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -25,6 +25,7 @@
 | `1.7.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan parameter DTOs: penambahan ekstensi BOQ industri (xls, docx, csv, jpeg) dan maxSizeBytes pada FileUploadRequestDTO, field fisik armada logistik pada DeliveryOrderFulfillmentDTO, diskon nominal lump-sum pada CalculateMarginDTO, serta konstanta dan guard validasi tipe dokumen pada DocumentNumberRequestDTO |
 | `1.8.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Harmonisasi arsitektur `DocumentNumberService` berbasis tabel `document_sequences` dengan pesimistis locking (`lockForUpdate()`), `DB::transaction(..., 3)` auto-retry deadlock, integrasi `DocumentNumberRequestDTO`, format resmi `INQ-YYYYMM-XXXX`, revisi penawaran `-R{n}`, dan emisi domain event `DocumentNumberGenerated` |
 | `1.9.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembaruan standar penomoran resmi korporat PBB: `PBB/{TIPE}/{YYYY}/{MMSSSS}/{XXXX}` dengan penyematan cryptographic security salt 4-karakter (anti-tebak/anti-enumerasi eksternal) dan kesinambungan urutan numerik internal kepatuhan audit UU KUP |
+| `1.9.1` | 20 Sep 2026 | Principal System Architect | Disetujui | Penyeragaman seluruh kode tipe transaksi menjadi tepat 3 huruf (`SO` -> `SOR`, `DO` -> `DOR`) untuk kepatuhan standar format korporat PBB |
 
 ---
 
@@ -46,27 +47,29 @@ use InvalidArgumentException;
 class DocumentNumberService
 {
     /**
-     * Peta awalan dokumen standar resmi PT. Panca Bima Bergawa.
+     * Peta awalan prefix dokumen resmi PT. Panca Bima Bergawa (Semua tipe 3 huruf).
      */
     public const PREFIX_MAP = [
         DocumentNumberRequestDTO::TYPE_INQUIRY        => 'INQ',
         DocumentNumberRequestDTO::TYPE_QUOTATION      => 'QUO',
-        DocumentNumberRequestDTO::TYPE_SALES_ORDER    => 'SO',
-        DocumentNumberRequestDTO::TYPE_DELIVERY_ORDER => 'DO',
+        DocumentNumberRequestDTO::TYPE_SALES_ORDER    => 'SOR',
+        DocumentNumberRequestDTO::TYPE_DELIVERY_ORDER => 'DOR',
         DocumentNumberRequestDTO::TYPE_INVOICE        => 'INV',
         DocumentNumberRequestDTO::TYPE_COMMISSION     => 'COM',
         'inquiry'                                     => 'INQ',
         'quotation'                                   => 'QUO',
-        'sales_order'                                 => 'SO',
-        'delivery_order'                              => 'DO',
+        'sales_order'                                 => 'SOR',
+        'delivery_order'                              => 'DOR',
         'invoice'                                     => 'INV',
         'commission'                                  => 'COM',
         'INQ'                                         => 'INQ',
         'QUO'                                         => 'QUO',
-        'SO'                                          => 'SO',
-        'DO'                                          => 'DO',
+        'SOR'                                         => 'SOR',
+        'DOR'                                         => 'DOR',
         'INV'                                         => 'INV',
         'COM'                                         => 'COM',
+        'SO'                                          => 'SOR',
+        'DO'                                          => 'DOR',
     ];
 
     /**
@@ -213,12 +216,21 @@ class DocumentNumberService
     }
 
     /**
-     * Format surat jalan parsial berdasar sales order (misal: PBB/DO/2026/092F9C/0001/01).
+     * Format surat jalan parsial berdasar sales order (misal: PBB/DOR/2026/092F9C/0001/01).
      */
     public function formatDeliveryOrderPartial(string $soNumber, int $partialIndex = 1): string
     {
-        $cleanSo = preg_replace('/\/SO\//i', '/DO/', trim($soNumber));
-        return sprintf('%s/%02d', $cleanSo, max(1, $partialIndex));
+        $cleanSo = trim($soNumber);
+
+        if (str_contains($cleanSo, '/SOR/')) {
+            $cleanDo = str_replace('/SOR/', '/DOR/', $cleanSo);
+        } elseif (str_contains($cleanSo, '/SO/')) {
+            $cleanDo = str_replace('/SO/', '/DOR/', $cleanSo);
+        } else {
+            $cleanDo = preg_replace('/^(SO|SOR)-/i', 'DOR-', $cleanSo);
+        }
+
+        return sprintf('%s/%02d', $cleanDo, max(1, $partialIndex));
     }
 }
 ```

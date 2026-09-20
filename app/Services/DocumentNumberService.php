@@ -20,22 +20,24 @@ class DocumentNumberService
     public const PREFIX_MAP = [
         DocumentNumberRequestDTO::TYPE_INQUIRY => 'INQ',
         DocumentNumberRequestDTO::TYPE_QUOTATION => 'QUO',
-        DocumentNumberRequestDTO::TYPE_SALES_ORDER => 'SO',
-        DocumentNumberRequestDTO::TYPE_DELIVERY_ORDER => 'DO',
+        DocumentNumberRequestDTO::TYPE_SALES_ORDER => 'SOR',
+        DocumentNumberRequestDTO::TYPE_DELIVERY_ORDER => 'DOR',
         DocumentNumberRequestDTO::TYPE_INVOICE => 'INV',
         DocumentNumberRequestDTO::TYPE_COMMISSION => 'COM',
         'inquiry' => 'INQ',
         'quotation' => 'QUO',
-        'sales_order' => 'SO',
-        'delivery_order' => 'DO',
+        'sales_order' => 'SOR',
+        'delivery_order' => 'DOR',
         'invoice' => 'INV',
         'commission' => 'COM',
         'INQ' => 'INQ',
         'QUO' => 'QUO',
-        'SO' => 'SO',
-        'DO' => 'DO',
+        'SOR' => 'SOR',
+        'DOR' => 'DOR',
         'INV' => 'INV',
         'COM' => 'COM',
+        'SO' => 'SOR',
+        'DO' => 'DOR',
     ];
 
     /**
@@ -195,16 +197,18 @@ class DocumentNumberService
     }
 
     /**
-     * Format surat jalan parsial berdasar sales order (misal: PBB/DO/2026/092F9C/0001/01).
+     * Format surat jalan parsial berdasar sales order (misal: PBB/DOR/2026/092F9C/0001/01).
      */
     public function formatDeliveryOrderPartial(string $soNumber, int $partialIndex = 1): string
     {
         $cleanSo = trim($soNumber);
 
-        if (str_contains($cleanSo, '/SO/')) {
-            $cleanDo = str_replace('/SO/', '/DO/', $cleanSo);
+        if (str_contains($cleanSo, '/SOR/')) {
+            $cleanDo = str_replace('/SOR/', '/DOR/', $cleanSo);
+        } elseif (str_contains($cleanSo, '/SO/')) {
+            $cleanDo = str_replace('/SO/', '/DOR/', $cleanSo);
         } else {
-            $cleanDo = preg_replace('/^SO-/i', 'DO-', $cleanSo);
+            $cleanDo = preg_replace('/^(SO|SOR)-/i', 'DOR-', $cleanSo);
         }
 
         return sprintf('%s/%02d', $cleanDo, max(1, $partialIndex));

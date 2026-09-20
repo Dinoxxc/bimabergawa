@@ -65,7 +65,7 @@ class ConcurrencyDocumentNumberTest extends TestCase
         $this->assertCount(10, array_unique($generatedNumbers));
 
         foreach ($generatedNumbers as $soNum) {
-            $this->assertStringStartsWith('PBB/SO/2026/09', $soNum);
+            $this->assertStringStartsWith('PBB/SOR/2026/09', $soNum);
         }
     }
 
@@ -85,7 +85,7 @@ class ConcurrencyDocumentNumberTest extends TestCase
         $this->assertCount(10, array_unique($generatedNumbers));
 
         foreach ($generatedNumbers as $doNum) {
-            $this->assertStringStartsWith('PBB/DO/2026/09', $doNum);
+            $this->assertStringStartsWith('PBB/DOR/2026/09', $doNum);
         }
     }
 
@@ -182,16 +182,16 @@ class ConcurrencyDocumentNumberTest extends TestCase
         $yearMonth = '202611';
 
         DocumentSequence::updateOrCreate(
-            ['document_type' => 'SO', 'year_month' => $yearMonth],
+            ['document_type' => 'SOR', 'year_month' => $yearMonth],
             ['current_sequence' => 9999]
         );
 
         $so10000 = $this->service->generateSalesOrderNumber($date);
-        $this->assertStringStartsWith('PBB/SO/2026/11', $so10000);
+        $this->assertStringStartsWith('PBB/SOR/2026/11', $so10000);
         $this->assertStringEndsWith('/10000', $so10000);
 
         $so10001 = $this->service->generateSalesOrderNumber($date);
-        $this->assertStringStartsWith('PBB/SO/2026/11', $so10001);
+        $this->assertStringStartsWith('PBB/SOR/2026/11', $so10001);
         $this->assertStringEndsWith('/10001', $so10001);
     }
 }

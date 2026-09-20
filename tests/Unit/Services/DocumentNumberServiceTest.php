@@ -56,8 +56,8 @@ class DocumentNumberServiceTest extends TestCase
 
         $this->assertStringStartsWith('PBB/INQ/2026/09', $inq);
         $this->assertStringStartsWith('PBB/QUO/2026/09', $quo);
-        $this->assertStringStartsWith('PBB/SO/2026/09', $so);
-        $this->assertStringStartsWith('PBB/DO/2026/09', $do);
+        $this->assertStringStartsWith('PBB/SOR/2026/09', $so);
+        $this->assertStringStartsWith('PBB/DOR/2026/09', $do);
         $this->assertStringStartsWith('PBB/INV/2026/09', $inv);
         $this->assertStringStartsWith('PBB/COM/2026/09', $com);
     }
@@ -110,17 +110,21 @@ class DocumentNumberServiceTest extends TestCase
 
     public function test_it_formats_delivery_order_partial_from_sales_order(): void
     {
-        $soNumber = 'PBB/SO/2026/092F9C/0005';
+        $soNumber = 'PBB/SOR/2026/092F9C/0005';
 
         $doPartial1 = $this->service->formatDeliveryOrderPartial($soNumber, 1);
         $doPartial2 = $this->service->formatDeliveryOrderPartial($soNumber, 2);
 
-        $this->assertSame('PBB/DO/2026/092F9C/0005/01', $doPartial1);
-        $this->assertSame('PBB/DO/2026/092F9C/0005/02', $doPartial2);
+        $this->assertSame('PBB/DOR/2026/092F9C/0005/01', $doPartial1);
+        $this->assertSame('PBB/DOR/2026/092F9C/0005/02', $doPartial2);
 
         // Direct generateDeliveryOrderNumber with soNumber parameter
         $directDO = $this->service->generateDeliveryOrderNumber($soNumber, 1);
-        $this->assertSame('PBB/DO/2026/092F9C/0005/01', $directDO);
+        $this->assertSame('PBB/DOR/2026/092F9C/0005/01', $directDO);
+
+        // Backward compatibility with legacy /SO/ prefix
+        $legacyDO = $this->service->formatDeliveryOrderPartial('PBB/SO/2026/092F9C/0005', 1);
+        $this->assertSame('PBB/DOR/2026/092F9C/0005/01', $legacyDO);
     }
 
     public function test_it_handles_sequence_overflow_above_9999_seamlessly(): void

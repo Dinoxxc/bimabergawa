@@ -67,7 +67,10 @@ class DocumentNumberService
         }
 
         $prefix = self::PREFIX_MAP[$lookupKey] ?? self::PREFIX_MAP[$normalizedType];
-        $yearMonth = ($effectiveDate ?? now())->format('Ym');
+        $targetDate = $effectiveDate ?? now();
+        $year = $targetDate->format('Y');
+        $month = $targetDate->format('m');
+        $yearMonth = $year.$month;
 
         $sequenceNumber = DB::transaction(function () use ($prefix, $yearMonth) {
             $sequenceRecord = DocumentSequence::where('document_type', $prefix)
@@ -99,10 +102,14 @@ class DocumentNumberService
             return (int) $sequenceRecord->current_sequence;
         }, 3);
 
+        // Hasilkan 4-karakter cryptographic security salt deterministik berbasis APP_KEY
+        $saltKey = sprintf('%s/%s/%s/%d', $prefix, $year, $month, $sequenceNumber);
+        $salt = strtoupper(substr(hash_hmac('sha256', $saltKey, config('app.key') ?: 'pbb-salt-seed'), 0, 4));
+
         if ($sequenceNumber > 9999) {
-            $documentNumber = sprintf('%s-%s-%d', $prefix, $yearMonth, $sequenceNumber);
+            $documentNumber = sprintf('PBB/%s/%s/%s%s/%d', $prefix, $year, $month, $salt, $sequenceNumber);
         } else {
-            $documentNumber = sprintf('%s-%s-%04d', $prefix, $yearMonth, $sequenceNumber);
+            $documentNumber = sprintf('PBB/%s/%s/%s%s/%04d', $prefix, $year, $month, $salt, $sequenceNumber);
         }
 
         $resolvedUserId = $effectiveUserId ?? (auth()->check() ? auth()->id() : null);
@@ -188,13 +195,19 @@ class DocumentNumberService
     }
 
     /**
-     * Format surat jalan parsial berdasar sales order (misal: DO-202609-0001/01).
+     * Format surat jalan parsial berdasar sales order (misal: PBB/DO/2026/092F9C/0001/01).
      */
     public function formatDeliveryOrderPartial(string $soNumber, int $partialIndex = 1): string
     {
-        $cleanSo = preg_replace('/^SO-/i', 'DO-', trim($soNumber));
+        $cleanSo = trim($soNumber);
 
-        return sprintf('%s/%02d', $cleanSo, max(1, $partialIndex));
+        if (str_contains($cleanSo, '/SO/')) {
+            $cleanDo = str_replace('/SO/', '/DO/', $cleanSo);
+        } else {
+            $cleanDo = preg_replace('/^SO-/i', 'DO-', $cleanSo);
+        }
+
+        return sprintf('%s/%02d', $cleanDo, max(1, $partialIndex));
     }
 
     /**

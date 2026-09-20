@@ -108,14 +108,14 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
 - Tarif PPN aktif dikelola secara mandiri oleh Super Admin / Direksi Finance melalui tabel `system_settings` di panel ERP (`app.bimabergawa.com`) tanpa ketergantungan pada perubahan teknis file `.env`.
 - Setiap rekaman transaksi quotation, sales order, dan invoice wajib mencatat persentase PPN saat transaksi diterbitkan (`vat_rate_applied = $activeVatRate`). Dilarang keras menghitung ulang PPN transaksi historis dari konfigurasi global saat membaca data masa lalu guna menjamin kepatuhan audit pajak 10 tahun UU KUP.
 
-### 3.7 Penomoran Dokumen Bebas Race Condition (Atomic Concurrency Lock)
-- Penomoran dokumen transaksi wajib melalui `DocumentNumberService` menggunakan transaksi database atomik (`SELECT ... FOR UPDATE`) dengan auto-retry 3x saat terjadi deadlock MySQL. Standar format resmi:
-  - Inkuiri: `INQ-YYYYMM-XXXX` (Contoh: `INQ-202609-0001`)
-  - Penawaran: `QUO-YYYYMM-XXXX` (Revisi: `QUO-YYYYMM-XXXX-R1`)
-  - Sales Order: `SO-YYYYMM-XXXX`
-  - Surat Jalan: `DO-YYYYMM-XXXX`
-  - Faktur Tagihan (Invoice): `INV-YYYYMM-XXXX`
-  - Faktur Komisi: `COM-YYYYMM-XXXX`
+### 3.7 Penomoran Dokumen Bebas Race Condition & Terlindungi (Atomic Concurrency Lock & Obfuscated Salt)
+- Penomoran dokumen transaksi wajib melalui `DocumentNumberService` menggunakan transaksi database atomik (`SELECT ... FOR UPDATE`) dengan auto-retry 3x saat terjadi deadlock MySQL, serta menyematkan 4-karakter cryptographic security salt (`SSSS`) setelah 2-digit bulan (`MM`) untuk proteksi anti-tebak/anti-enumerasi pihak luar tanpa merusak urutan numerik internal. Standar format resmi:
+  - Inkuiri: `PBB/INQ/YYYY/MMSSSS/XXXX` (Contoh: `PBB/INQ/2026/092F9C/0001`)
+  - Penawaran: `PBB/QUO/YYYY/MMSSSS/XXXX` (Revisi: `PBB/QUO/2026/092F9C/0001-R1`)
+  - Sales Order: `PBB/SO/YYYY/MMSSSS/XXXX` (Contoh: `PBB/SO/2026/092F9C/0001`)
+  - Surat Jalan: `PBB/DO/YYYY/MMSSSS/XXXX` (Parsial: `PBB/DO/2026/092F9C/0001/01`)
+  - Faktur Tagihan (Invoice): `PBB/INV/YYYY/MMSSSS/XXXX` (Contoh: `PBB/INV/2026/092F9C/0001`)
+  - Faktur Komisi: `PBB/COM/YYYY/MMSSSS/XXXX` (Contoh: `PBB/COM/2026/092F9C/0001`)
 
 ### 3.8 Enkripsi Data Pribadi Sensitif At-Rest (UU PDP No. 27/2022)
 - Kolom NIK KTP (`nik_ktp`), NPWP (`npwp_number`), dan nomor rekening perbankan (`bank_account_number`) pada model `AgentProfile` wajib dienkripsi pada level basis data menggunakan Eloquent `$casts = ['encrypted']` (kunci enkripsi `APP_KEY`).

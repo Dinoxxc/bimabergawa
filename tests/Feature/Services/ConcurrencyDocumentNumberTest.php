@@ -65,7 +65,7 @@ class ConcurrencyDocumentNumberTest extends TestCase
         $this->assertCount(10, array_unique($generatedNumbers));
 
         foreach ($generatedNumbers as $soNum) {
-            $this->assertStringStartsWith('SO-202609-', $soNum);
+            $this->assertStringStartsWith('PBB/SO/2026/09', $soNum);
         }
     }
 
@@ -85,7 +85,7 @@ class ConcurrencyDocumentNumberTest extends TestCase
         $this->assertCount(10, array_unique($generatedNumbers));
 
         foreach ($generatedNumbers as $doNum) {
-            $this->assertStringStartsWith('DO-202609-', $doNum);
+            $this->assertStringStartsWith('PBB/DO/2026/09', $doNum);
         }
     }
 
@@ -100,10 +100,10 @@ class ConcurrencyDocumentNumberTest extends TestCase
         $lastSept = $this->service->generateInquiryNumber($datePeriodA);
         $firstOct = $this->service->generateInquiryNumber($datePeriodB);
 
-        $this->assertStringStartsWith('INQ-202609-', $lastSept);
-        $this->assertStringStartsWith('INQ-202610-', $firstOct);
+        $this->assertStringStartsWith('PBB/INQ/2026/09', $lastSept);
+        $this->assertStringStartsWith('PBB/INQ/2026/10', $firstOct);
 
-        $this->assertStringEndsWith('0001', $firstOct);
+        $this->assertStringEndsWith('/0001', $firstOct);
     }
 
     /**
@@ -187,9 +187,11 @@ class ConcurrencyDocumentNumberTest extends TestCase
         );
 
         $so10000 = $this->service->generateSalesOrderNumber($date);
-        $this->assertSame('SO-202611-10000', $so10000);
+        $this->assertStringStartsWith('PBB/SO/2026/11', $so10000);
+        $this->assertStringEndsWith('/10000', $so10000);
 
         $so10001 = $this->service->generateSalesOrderNumber($date);
-        $this->assertSame('SO-202611-10001', $so10001);
+        $this->assertStringStartsWith('PBB/SO/2026/11', $so10001);
+        $this->assertStringEndsWith('/10001', $so10001);
     }
 }

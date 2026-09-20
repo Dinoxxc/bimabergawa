@@ -143,13 +143,18 @@ class BulkSkuNormalizationService
             }
         }
 
-        // 4. Pencocokan karakter alfanumerik murni (mengabaikan spasi, strip, slash, pagar, titik, underscore)
+        // 4b. Pencocokan karakter alfanumerik murni (mengabaikan spasi, strip, slash, pagar, titik, underscore)
         $cleanAlphaNum = self::cleanForComparison($cleanInput);
         if ($cleanAlphaNum !== '') {
-            $product = Product::whereRaw(
-                "UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(model_number, ' ', ''), '-', ''), '/', ''), '#', ''), '.', ''), '_', '')) = ?",
-                [$cleanAlphaNum]
-            )
+            $product = Product::where(function ($q) use ($cleanAlphaNum) {
+                $q->whereRaw(
+                    "UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(model_number, ' ', ''), '-', ''), '/', ''), '#', ''), '.', ''), '_', '')) = ?",
+                    [$cleanAlphaNum]
+                )->orWhereRaw(
+                    "UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(sku, ' ', ''), '-', ''), '/', ''), '#', ''), '.', ''), '_', '')) = ?",
+                    [$cleanAlphaNum]
+                );
+            })
                 ->when($brandId !== null, fn ($q) => $q->where('brand_id', $brandId))
                 ->first();
 

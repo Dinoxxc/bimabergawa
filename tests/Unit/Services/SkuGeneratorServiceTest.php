@@ -124,4 +124,59 @@ class SkuGeneratorServiceTest extends TestCase
 
         $this->assertSame('PBB-GEN-GEN-0001', $sku);
     }
+
+    public function test_sequence_correctly_transitions_beyond_9999_items(): void
+    {
+        // Simulasi produk dengan sequence 9999 dan 10000 sudah ada
+        Product::factory()->create([
+            'brand_id' => $this->schneider->id,
+            'category_id' => $this->electrical->id,
+            'sku' => 'PBB-ELE-SCH-9999',
+            'model_number' => 'SIM-9999',
+        ]);
+
+        Product::factory()->create([
+            'brand_id' => $this->schneider->id,
+            'category_id' => $this->electrical->id,
+            'sku' => 'PBB-ELE-SCH-10000',
+            'model_number' => 'SIM-10000',
+        ]);
+
+        // Pembangkitan SKU berikutnya harus menghasilkan 10001 secara numerik
+        $nextSku = SkuGeneratorService::generateFor($this->electrical, $this->schneider);
+        $this->assertSame('PBB-ELE-SCH-10001', $nextSku);
+    }
+
+    public function test_subcategory_inherits_parent_category_division_code_when_code_is_empty(): void
+    {
+        // Subcategory under electrical with empty code
+        $mcbSubcategory = Category::factory()->create([
+            'name' => 'Miniature Circuit Breaker',
+            'parent_id' => $this->electrical->id,
+            'code' => null,
+        ]);
+
+        $sku = SkuGeneratorService::generateFor($mcbSubcategory, $this->schneider);
+
+        // Harus mewarisi kode 'ELE' dari parent category, bukan singkatan nama subkategori 'MIN'
+        $this->assertSame('PBB-ELE-SCH-0001', $sku);
+    }
+
+    public function test_code_sanitization_ignores_symbols_and_falls_back_gracefully(): void
+    {
+        $symbolBrand = Brand::factory()->create([
+            'name' => 'General Electric',
+            'code' => '---###---',
+        ]);
+
+        $symbolCategory = Category::factory()->create([
+            'name' => 'Instrumentation',
+            'code' => '***@@@',
+        ]);
+
+        $sku = SkuGeneratorService::generateFor($symbolCategory, $symbolBrand);
+
+        // Kategori "Instrumentation" -> "INS", Brand "General Electric" -> "GENE"
+        $this->assertSame('PBB-INS-GENE-0001', $sku);
+    }
 }

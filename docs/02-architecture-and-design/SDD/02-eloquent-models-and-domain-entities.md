@@ -27,6 +27,7 @@
 | `1.8.0` | 19 Sep 2026 | Principal System Architect | Disetujui | Penambahan Model `UnitOfMeasure` (Master Satuan Dinamis), ekspansi 28 Model Domain, integrasi atribut `uom`, `project_name`, `company_npwp`, `faktur_pajak_number`, `driver_name`, `vehicle_plate_number`, `moq`, `warranty_period`, serta kustomisasi spesifikasi dinamis per item (`custom_specifications`) |
 | `1.9.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Integrasi model Tahap A: `exchange_rate_applied`, `base_currency`, `idempotency_key` (Quotation/SO/Payout), `spec_template` (Category), `UnitOfMeasureObserver`, dan full-chain withTrashed() User->freelanceSales() |
 | `1.10.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Integrasi Dual-Identifier Architecture: penambahan atribut `code` pada Brand dan Category, atribut `sku` pada Product, serta SkuGeneratorService auto-hook pada ProductObserver |
+| `1.11.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembaruan ProductObserver dengan creating hook (auto-generate SKU & normalisasi manual), updating hook (proteksi penghapusan SKU tidak sengaja & auto-generation produk legacy), serta pewarisan kode divisi kategori induk hierarkis pada Category::getEffectiveCode() |
 
 ---
 
@@ -1269,9 +1270,36 @@ Untuk memenuhi **Rule 6.10**, dibuat `App\Observers\ProductObserver` untuk memod
 namespace App\Observers;
 
 use App\Models\Product;
+use App\Services\BulkSkuNormalizationService;
+use App\Services\SkuGeneratorService;
 
 class ProductObserver
 {
+    public function creating(Product $product): void
+    {
+        if (empty($product->sku)) {
+            $product->sku = SkuGeneratorService::generate($product);
+        } else {
+            $product->sku = BulkSkuNormalizationService::normalize($product->sku);
+        }
+    }
+
+    public function updating(Product $product): void
+    {
+        if (empty($product->sku)) {
+            $originalSku = $product->getOriginal('sku');
+            if (! empty($originalSku)) {
+                // Cegah penghapusan tidak sengaja, pulihkan SKU awal
+                $product->sku = (string) $originalSku;
+            } else {
+                // Produk warisan lama tanpa SKU (null) dibangkitkan otomatis
+                $product->sku = SkuGeneratorService::generate($product);
+            }
+        } elseif ($product->isDirty('sku')) {
+            $product->sku = BulkSkuNormalizationService::normalize($product->sku);
+        }
+    }
+
     public function deleting(Product $product): void
     {
         if (! $product->isForceDeleting()) {

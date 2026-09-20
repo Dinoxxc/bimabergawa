@@ -28,6 +28,7 @@
 | `1.9.1` | 20 Sep 2026 | Principal System Architect | Disetujui | Penyeragaman seluruh kode tipe transaksi menjadi tepat 3 huruf (`SO` -> `SOR`, `DO` -> `DOR`) untuk kepatuhan standar format korporat PBB |
 | `1.10.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembersihan format penomoran dokumen menjadi standar korporat bersih `PBB/{TIPE}/{YYYY}/{MM}/{XXXX}` tanpa salt kriptografis |
 | `1.11.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi SkuGeneratorService untuk auto-generated internal SKU PBB format PBB-[DIV]-[BRAND]-[SEQUENCE], integrasi pencarian SKU internal pada BulkSkuNormalizationService, dan auto-derivation kode fallback |
+| `1.12.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penguatan SkuGeneratorService dengan pengurutan numerik CAST(SUBSTRING_INDEX), pewarisan kode divisi kategori hierarkis, proteksi penghapusan SKU pada ProductObserver update, dan integrasi penelusuran alfanumerik toleran murni pada BulkSkuNormalizationService |
 
 ---
 
@@ -747,7 +748,7 @@ Seluruh penanganan kesalahan logika bisnis menggunakan custom typed exceptions d
 
 ## 12. `SkuGeneratorService` (Pembangkitan SKU Internal PBB Otomatis)
 
-Menghasilkan format kode identitas inventaris internal PBB yang seragam, bersih, dan siap cetak barcode/label rak gudang:
+Menghasilkan format kode identitas inventaris internal PBB yang seragam, bersih, deterministik, dan siap cetak barcode/label rak gudang (`PBB-[DIV]-[BRAND]-[SEQUENCE]`):
 
 ```php
 namespace App\Services;
@@ -756,27 +757,65 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class SkuGeneratorService
 {
     /**
-     * Membangkitkan internal SKU resmi PBB berformat: PBB-[DIV]-[BRAND]-[SEQUENCE]
-     * Contoh: PBB-ELE-SCH-0001, PBB-MEC-EBR-0012
+     * Membangkitkan internal SKU resmi PBB untuk model Product.
      */
     public static function generate(Product $product): string
     {
-        // 1. Dapatkan kode divisi dari kategori (atau auto-derive 3 huruf dari nama)
-        $categoryCode = self::resolveCategoryCode($product->category_id ? $product->category : null);
+        $category = $product->category ?? ($product->category_id ? Category::find($product->category_id) : null);
+        $brand = $product->brand ?? ($product->brand_id ? Brand::find($product->brand_id) : null);
 
-        // 2. Dapatkan kode brand dari principal (atau auto-derive 3-4 huruf dari nama)
-        $brandCode = self::resolveBrandCode($product->brand_id ? $product->brand : null);
+        return self::generateFor($category, $brand);
+    }
 
-        // 3. Hitung sequence nomor urut unik scoped to DIV-BRAND
-        $sequence = self::getNextSequence($categoryCode, $brandCode);
+    /**
+     * Membangkitkan internal SKU resmi PBB berdasarkan Category dan Brand:
+     * - Sanitasi alfanumerik huruf besar
+     * - Transaksi database atomik (3x deadlock auto-retry)
+     * - Pessimistic row locking (lockForUpdate) dengan pengurutan numerik CAST(SUBSTRING_INDEX(sku, '-', -1) AS UNSIGNED) DESC
+     * - Loop deterministik mencegah tabrakan indeks unik MySQL
+     */
+    public static function generateFor(?Category $category = null, ?Brand $brand = null): string
+    {
+        $categoryCode = $category?->getEffectiveCode() ?? 'GEN';
+        $brandCode = $brand?->getEffectiveCode() ?? 'GEN';
 
-        return sprintf('PBB-%s-%s-%04d', $categoryCode, $brandCode, $sequence);
+        $categoryCode = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $categoryCode));
+        $brandCode = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $brandCode));
+
+        if ($categoryCode === '') {
+            $categoryCode = 'GEN';
+        }
+        if ($brandCode === '') {
+            $brandCode = 'GEN';
+        }
+
+        $prefix = sprintf('PBB-%s-%s-', $categoryCode, $brandCode);
+
+        return DB::transaction(function () use ($prefix) {
+            $latestSku = Product::withTrashed()
+                ->where('sku', 'like', $prefix.'%')
+                ->lockForUpdate()
+                ->orderByRaw("CAST(SUBSTRING_INDEX(sku, '-', -1) AS UNSIGNED) DESC")
+                ->orderByDesc('sku')
+                ->value('sku');
+
+            $nextSequence = 1;
+            if ($latestSku !== null && preg_match('/-(\d+)$/', $latestSku, $matches)) {
+                $nextSequence = ((int) $matches[1]) + 1;
+            }
+
+            $candidateSku = sprintf('%s%04d', $prefix, $nextSequence);
+            while (Product::withTrashed()->where('sku', $candidateSku)->exists()) {
+                $nextSequence++;
+                $candidateSku = sprintf('%s%04d', $prefix, $nextSequence);
+            }
+
+            return $candidateSku;
+        }, 3);
     }
 }
 ```
-

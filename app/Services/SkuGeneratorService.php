@@ -46,10 +46,11 @@ class SkuGeneratorService
         $prefix = sprintf('PBB-%s-%s-', $categoryCode, $brandCode);
 
         return DB::transaction(function () use ($prefix) {
-            // Cari SKU terbaru dengan awalan yang sama
+            // Cari SKU terbaru dengan awalan yang sama, urutkan numerik terlebih dahulu
             $latestSku = Product::withTrashed()
                 ->where('sku', 'like', $prefix.'%')
                 ->lockForUpdate()
+                ->orderByRaw("CAST(SUBSTRING_INDEX(sku, '-', -1) AS UNSIGNED) DESC")
                 ->orderByDesc('sku')
                 ->value('sku');
 

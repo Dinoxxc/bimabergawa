@@ -174,7 +174,7 @@ class SkuParserService
             }
 
             if ($product !== null) {
-                $matchType = ($product->model_number === $item['sku']) ? 'exact' : 'tolerant';
+                $matchType = ($product->model_number === $item['sku'] || $product->sku === $item['sku']) ? 'exact' : 'tolerant';
 
                 $matched[] = [
                     'product' => $product,

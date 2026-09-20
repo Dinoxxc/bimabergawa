@@ -28,12 +28,23 @@ class Category extends Model
     public function getEffectiveCode(): string
     {
         if (! empty($this->code)) {
-            return strtoupper(trim((string) preg_replace('/[^A-Za-z0-9]/', '', $this->code)));
+            $cleanCode = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $this->code));
+            if ($cleanCode !== '') {
+                return substr($cleanCode, 0, 10);
+            }
         }
 
-        $clean = (string) preg_replace('/[^A-Za-z0-9]/', '', $this->name);
+        // Wariskan kode divisi dari kategori induk jika ada
+        if ($this->parent_id !== null) {
+            $parent = $this->parent ?? Category::find($this->parent_id);
+            if ($parent !== null) {
+                return $parent->getEffectiveCode();
+            }
+        }
 
-        return strtoupper(substr($clean !== '' ? $clean : 'GEN', 0, 3));
+        $cleanName = (string) preg_replace('/[^A-Za-z0-9]/', '', $this->name ?? '');
+
+        return strtoupper(substr($cleanName !== '' ? $cleanName : 'GEN', 0, 3));
     }
 
     protected function casts(): array

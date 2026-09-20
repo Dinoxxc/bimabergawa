@@ -27,12 +27,15 @@ class Brand extends Model
     public function getEffectiveCode(): string
     {
         if (! empty($this->code)) {
-            return strtoupper(trim((string) preg_replace('/[^A-Za-z0-9]/', '', $this->code)));
+            $cleanCode = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $this->code));
+            if ($cleanCode !== '') {
+                return substr($cleanCode, 0, 10);
+            }
         }
 
-        $clean = (string) preg_replace('/[^A-Za-z0-9]/', '', $this->name);
+        $cleanName = (string) preg_replace('/[^A-Za-z0-9]/', '', $this->name ?? '');
 
-        return strtoupper(substr($clean !== '' ? $clean : 'GEN', 0, 4));
+        return strtoupper(substr($cleanName !== '' ? $cleanName : 'GEN', 0, 4));
     }
 
     protected function casts(): array

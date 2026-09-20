@@ -529,4 +529,53 @@ class DatabaseSeederTest extends TestCase
         ]);
         $this->assertEquals('unit', $invItem->uom);
     }
+
+    /**
+     * TC-INF-MIG-021: Integritas Skema Fondasi Service Layer B2B (Hedging Valas, Idempotensi, Spec Template, Fulltext Index).
+     */
+    public function test_service_foundation_and_b2b_contracts_fields_integrity(): void
+    {
+        $this->seed(RoleAndPermissionSeeder::class);
+        $this->seed(CommissionTierSeeder::class);
+        $this->seed(InitialSuperAdminSeeder::class);
+        $this->seed(BrandAndCategorySeeder::class);
+        $this->seed(SystemSettingSeeder::class);
+
+        // Verify payment terms presets in system_settings
+        $setting = SystemSetting::where('key', 'commercial_tax.payment_terms_presets')->firstOrFail();
+        $presets = json_decode($setting->value, true);
+        $this->assertIsArray($presets);
+        $this->assertCount(5, $presets);
+
+        // Verify category spec_template seeded
+        $category = Category::where('name', 'Distribusi Daya Listrik')->firstOrFail();
+        $this->assertNotNull($category->spec_template);
+        $this->assertIsArray($category->spec_template);
+        $this->assertEquals('Rated Current (In)', $category->spec_template[0]['name']);
+
+        // Verify Quotation hedging & idempotency
+        $quo = Quotation::factory()->create([
+            'exchange_rate_applied' => '16250.5000',
+            'base_currency' => 'USD',
+            'idempotency_key' => 'idemp-quo-test-1',
+        ]);
+        $this->assertEquals('16250.5000', (string) $quo->exchange_rate_applied);
+        $this->assertEquals('USD', $quo->base_currency);
+        $this->assertEquals('idemp-quo-test-1', $quo->idempotency_key);
+
+        // Verify QuotationItem hedging
+        $quoItem = QuotationItem::factory()->create([
+            'quotation_id' => $quo->id,
+            'exchange_rate_applied' => '16250.5000',
+            'base_currency' => 'USD',
+        ]);
+        $this->assertEquals('16250.5000', (string) $quoItem->exchange_rate_applied);
+        $this->assertEquals('USD', $quoItem->base_currency);
+
+        // Verify unique constraint on idempotency_key
+        $this->expectException(QueryException::class);
+        Quotation::factory()->create([
+            'idempotency_key' => 'idemp-quo-test-1',
+        ]);
+    }
 }

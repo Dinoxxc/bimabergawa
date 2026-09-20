@@ -30,6 +30,7 @@ class SalesOrder extends Model
         'is_approved_by_director',
         'approved_by',
         'approved_at',
+        'idempotency_key',
     ];
 
     protected function casts(): array

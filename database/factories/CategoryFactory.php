@@ -25,6 +25,7 @@ class CategoryFactory extends Factory
             'slug' => Str::slug($name),
             'icon_name' => 'heroicon-o-folder',
             'description' => fake()->sentence(),
+            'spec_template' => [['name' => 'Standard', 'unit' => '', 'type' => 'string']],
             'sort_order' => fake()->numberBetween(1, 50),
         ];
     }

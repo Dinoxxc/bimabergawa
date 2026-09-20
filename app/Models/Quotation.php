@@ -39,12 +39,15 @@ class Quotation extends Model
         'currency',
         'total_cost',
         'gross_profit_margin',
+        'exchange_rate_applied',
+        'base_currency',
         'is_approved_by_director',
         'status',
         'pdf_path',
         'approved_by',
         'approved_at',
         'director_notes',
+        'idempotency_key',
     ];
 
     protected function casts(): array
@@ -61,6 +64,7 @@ class Quotation extends Model
             'grand_total' => 'decimal:2',
             'total_cost' => 'decimal:2',
             'gross_profit_margin' => 'decimal:2',
+            'exchange_rate_applied' => 'decimal:4',
             'is_approved_by_director' => 'boolean',
             'approved_by' => 'integer',
             'approved_at' => 'datetime',

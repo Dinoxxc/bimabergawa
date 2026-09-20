@@ -29,6 +29,7 @@ class SalesOrderFactory extends Factory
             'total_amount' => fake()->randomFloat(2, 10000000, 100000000),
             'currency' => 'IDR',
             'is_approved_by_director' => true,
+            'idempotency_key' => fake()->optional()->uuid(),
         ];
     }
 }

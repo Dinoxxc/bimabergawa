@@ -34,6 +34,8 @@ class QuotationItemFactory extends Factory
             'cost_price' => $costPrice,
             'discount_percent' => 0.00,
             'total_price' => round($unitPrice * $qty, 2),
+            'exchange_rate_applied' => 1.0000,
+            'base_currency' => 'IDR',
             'warranty_period' => '12 Bulan Garansi Resmi',
             'custom_specifications' => [['key' => 'Standar', 'value' => 'SNI']],
         ];

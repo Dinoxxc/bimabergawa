@@ -24,6 +24,8 @@ class QuotationItem extends Model
         'cost_price',
         'discount_percent',
         'total_price',
+        'exchange_rate_applied',
+        'base_currency',
         'warranty_period',
         'custom_specifications',
     ];
@@ -36,6 +38,7 @@ class QuotationItem extends Model
             'cost_price' => 'decimal:2',
             'discount_percent' => 'decimal:2',
             'total_price' => 'decimal:2',
+            'exchange_rate_applied' => 'decimal:4',
             'custom_specifications' => 'array',
         ];
     }

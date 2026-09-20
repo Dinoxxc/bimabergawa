@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.6.0 |
+| **Versi Dokumen** | 1.7.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -26,6 +26,7 @@
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan softDeletes pada tabel kritis, berkas PO klien, catatan evaluasi direksi, multi-currency, modul faktur penagihan (`invoices`, `invoice_items`), dan audit log sistem (`activity_logs`) |
 | `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan Bagian 4 (5 Evaluasi Arsitektural & Mitigasi Risiko Teknis) serta kolom `paid_amount` pada tabel `invoices` |
 | `1.6.0` | 19 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `units_of_measure` (Master Satuan Dinamis), kolom `uom`, `project_name`, `company_npwp`, `faktur_pajak_number`, `driver_name`, `vehicle_plate_number`, `moq`, `warranty_period`, serta kustomisasi spesifikasi per item (`spec_group`, `spec_unit`, `is_highlight`, `custom_specifications`) untuk kesiapan B2B General Industrial Supplier |
+| `1.7.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema Tahap A: kolom snapshot kurs valas (`exchange_rate_applied`, `base_currency`), `idempotency_key` pada transaksi komersial, `spec_template` JSON pada kategori, dan indeks Fulltext MySQL pada produk |
 
 ---
 
@@ -535,4 +536,18 @@ Berdasarkan audit kelayakan komersial menyeluruh pada tahap fondasi awal (*Early
   ]);
   ```
   Langkah ini mereduksi ukuran penyimpanan indeks string komposit hingga 75% dan mencegah kegagalan *Out of Memory* pada server LiteSpeed.
+
+### 4.6 Skema Fondasi Service Layer & Proteksi Transaksi B2B (Tahap A)
+Menjelang implementasi Service Layer di Fase 2, skema basis data diperkaya dengan kolom-kolom pendukung integritas transaksi tingkat lanjut:
+1. **Snapshot Valas & Hedging Margin:**
+   - Kolom `exchange_rate_applied DECIMAL(12,4) DEFAULT 1.0000` dan `base_currency VARCHAR(3) DEFAULT 'IDR'` pada tabel `quotations` dan `quotation_items`.
+   - Mengunci nilai konversi kurs valas impor saat penawaran harga diterbitkan sehingga kalkulasi Live Margin HPP Guard tetap akurat meski terjadi fluktuasi kurs selama 14 hari masa berlaku penawaran.
+2. **Idempotency Key Transaksi Kritis:**
+   - Kolom `idempotency_key VARCHAR(64) NULL UNIQUE` pada tabel `quotations`, `sales_orders`, dan `commission_payouts`.
+   - Menjamin bahwa operasi komersial tidak terduplikasi saat terjadi gangguan jaringan atau pengiriman ulang data (*double-submit*).
+3. **Template Spesifikasi Teknis Kategori (`spec_template`):**
+   - Kolom `spec_template JSON NULL` pada tabel `categories` untuk menyimpan preset rekomendasi atribut teknis per kategori industri (Katup, MCB, Pompa, APD K3, Perkakas Bengkel).
+4. **Indeks Pencarian Cepat Produk (`idx_products_fulltext`):**
+   - Indeks `FULLTEXT idx_products_fulltext (name, model_number, description)` pada tabel `products` untuk mendukung pencarian katalog berkecepatan tinggi pada RFQ drawer dan Quotation Builder.
+
 

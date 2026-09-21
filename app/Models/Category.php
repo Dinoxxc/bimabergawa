@@ -35,8 +35,12 @@ class Category extends Model
         }
 
         // Wariskan kode divisi dari kategori induk jika ada
+        if ($this->relationLoaded('parent') && $this->parent !== null) {
+            return $this->parent->getEffectiveCode();
+        }
+
         if ($this->parent_id !== null) {
-            $parent = $this->parent ?? Category::find($this->parent_id);
+            $parent = Category::find($this->parent_id);
             if ($parent !== null) {
                 return $parent->getEffectiveCode();
             }

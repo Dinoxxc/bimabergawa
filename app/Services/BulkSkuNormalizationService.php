@@ -60,27 +60,52 @@ class BulkSkuNormalizationService
      * dengan menyematkan tanda kutip tunggal pengaman (') agar aman saat diekspor.
      * (Rujukan: TC-CAT-IMP-011).
      */
-    public static function sanitizeTextField(string $text): string
+    public static function sanitizeTextField(string|int|float|null $text): string
     {
-        $trimmed = trim($text);
-        if ($trimmed === '') {
+        if ($text === null) {
+            return '';
+        }
+
+        if (is_int($text) || is_float($text)) {
+            return (string) $text;
+        }
+
+        $raw = (string) $text;
+        if (trim($raw) === '') {
             return '';
         }
 
         // Jika sudah dimulai dengan tanda kutip tunggal pengaman, abaikan
-        if ($trimmed[0] === "'") {
-            return $trimmed;
+        if ($raw[0] === "'") {
+            return $raw;
         }
 
         $formulaTriggers = ['=', '+', '@', "\t", "\r"];
-        $firstChar = $trimmed[0];
 
-        // Trigger jika dimulai dengan formula trigger, atau '-' diikuti karakter non-angka
-        if (in_array($firstChar, $formulaTriggers, true) || ($firstChar === '-' && isset($trimmed[1]) && ! is_numeric($trimmed[1]))) {
-            return "'".$trimmed;
+        // Periksa karakter pertama langsung pada string mentah
+        $firstChar = $raw[0];
+        if (in_array($firstChar, $formulaTriggers, true)) {
+            return "'".$raw;
         }
 
-        return $trimmed;
+        // Tanda minus diikuti karakter non-angka
+        if ($firstChar === '-' && isset($raw[1]) && ! is_numeric($raw[1])) {
+            return "'".$raw;
+        }
+
+        // Periksa bila ada spasi tersembunyi di awal sebelum karakter formula (contoh: "  =CMD")
+        $trimmedSpaces = ltrim($raw, ' ');
+        if ($trimmedSpaces !== '' && $trimmedSpaces !== $raw) {
+            if ($trimmedSpaces[0] === "'") {
+                return $raw;
+            }
+            if (in_array($trimmedSpaces[0], $formulaTriggers, true) ||
+                ($trimmedSpaces[0] === '-' && isset($trimmedSpaces[1]) && ! is_numeric($trimmedSpaces[1]))) {
+                return "'".$raw;
+            }
+        }
+
+        return $raw;
     }
 
     /**

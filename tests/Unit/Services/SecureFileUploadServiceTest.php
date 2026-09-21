@@ -7,15 +7,12 @@ namespace Tests\Unit\Services;
 use App\Exceptions\FileSecurityException;
 use App\Exceptions\InvalidFileMagicBytesException;
 use App\Services\SecureFileUploadService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SecureFileUploadServiceTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -198,5 +195,82 @@ class SecureFileUploadServiceTest extends TestCase
         $this->assertStringNotContainsString('javascript:', $cleanSvg);
         $this->assertStringNotContainsString('!ENTITY', $cleanSvg);
         $this->assertStringContainsString('<circle', $cleanSvg);
+    }
+
+    /**
+     * ADVERSARIAL: Penolakan payload PHP yang disembunyikan jauh melampaui offset 4096 bytes.
+     */
+    public function test_rejection_of_php_payload_hidden_deep_beyond_4096_bytes(): void
+    {
+        // 6000 bytes padding di tengah berkas PDF valid
+        $deepPayloadPdf = "%PDF-1.4\n%".str_repeat('PADDING_BINARY_DATA_', 300)."\n<?php echo 'RCE_OFFSET_6000'; ?>\n%%EOF";
+        $file = UploadedFile::fake()->createWithContent('sneaky_deep_payload.pdf', $deepPayloadPdf);
+
+        $this->expectException(FileSecurityException::class);
+        $this->expectExceptionMessage('pola skrip eksekusi terlarang');
+
+        SecureFileUploadService::validateFile($file, ['pdf']);
+    }
+
+    /**
+     * ADVERSARIAL: Penolakan ekstensi tunggal terlarang (phtml, exe, phar, dll).
+     */
+    public function test_rejection_of_forbidden_single_extension(): void
+    {
+        $fakePhtml = 'Sample Binary Content';
+        $file = UploadedFile::fake()->createWithContent('backdoor.phtml', $fakePhtml);
+
+        $this->expectException(FileSecurityException::class);
+        $this->expectExceptionMessage('dilarang keras');
+
+        SecureFileUploadService::validateFile($file, ['pdf', 'spreadsheet', 'word', 'image']);
+    }
+
+    /**
+     * ADVERSARIAL: Imunitas terhadap nested path traversal (....//....//).
+     */
+    public function test_nested_path_traversal_sanitization(): void
+    {
+        $binaryPdf = '%PDF-1.4 Legitimate Content';
+        $file = UploadedFile::fake()->createWithContent('tender.pdf', $binaryPdf);
+
+        $storedPath = SecureFileUploadService::storePrivateDocument($file, '....//....//secure_docs//sub', 5120);
+
+        $this->assertStringStartsWith('secure_docs/sub/', $storedPath);
+        $this->assertStringNotContainsString('..', $storedPath);
+        Storage::disk('private')->assertExists($storedPath);
+    }
+
+    /**
+     * ADVERSARIAL: Penolakan akses jika parameter URL yang ditandatangani dimanipulasi (tampered).
+     */
+    public function test_tampered_signed_url_is_rejected(): void
+    {
+        $binaryPdf = '%PDF-1.4 Confidential Contract';
+        Storage::disk('private')->put('contracts/legal.pdf', $binaryPdf);
+
+        $signedUrl = SecureFileUploadService::generateTemporaryUrl('contracts/legal.pdf', 10);
+
+        // Manipulasi path pada URL bertanda tangan (ganti legal.pdf menjadi payroll.pdf)
+        $tamperedUrl = str_replace(urlencode('contracts/legal.pdf'), urlencode('contracts/payroll.pdf'), $signedUrl);
+
+        $response = $this->get($tamperedUrl);
+        $response->assertForbidden();
+    }
+
+    /**
+     * ADVERSARIAL: Header Content-Security-Policy sandbox hadir untuk melucuti eksekusi JavaScript pada browser.
+     */
+    public function test_content_security_policy_sandbox_header_present(): void
+    {
+        $binaryPdf = '%PDF-1.4 Confidential Contract';
+        Storage::disk('private')->put('contracts/sandboxed.pdf', $binaryPdf);
+
+        $signedUrl = SecureFileUploadService::generateTemporaryUrl('contracts/sandboxed.pdf', 10);
+        $response = $this->get($signedUrl);
+
+        $response->assertOk();
+        $response->assertHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+        $response->assertHeader('X-Content-Type-Options', 'nosniff');
     }
 }

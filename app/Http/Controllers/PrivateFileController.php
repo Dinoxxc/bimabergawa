@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\SecureFileUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,7 +17,7 @@ class PrivateFileController extends Controller
     public function download(Request $request): Response
     {
         $rawPath = (string) $request->query('path', '');
-        $cleanPath = trim(str_replace(['..', '\\'], ['', '/'], $rawPath), '/');
+        $cleanPath = SecureFileUploadService::sanitizeDirectoryPath($rawPath);
 
         if ($cleanPath === '' || ! Storage::disk('private')->exists($cleanPath)) {
             abort(404, 'Berkas privat tidak ditemukan atau telah dihapus.');
@@ -24,6 +25,7 @@ class PrivateFileController extends Controller
 
         $headers = [
             'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; sandbox",
             'Cache-Control' => 'no-store, no-cache, must-revalidate, private',
             'Pragma' => 'no-cache',
         ];

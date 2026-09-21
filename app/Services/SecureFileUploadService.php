@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Exceptions\FileSecurityException;
 use App\Exceptions\InvalidFileMagicBytesException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -98,6 +99,12 @@ class SecureFileUploadService
 
         // 2. Proteksi Null Byte Injection (TC-SEC-UPL-009)
         if (str_contains($originalName, "\0") || str_contains($originalName, '%00')) {
+            Log::warning(sprintf(
+                '[SECURITY_FILE_UPLOAD_BLOCKED] Null byte injection terdeteksi pada berkas: [%s] (IP: %s)',
+                $originalName,
+                request()->ip() ?? 'CLI'
+            ));
+
             throw new FileSecurityException(
                 message: 'Nama berkas memuat karakter null byte yang berbahaya.',
                 fileName: $originalName,
@@ -105,7 +112,21 @@ class SecureFileUploadService
             );
         }
 
-        // 3. Proteksi Eksploitasi Ekstensi Ganda (TC-SEC-UPL-008)
+        // 3. Proteksi Ekstensi Berbahaya Tunggal & Ekstensi Ganda (TC-SEC-UPL-007, 008)
+        if (in_array($clientExtension, self::DANGEROUS_EXTENSIONS, true)) {
+            Log::warning(sprintf(
+                '[SECURITY_FILE_UPLOAD_BLOCKED] Berkas dengan ekstensi terlarang ditolak: [%s] (IP: %s)',
+                $originalName,
+                request()->ip() ?? 'CLI'
+            ));
+
+            throw new FileSecurityException(
+                message: sprintf('Ekstensi berkas [%s] dilarang keras demi keamanan sistem.', $clientExtension),
+                fileName: $originalName,
+                violationType: 'forbidden_extension'
+            );
+        }
+
         self::assertNoDoubleExtension($originalName);
 
         // 4. Inspeksi Tipe MIME Kernel via PHP finfo
@@ -127,7 +148,7 @@ class SecureFileUploadService
         // 5. Verifikasi Signature Magic Byte Biner (TC-SEC-UPL-001 s.d. 003)
         self::verifyBinaryMagicBytes($realPath, $detectedMime, $clientExtension, $expectedMimes, $originalName);
 
-        // 6. Proteksi Terhadap Payload Skrip Tersembunyi (Anti-RCE & PHP Masquerading)
+        // 6. Proteksi Terhadap Payload Skrip Tersembunyi (Anti-RCE & PHP Masquerading pada seluruh berkas)
         self::assertNoEmbeddedScriptPayload($realPath, $originalName);
 
         return [
@@ -156,7 +177,7 @@ class SecureFileUploadService
 
         $extension = $meta['extension'] !== '' ? $meta['extension'] : 'bin';
         $safeFileName = Str::uuid()->toString().'.'.$extension;
-        $cleanDirectory = trim(str_replace(['..', '\\'], ['', '/'], $directory), '/');
+        $cleanDirectory = self::sanitizeDirectoryPath($directory);
         $targetPath = ($cleanDirectory !== '' ? $cleanDirectory.'/' : '').$safeFileName;
 
         if ($file instanceof UploadedFile) {
@@ -184,7 +205,7 @@ class SecureFileUploadService
 
         $extension = $meta['extension'] !== '' ? $meta['extension'] : 'webp';
         $safeFileName = Str::uuid()->toString().'.'.$extension;
-        $cleanDirectory = trim(str_replace(['..', '\\'], ['', '/'], $directory), '/');
+        $cleanDirectory = self::sanitizeDirectoryPath($directory);
         $targetPath = ($cleanDirectory !== '' ? $cleanDirectory.'/' : '').$safeFileName;
 
         if ($file instanceof UploadedFile) {
@@ -201,12 +222,35 @@ class SecureFileUploadService
     }
 
     /**
+     * Sanitasi mutlak direktori penyimpanan mencegah serangan nested path traversal (....//).
+     */
+    public static function sanitizeDirectoryPath(string $directory): string
+    {
+        $normalized = str_replace('\\', '/', $directory);
+        $rawSegments = explode('/', $normalized);
+
+        $cleanSegments = [];
+        foreach ($rawSegments as $segment) {
+            $trimmed = trim($segment);
+            if ($trimmed === '' || preg_match('/^\.+$/', $trimmed)) {
+                continue;
+            }
+            $safe = (string) preg_replace('/[^a-zA-Z0-9_\-\.]/', '', $trimmed);
+            if ($safe !== '' && ! preg_match('/^\.+$/', $safe)) {
+                $cleanSegments[] = $safe;
+            }
+        }
+
+        return implode('/', $cleanSegments);
+    }
+
+    /**
      * Buat Temporary Signed URL untuk mengakses berkas privat dengan masa kedaluwarsa ketat.
      * (Rujukan: TC-SEC-UPL-006, kedaluwarsa default 10 menit).
      */
     public static function generateTemporaryUrl(string $path, int $expirationMinutes = 10): string
     {
-        $cleanPath = trim(str_replace(['..', '\\'], ['', '/'], $path), '/');
+        $cleanPath = self::sanitizeDirectoryPath($path);
 
         return URL::temporarySignedRoute(
             'private.file.download',
@@ -348,7 +392,8 @@ class SecureFileUploadService
     }
 
     /**
-     * Memeriksa keberadaan tag skrip eksekusi PHP tersembunyi di dalam berkas.
+     * Memeriksa keberadaan tag skrip eksekusi tersembunyi (PHP/ASP) di seluruh konten biner berkas.
+     * Menggunakan pembacaan aliran chunk 64 KB dengan overlap 64 byte guna mendeteksi pola di setiap offset.
      */
     protected static function assertNoEmbeddedScriptPayload(string $filePath, string $originalName): void
     {
@@ -357,30 +402,45 @@ class SecureFileUploadService
             return;
         }
 
-        // Baca 4096 byte pertama
-        $buffer = (string) fread($handle, 4096);
-        fclose($handle);
-
         $forbiddenPatterns = [
             '<?php',
             '<?=',
             '<script language="php"',
-            'eval(',
-            'system(',
-            'passthru(',
-            'exec(',
-            'shell_exec(',
+            "<script language='php'",
+            '<%',
         ];
 
-        $lowerBuffer = strtolower($buffer);
-        foreach ($forbiddenPatterns as $pattern) {
-            if (str_contains($lowerBuffer, $pattern)) {
-                throw new FileSecurityException(
-                    message: 'Berkas memuat pola skrip eksekusi terlarang di dalam konten biner.',
-                    fileName: $originalName,
-                    violationType: 'malicious_code_detected'
-                );
+        $overlap = '';
+        while (! feof($handle)) {
+            $chunk = fread($handle, 65536);
+            if ($chunk === false || $chunk === '') {
+                break;
             }
+
+            $haystack = strtolower($overlap.$chunk);
+            foreach ($forbiddenPatterns as $pattern) {
+                if (str_contains($haystack, $pattern)) {
+                    fclose($handle);
+
+                    Log::warning(sprintf(
+                        '[SECURITY_FILE_UPLOAD_BLOCKED] Embedded script payload [%s] terdeteksi pada berkas: [%s] (IP: %s)',
+                        $pattern,
+                        $originalName,
+                        request()->ip() ?? 'CLI'
+                    ));
+
+                    throw new FileSecurityException(
+                        message: 'Berkas memuat pola skrip eksekusi terlarang di dalam konten biner.',
+                        fileName: $originalName,
+                        violationType: 'malicious_code_detected'
+                    );
+                }
+            }
+
+            // Simpan 64 byte terakhir dari chunk untuk mencegah pola terputus di batas chunk
+            $overlap = substr($chunk, -64);
         }
+
+        fclose($handle);
     }
 }

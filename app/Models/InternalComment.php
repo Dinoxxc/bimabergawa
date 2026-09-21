@@ -34,8 +34,18 @@ class InternalComment extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('agent_comment_visibility', function (Builder $builder) {
-            if (auth()->check() && auth()->user()->hasRole('freelance_sales')) {
-                $builder->where('type', 'agent_visible');
+            if (auth()->check()) {
+                $user = auth()->user();
+
+                // Staf internal memiliki akses penuh ke seluruh komentar (termasuk modal HPP & direksi)
+                if ($user->hasRole('super_admin') || $user->hasRole('sales_pic') || $user->hasRole('finance') || $user->hasRole('logistics')) {
+                    return;
+                }
+
+                // Mitra agen freelance (berdasarkan role atau keterkaitan profile agen) hanya dapat melihat komentar publik agen
+                if ($user->hasRole('freelance_sales') || $user->freelance_sales_id !== null) {
+                    $builder->where('type', 'agent_visible');
+                }
             }
         });
     }

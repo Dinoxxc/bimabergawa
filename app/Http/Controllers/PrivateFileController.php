@@ -19,7 +19,8 @@ class PrivateFileController extends Controller
         $rawPath = (string) $request->query('path', '');
         $cleanPath = SecureFileUploadService::sanitizeDirectoryPath($rawPath);
 
-        if ($cleanPath === '' || ! Storage::disk('private')->exists($cleanPath)) {
+        $fullPath = Storage::disk('private')->path($cleanPath);
+        if ($cleanPath === '' || ! Storage::disk('private')->exists($cleanPath) || is_dir($fullPath) || ! is_file($fullPath)) {
             abort(404, 'Berkas privat tidak ditemukan atau telah dihapus.');
         }
 

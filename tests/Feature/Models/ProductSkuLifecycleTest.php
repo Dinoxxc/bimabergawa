@@ -258,4 +258,28 @@ class ProductSkuLifecycleTest extends TestCase
         $this->assertSame('exact', $result['matched'][0]['match_type']);
         $this->assertSame($product->id, $result['matched'][0]['product_id']);
     }
+
+    public function test_product_without_slug_automatically_generates_unique_slug_from_name(): void
+    {
+        $product1 = Product::create([
+            'brand_id' => $this->brand->id,
+            'category_id' => $this->category->id,
+            'name' => 'Miniature Circuit Breaker 16A',
+            'model_number' => 'MCB-16A-TEST1',
+            'cost_price' => 50000.00,
+        ]);
+
+        $this->assertSame('miniature-circuit-breaker-16a', $product1->slug);
+
+        // Second product with identical name must get collision-free unique slug
+        $product2 = Product::create([
+            'brand_id' => $this->brand->id,
+            'category_id' => $this->category->id,
+            'name' => 'Miniature Circuit Breaker 16A',
+            'model_number' => 'MCB-16A-TEST2',
+            'cost_price' => 52000.00,
+        ]);
+
+        $this->assertSame('miniature-circuit-breaker-16a-2', $product2->slug);
+    }
 }

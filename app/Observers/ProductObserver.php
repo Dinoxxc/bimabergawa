@@ -7,6 +7,7 @@ namespace App\Observers;
 use App\Models\Product;
 use App\Services\BulkSkuNormalizationService;
 use App\Services\SkuGeneratorService;
+use Illuminate\Support\Str;
 
 class ProductObserver
 {
@@ -15,6 +16,17 @@ class ProductObserver
      */
     public function creating(Product $product): void
     {
+        if (empty($product->slug) && ! empty($product->name)) {
+            $baseSlug = Str::slug($product->name);
+            $candidate = $baseSlug;
+            $counter = 1;
+            while (Product::withTrashed()->where('slug', $candidate)->exists()) {
+                $counter++;
+                $candidate = "{$baseSlug}-{$counter}";
+            }
+            $product->slug = $candidate;
+        }
+
         if (empty($product->sku)) {
             $product->sku = SkuGeneratorService::generate($product);
         } else {
@@ -46,10 +58,10 @@ class ProductObserver
      */
     public function deleting(Product $product): void
     {
-        if (! $product->isForceDeleting()) {
+        if (! $product->isForceDeleting() && ! empty($product->slug)) {
             // Hindari duplikasi sufiks jika telah bertanda -deleted-
-            if (! preg_match('/-deleted-\d+$/', $product->slug)) {
-                $base = substr($product->slug, 0, 220);
+            if (! preg_match('/-deleted-\d+$/', (string) $product->slug)) {
+                $base = substr((string) $product->slug, 0, 220);
                 $product->slug = $base.'-deleted-'.time();
                 $product->saveQuietly();
             }
@@ -61,16 +73,18 @@ class ProductObserver
      */
     public function restoring(Product $product): void
     {
-        // Bersihkan sufiks -deleted-{timestamp}
-        $cleanSlug = (string) preg_replace('/-deleted-\d+$/', '', $product->slug);
+        if (! empty($product->slug)) {
+            // Bersihkan sufiks -deleted-{timestamp}
+            $cleanSlug = (string) preg_replace('/-deleted-\d+$/', '', (string) $product->slug);
 
-        // Loop deterministik: cari kandidat slug unik tanpa risiko benturan MySQL Unique Key
-        $candidate = $cleanSlug;
-        $counter = 1;
-        while (Product::withTrashed()->where('slug', $candidate)->where('id', '!=', $product->id)->exists()) {
-            $counter++;
-            $candidate = "{$cleanSlug}-{$counter}";
+            // Loop deterministik: cari kandidat slug unik tanpa risiko benturan MySQL Unique Key
+            $candidate = $cleanSlug;
+            $counter = 1;
+            while (Product::withTrashed()->where('slug', $candidate)->where('id', '!=', $product->id)->exists()) {
+                $counter++;
+                $candidate = "{$cleanSlug}-{$counter}";
+            }
+            $product->slug = $candidate;
         }
-        $product->slug = $candidate;
     }
 }

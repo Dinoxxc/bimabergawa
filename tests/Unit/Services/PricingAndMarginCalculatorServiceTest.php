@@ -536,4 +536,29 @@ class PricingAndMarginCalculatorServiceTest extends TestCase
         $this->assertSame(0.0, $result['tax_amount']);
         $this->assertSame(100000.0, $result['grand_total']);
     }
+
+    public function test_fractional_quantity_is_accurately_calculated_without_truncation(): void
+    {
+        $items = [
+            ['quantity' => 15.5, 'unit_price' => 20000.0, 'cost_price' => 15000.0],
+            ['quantity' => 0.75, 'unit_price' => 40000.0, 'cost_price' => 30000.0],
+        ];
+
+        $result = PricingAndMarginCalculatorService::calculate(
+            items: $items,
+            vatRate: 11.0
+        );
+
+        // Item 1: 15.5 * 20000 = 310,000 | Cost: 15.5 * 15000 = 232,500
+        // Item 2: 0.75 * 40000 = 30,000  | Cost: 0.75 * 30000 = 22,500
+        // Subtotal = 340,000 | Total cost = 255,000 | DPP = 340,000 | VAT 11% = 37,400 | Grand total = 377,400
+        $this->assertSame(340000.0, $result['subtotal']);
+        $this->assertSame(255000.0, $result['total_cost']);
+        $this->assertSame(340000.0, $result['dpp']);
+        $this->assertSame(37400.0, $result['tax_amount']);
+        $this->assertSame(377400.0, $result['grand_total']);
+        $this->assertSame(85000.0, $result['gross_profit']);
+        $this->assertSame(15.5, $result['items'][0]['quantity']);
+        $this->assertSame(0.75, $result['items'][1]['quantity']);
+    }
 }

@@ -226,22 +226,33 @@ class SecureFileUploadService
      */
     public static function sanitizeDirectoryPath(string $directory): string
     {
-        $normalized = str_replace('\\', '/', $directory);
+        // 1. Truncate pada null byte injection (\0) sebelum pemrosesan filesystem
+        $directoryWithoutNull = explode("\0", $directory)[0];
+        $normalized = str_replace('\\', '/', $directoryWithoutNull);
         $rawSegments = explode('/', $normalized);
 
-        $cleanSegments = [];
+        // 2. Gunakan struktur data stack untuk menyelesaikan canonical traversal (..)
+        $stack = [];
         foreach ($rawSegments as $segment) {
             $trimmed = trim($segment);
-            if ($trimmed === '' || preg_match('/^\.+$/', $trimmed)) {
+            if ($trimmed === '' || $trimmed === '.') {
                 continue;
             }
+
+            // Jika segmen adalah .. atau sekuens dot (....), pop direktori sebelumnya
+            if (preg_match('/^\.+$/', $trimmed)) {
+                array_pop($stack);
+
+                continue;
+            }
+
             $safe = (string) preg_replace('/[^a-zA-Z0-9_\-\.]/', '', $trimmed);
             if ($safe !== '' && ! preg_match('/^\.+$/', $safe)) {
-                $cleanSegments[] = $safe;
+                $stack[] = $safe;
             }
         }
 
-        return implode('/', $cleanSegments);
+        return implode('/', $stack);
     }
 
     /**
@@ -265,16 +276,25 @@ class SecureFileUploadService
      */
     public static function sanitizeSvg(string $svgContent): string
     {
-        // 1. Hapus deklarasi DTD Entity yang berpotensi XXE
-        $sanitized = (string) preg_replace('/<!ENTITY\s+.*?>/is', '', $svgContent);
+        // 1. Hapus deklarasi XML DTD DOCTYPE dan Entity yang berpotensi XXE / XML bomb
+        $sanitized = (string) preg_replace('/<!DOCTYPE\b[^>]*>/is', '', $svgContent);
+        $sanitized = (string) preg_replace('/<!ENTITY\b[^>]*>/is', '', $sanitized);
 
-        // 2. Hapus tag <script>...</script>
+        // 2. Hapus tag <script>...</script> dan self-closing <script ... />
         $sanitized = (string) preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $sanitized);
+        $sanitized = (string) preg_replace('/<script\b[^>]*\/>/is', '', $sanitized);
 
-        // 3. Hapus inline event handlers (contoh: onload=, onerror=, onclick=, onmouseover=)
-        $sanitized = (string) preg_replace('/\s+on[a-z]+\s*=\s*(["\'][^"\']*["\']|[^\s>]+)/i', '', $sanitized);
+        // 3. Hapus elemen penyemat konten asing berbahaya: <foreignObject>, <object>, <iframe>, <embed>, <applet>
+        $sanitized = (string) preg_replace('/<foreignObject\b[^>]*>(.*?)<\/foreignObject>/is', '', $sanitized);
+        $sanitized = (string) preg_replace('/<foreignObject\b[^>]*\/>/is', '', $sanitized);
+        $sanitized = (string) preg_replace('/<object\b[^>]*>(.*?)<\/object>|<object\b[^>]*\/>/is', '', $sanitized);
+        $sanitized = (string) preg_replace('/<iframe\b[^>]*>(.*?)<\/iframe>|<iframe\b[^>]*\/>/is', '', $sanitized);
+        $sanitized = (string) preg_replace('/<embed\b[^>]*\/?>/is', '', $sanitized);
 
-        // 4. Hapus protokol berbahaya (javascript:, data:text/html, vbscript:) pada atribut href / xlink:href
+        // 4. Hapus inline event handlers (contoh: onload=, onerror=, onclick=, onmouseover=)
+        $sanitized = (string) preg_replace('/\s+on[a-z0-9_\-]+\s*=\s*(["\'][^"\']*["\']|[^\s>]+)/i', '', $sanitized);
+
+        // 5. Hapus protokol berbahaya (javascript:, data:text/html, vbscript:) pada atribut href / xlink:href
         $sanitized = (string) preg_replace('/(href|xlink:href)\s*=\s*(["\'])(?:javascript|vbscript|data\s*:\s*text\/html).*?\2/is', '', $sanitized);
 
         return $sanitized;

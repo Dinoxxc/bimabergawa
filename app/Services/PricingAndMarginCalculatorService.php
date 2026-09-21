@@ -41,7 +41,8 @@ class PricingAndMarginCalculatorService
         $processedItems = [];
 
         foreach ($items as $item) {
-            $qty = max(1, (int) ($item['quantity'] ?? 1));
+            $rawQty = (float) ($item['quantity'] ?? 1.0);
+            $qty = $rawQty <= 0.0 ? 1.0 : $rawQty;
             $unitPrice = max(0.0, (float) ($item['unit_price'] ?? 0));
             $costPrice = max(0.0, (float) ($item['cost_price'] ?? 0));
             $itemDiscountPercent = (float) ($item['discount_percent'] ?? 0);
@@ -143,7 +144,8 @@ class PricingAndMarginCalculatorService
         float $discountPercent = 0.0,
         float $discountAmount = 0.0
     ): array {
-        $qty = max(1, (int) $quantity);
+        $rawQty = (float) $quantity;
+        $qty = $rawQty <= 0.0 ? 1.0 : $rawQty;
         $cleanUnitPrice = max(0.0, $unitPrice);
         $cleanCostPrice = max(0.0, $costPrice);
         $itemGross = $qty * $cleanUnitPrice;
@@ -161,7 +163,7 @@ class PricingAndMarginCalculatorService
         $marginTier = self::evaluateMarginTier($marginPercentage, $grossProfit);
 
         return [
-            'quantity' => $qty,
+            'quantity' => (floor($qty) === $qty) ? (int) $qty : round($qty, 4),
             'unit_price' => round($cleanUnitPrice, 2),
             'cost_price' => round($cleanCostPrice, 2),
             'subtotal' => round($itemGross, 2),

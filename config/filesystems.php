@@ -44,6 +44,13 @@ return [
             'throw' => false,
         ],
 
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
         'local_private' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

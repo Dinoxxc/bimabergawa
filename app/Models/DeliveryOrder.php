@@ -30,6 +30,8 @@ class DeliveryOrder extends Model
         'total_weight_kg',
         'status',
         'proof_of_delivery_path',
+        'discrepancy_notes',
+        'return_proof_path',
         'shipped_at',
     ];
 

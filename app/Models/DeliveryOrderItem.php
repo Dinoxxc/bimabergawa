@@ -18,6 +18,9 @@ class DeliveryOrderItem extends Model
         'item_name',
         'model_number',
         'quantity_shipped',
+        'quantity_received',
+        'quantity_defective',
+        'defect_notes',
         'uom',
     ];
 
@@ -25,6 +28,8 @@ class DeliveryOrderItem extends Model
     {
         return [
             'quantity_shipped' => 'integer',
+            'quantity_received' => 'integer',
+            'quantity_defective' => 'integer',
         ];
     }
 

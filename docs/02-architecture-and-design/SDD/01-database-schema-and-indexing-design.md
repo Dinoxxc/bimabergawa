@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.8.0 |
+| **Versi Dokumen** | 1.9.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -28,6 +28,7 @@
 | `1.6.0` | 19 Sep 2026 | Principal System Architect | Disetujui | Penambahan tabel `units_of_measure` (Master Satuan Dinamis), kolom `uom`, `project_name`, `company_npwp`, `faktur_pajak_number`, `driver_name`, `vehicle_plate_number`, `moq`, `warranty_period`, serta kustomisasi spesifikasi per item (`spec_group`, `spec_unit`, `is_highlight`, `custom_specifications`) untuk kesiapan B2B General Industrial Supplier |
 | `1.7.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema Tahap A: kolom snapshot kurs valas (`exchange_rate_applied`, `base_currency`), `idempotency_key` pada transaksi komersial, `spec_template` JSON pada kategori, dan indeks Fulltext MySQL pada produk |
 | `1.8.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema Dual-Identifier Architecture: kolom `brands.code` (Indexed), `categories.code` (Indexed), dan `products.sku` (Unique Indexed) untuk auto-generated SKU internal PBB |
+| `1.9.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema penanganan barang cacat & retur fisik: kolom `discrepancy_notes`, `return_proof_path` pada `delivery_orders`, serta `quantity_received`, `quantity_defective`, `defect_notes` pada `delivery_order_items` |
 
 ---
 
@@ -270,10 +271,12 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `recipient_phone` | VARCHAR(50) | Kontak PIC Lapangan |
 | `total_packages` | INT | Jumlah Koli / Dus |
 | `total_weight_kg` | DECIMAL(8,2) | Nullable, Estimasi Berat Total (Kg) |
-| `status` | ENUM | `prepared`, `shipped`, `delivered` |
+| `status` | VARCHAR(35) | Default: `prepared`, mendukung `prepared`, `shipped`, `delivered`, `partially_delivered`, `delivery_failed` |
 | `proof_of_delivery_path`| VARCHAR(255)| Nullable, Scan stempel basah tanda terima gudang |
+| `discrepancy_notes` | TEXT | Nullable, Catatan BAP serah terima fisik barang cacat/rusak/retur |
+| `return_proof_path` | VARCHAR(255) | Nullable, Foto bukti fisik kerusakan barang di lapangan |
 | `shipped_at` | TIMESTAMP | Nullable, Waktu serah terima ke ekspedisi |
-| `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Laravel Timestamps & Soft Deletes |
 
 #### Tabel: `delivery_order_items`
 | Nama Kolom | Tipe Data | Keterangan & Atribut |
@@ -284,6 +287,10 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `item_name` | VARCHAR(255) | Nama Produk yang dikirim |
 | `model_number` | VARCHAR(150) | Part Number |
 | `quantity_shipped` | INT | Kuantiti unit yang dikirim pada batch ini |
+| `quantity_received` | INT | Default: 0, Kuantitas unit yang lolos verifikasi dan diterima baik oleh klien |
+| `quantity_defective`| INT | Default: 0, Kuantitas unit yang mengalami cacat / rusak fisik di lokasi |
+| `defect_notes` | TEXT | Nullable, Rincian catatan kerusakan fisik unit |
+| `uom` | VARCHAR(20) | Default: `pcs`, Satuan unit fisik barang |
 
 ---
 

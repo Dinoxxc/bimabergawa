@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.14.0 |
+| **Versi Dokumen** | 1.15.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -31,6 +31,9 @@
 | `1.12.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penguatan SkuGeneratorService dengan pengurutan numerik CAST(SUBSTRING_INDEX), pewarisan kode divisi kategori hierarkis, proteksi penghapusan SKU pada ProductObserver update, dan integrasi penelusuran alfanumerik toleran murni pada BulkSkuNormalizationService |
 | `1.13.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi resmi DeliveryOrderFulfillmentService (alokasi kuantitas berurutan FIFO pool, penomoran parsial, validasi limit SO >= 100M, konfirmasi serah terima fisik & state machine pembatalan) dan CommissionPayoutService (kalkulasi DPP subtotal, aktivasi faktur lunas, ledger komisi mandiri via mutex lock & idempotensi, masking rekening UU PDP No. 27/2022, eskalasi approval direktur >= 25 Juta, dan pencatatan clawback reversal) |
 | `1.14.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Peningkatan proteksi multi-baris batch pemenuhan surat jalan (cumulative quantity tracking), validasi data perbankan agen sebelum pengajuan pencairan komisi, penambahan alur penolakan pencairan resmi (rejectPayout) dengan pengembalian saldo tertahan, serta double-checked locking idempotensi |
+| `1.15.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi Golden Choice penanganan barang cacat & retur fisik lapangan (confirmDeliveryWithDiscrepancy) dengan restorasi otomatis sisa pesanan aktif dan penerbitan Surat Jalan Pengganti (Replacement Delivery Order) |
+
+---
 
 ---
 
@@ -839,6 +842,11 @@ Mengelola seluruh siklus hidup pengiriman fisik barang, penerbitan Surat Jalan p
    - Menolak pembatalan Surat Jalan (`cancelDeliveryOrder`) jika barang telah berstatus diterima di lokasi proyek (`status = delivered`).
    - Restorasi sisa kuantitas pesanan dan pemulihan status Sales Order kembali ke `processing` atau `partially_fulfilled` saat Surat Jalan dibatalkan.
 5. **Proteksi Batch Multi-Baris Kumulatif:** Pada satu permintaan pengiriman yang memuat beberapa baris item merujuk ke produk / item pesanan yang sama, sistem menghitung akumulasi total kuantitas seluruh baris (`cumulativeRequested`) dan menolak penerbitan jika total permintaan gabungan melebihi sisa pesanan belum terkirim.
+6. **Penanganan Barang Cacat & Retur Fisik Lapangan (*Discrepancy Receipt & Replacement Fulfillment* - Golden Choice):**
+   - Saat serah terima fisik di lokasi proyek, staf logistik mencatat kuantitas riil yang diterima baik (`quantity_received`) dan kuantitas yang cacat/rusak/retur (`quantity_defective`) beserta catatan kerusakan (`defect_notes`) dan berkas bukti fisik (`return_proof_path`).
+   - Sisa pesanan (`remaining_qty`) pada Sales Order otomatis memperhitungkan barang yang cacat/rusak sehingga unit tersebut kembali menjadi saldo sisa pesanan yang belum terpenuhi.
+   - Status Sales Order tetap `partially_fulfilled` (atau dipulihkan dari `completed`), memungkinkan tim gudang segera menerbitkan Surat Jalan Parsial Pengganti (*Replacement Delivery Order*) bernomor urut berikutnya (`PBB/DOR/YYYY/MM/XXXX/02`).
+   - Penutupan Sales Order (`completed`) hanya terjadi jika seluruh akumulasi kuantitas yang *diterima baik* oleh klien telah mencapai 100% dari pesanan.
 
 ---
 

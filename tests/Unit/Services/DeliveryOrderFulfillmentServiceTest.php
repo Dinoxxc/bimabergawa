@@ -408,4 +408,103 @@ class DeliveryOrderFulfillmentServiceTest extends TestCase
             ['quotation_item_id' => $this->item1->id, 'quantity' => 50],
         ]);
     }
+
+    public function test_confirm_delivery_with_discrepancy_records_defects_and_restores_remaining_quantity_for_replacement(): void
+    {
+        // 1. Terbitkan DO Tahap 1 untuk seluruh 100 pcs Item 1
+        $dto1 = new DeliveryOrderFulfillmentDTO(
+            salesOrderId: $this->salesOrder->id,
+            items: [
+                ['quotation_item_id' => $this->item1->id, 'quantity_delivered' => 100],
+            ],
+            shippingMethod: 'Armada Internal PBB'
+        );
+        $do1 = $this->service->createFulfillment($dto1);
+
+        $do1Item = $do1->items()->first();
+
+        // 2. Di lapangan, 90 pcs diterima baik, 10 pcs rusak/cacat bodi
+        $confirmedDo = $this->service->confirmDeliveryWithDiscrepancy(
+            deliveryOrder: $do1,
+            itemDiscrepancies: [
+                [
+                    'delivery_order_item_id' => $do1Item->id,
+                    'quantity_received' => 90,
+                    'quantity_defective' => 10,
+                    'defect_notes' => 'Bodi MCB retak terbanting saat pengiriman',
+                ],
+            ],
+            podPath: 'pod/do-001-signed.jpg',
+            returnProofPath: 'returns/defect-mcb-photo.jpg',
+            discrepancyNotes: '10 unit MCB dikembalikan ke supir PBB untuk diganti'
+        );
+
+        // Verifikasi status DO dan field barang cacat
+        $this->assertSame('partially_delivered', $confirmedDo->status);
+        $this->assertSame('pod/do-001-signed.jpg', $confirmedDo->proof_of_delivery_path);
+        $this->assertSame('returns/defect-mcb-photo.jpg', $confirmedDo->return_proof_path);
+        $this->assertStringContainsString('dikembalikan ke supir PBB', $confirmedDo->discrepancy_notes);
+
+        $refreshedItem = $do1Item->fresh();
+        $this->assertSame(90, $refreshedItem->quantity_received);
+        $this->assertSame(10, $refreshedItem->quantity_defective);
+        $this->assertSame('Bodi MCB retak terbanting saat pengiriman', $refreshedItem->defect_notes);
+
+        // 3. Sisa pesanan pada Sales Order otomatis kembali menjadi 10 pcs (karena 10 pcs cacat belum terpenuhi)
+        $remaining = $this->service->getRemainingQuantities($this->salesOrder);
+        $item1Remaining = collect($remaining)->firstWhere('quotation_item_id', $this->item1->id);
+        $this->assertSame(10, $item1Remaining['remaining_qty']);
+        $this->assertFalse($item1Remaining['is_fulfilled']);
+
+        $this->salesOrder->refresh();
+        $this->assertSame('partially_fulfilled', $this->salesOrder->status);
+
+        // 4. Staf logistik dapat langsung menerbitkan Surat Jalan Pengganti (DO 2) untuk 10 unit pengganti
+        $dto2 = new DeliveryOrderFulfillmentDTO(
+            salesOrderId: $this->salesOrder->id,
+            items: [
+                ['quotation_item_id' => $this->item1->id, 'quantity_delivered' => 10],
+            ],
+            shippingMethod: 'Armada Internal PBB'
+        );
+        $do2 = $this->service->createFulfillment($dto2);
+        $this->assertStringEndsWith('/02', $do2->delivery_number);
+
+        // 5. Konfirmasi serah terima DO 2 dengan 10 pcs diterima baik 100%
+        $this->service->confirmDelivery($do2);
+
+        // Sisa pesanan Item 1 sekarang 0 pcs
+        $finalRemaining = $this->service->getRemainingQuantities($this->salesOrder);
+        $finalItem1 = collect($finalRemaining)->firstWhere('quotation_item_id', $this->item1->id);
+        $this->assertSame(0, $finalItem1['remaining_qty']);
+        $this->assertTrue($finalItem1['is_fulfilled']);
+    }
+
+    public function test_confirm_delivery_with_discrepancy_rejects_sum_exceeding_shipped_quantity(): void
+    {
+        $dto = new DeliveryOrderFulfillmentDTO(
+            salesOrderId: $this->salesOrder->id,
+            items: [
+                ['quotation_item_id' => $this->item1->id, 'quantity_delivered' => 50],
+            ],
+            shippingMethod: 'Armada Internal PBB'
+        );
+        $do = $this->service->createFulfillment($dto);
+        $doItem = $do->items()->first();
+
+        // Shipped = 50, coba klaim received (45) + defective (10) = 55 (> 50)
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('melebihi kuantitas awal yang dikirim');
+
+        $this->service->confirmDeliveryWithDiscrepancy(
+            deliveryOrder: $do,
+            itemDiscrepancies: [
+                [
+                    'delivery_order_item_id' => $doItem->id,
+                    'quantity_received' => 45,
+                    'quantity_defective' => 10,
+                ],
+            ]
+        );
+    }
 }

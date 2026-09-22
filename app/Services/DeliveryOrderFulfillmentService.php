@@ -135,6 +135,8 @@ class DeliveryOrderFulfillmentService
             }
         }
 
+        $cumulativeRequested = [];
+
         foreach ($itemsToShip as $shipItem) {
             $rawQty = $shipItem['quantity_delivered']
                 ?? $shipItem['quantity_shipped']
@@ -170,14 +172,17 @@ class DeliveryOrderFulfillmentService
                 ));
             }
 
-            if ($qtyToShip > $matchedRemaining['remaining_qty']) {
+            $targetKey = $matchedRemaining['quotation_item_id'];
+            $cumulativeRequested[$targetKey] = ($cumulativeRequested[$targetKey] ?? 0) + $qtyToShip;
+
+            if ($cumulativeRequested[$targetKey] > $matchedRemaining['remaining_qty']) {
                 throw new InsufficientFulfillmentQuantityException(
                     salesOrderItemId: (int) ($itemId ?? $matchedRemaining['quotation_item_id']),
-                    requestedQty: $qtyToShip,
+                    requestedQty: $cumulativeRequested[$targetKey],
                     remainingQty: $matchedRemaining['remaining_qty'],
                     message: sprintf(
-                        'Kuantitas pengiriman (%d) untuk item [%s] tidak boleh melebihi sisa pesanan yang belum terkirim (%d).',
-                        $qtyToShip,
+                        'Akumulasi kuantitas pengiriman (%d) untuk item [%s] tidak boleh melebihi sisa pesanan yang belum terkirim (%d).',
+                        $cumulativeRequested[$targetKey],
                         $matchedRemaining['item_name'],
                         $matchedRemaining['remaining_qty']
                     )

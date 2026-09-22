@@ -395,4 +395,17 @@ class DeliveryOrderFulfillmentServiceTest extends TestCase
 
         $this->service->cancelDeliveryOrder($do);
     }
+
+    public function test_validation_rejects_cumulative_quantity_exceeding_remaining_in_single_batch(): void
+    {
+        // Item 1 memiliki kuantitas pesanan 100
+        // Kirim batch dengan 2 baris item yang merujuk item yang sama (60 pcs + 50 pcs = 110 pcs)
+        $this->expectException(InsufficientFulfillmentQuantityException::class);
+        $this->expectExceptionMessage('Akumulasi kuantitas pengiriman (110) untuk item');
+
+        $this->service->validateShippedQuantities($this->salesOrder, [
+            ['quotation_item_id' => $this->item1->id, 'quantity' => 60],
+            ['quotation_item_id' => $this->item1->id, 'quantity' => 50],
+        ]);
+    }
 }

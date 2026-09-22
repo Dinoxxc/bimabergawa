@@ -39,6 +39,17 @@ class ProductObserver
      */
     public function updating(Product $product): void
     {
+        if (empty($product->slug) && ! empty($product->name)) {
+            $baseSlug = Str::slug($product->name);
+            $candidate = $baseSlug;
+            $counter = 1;
+            while (Product::withTrashed()->where('slug', $candidate)->where('id', '!=', $product->id)->exists()) {
+                $counter++;
+                $candidate = "{$baseSlug}-{$counter}";
+            }
+            $product->slug = $candidate;
+        }
+
         if (empty($product->sku)) {
             $originalSku = $product->getOriginal('sku');
             if (! empty($originalSku)) {

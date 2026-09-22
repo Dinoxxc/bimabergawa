@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.13.0 |
+| **Versi Dokumen** | 1.14.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -30,6 +30,7 @@
 | `1.11.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi SkuGeneratorService untuk auto-generated internal SKU PBB format PBB-[DIV]-[BRAND]-[SEQUENCE], integrasi pencarian SKU internal pada BulkSkuNormalizationService, dan auto-derivation kode fallback |
 | `1.12.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penguatan SkuGeneratorService dengan pengurutan numerik CAST(SUBSTRING_INDEX), pewarisan kode divisi kategori hierarkis, proteksi penghapusan SKU pada ProductObserver update, dan integrasi penelusuran alfanumerik toleran murni pada BulkSkuNormalizationService |
 | `1.13.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi resmi DeliveryOrderFulfillmentService (alokasi kuantitas berurutan FIFO pool, penomoran parsial, validasi limit SO >= 100M, konfirmasi serah terima fisik & state machine pembatalan) dan CommissionPayoutService (kalkulasi DPP subtotal, aktivasi faktur lunas, ledger komisi mandiri via mutex lock & idempotensi, masking rekening UU PDP No. 27/2022, eskalasi approval direktur >= 25 Juta, dan pencatatan clawback reversal) |
+| `1.14.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Peningkatan proteksi multi-baris batch pemenuhan surat jalan (cumulative quantity tracking), validasi data perbankan agen sebelum pengajuan pencairan komisi, penambahan alur penolakan pencairan resmi (rejectPayout) dengan pengembalian saldo tertahan, serta double-checked locking idempotensi |
 
 ---
 
@@ -837,6 +838,7 @@ Mengelola seluruh siklus hidup pengiriman fisik barang, penerbitan Surat Jalan p
    - Mengunci konfirmasi serah terima fisik (`confirmDelivery`) agar tidak dapat dieksekusi pada Surat Jalan yang telah di-soft-delete / batal.
    - Menolak pembatalan Surat Jalan (`cancelDeliveryOrder`) jika barang telah berstatus diterima di lokasi proyek (`status = delivered`).
    - Restorasi sisa kuantitas pesanan dan pemulihan status Sales Order kembali ke `processing` atau `partially_fulfilled` saat Surat Jalan dibatalkan.
+5. **Proteksi Batch Multi-Baris Kumulatif:** Pada satu permintaan pengiriman yang memuat beberapa baris item merujuk ke produk / item pesanan yang sama, sistem menghitung akumulasi total kuantitas seluruh baris (`cumulativeRequested`) dan menolak penerbitan jika total permintaan gabungan melebihi sisa pesanan belum terkirim.
 
 ---
 
@@ -847,7 +849,7 @@ Mengelola seluruh alur hak finansial mitra agen freelance, perhitungan komisi Da
 ### 14.1 Karakteristik & Aturan Bisnis Komisi Agen
 1. **Kalkulasi Otomatis DPP & Rate Tier:** Dihitung otomatis dari nilai subtotal sebelum PPN (DPP) saat Sales Order disetujui, menggunakan tarif komisi aktif tier agen atau kesepakatan penawaran. Rekalkulasi di masa mendatang mempertahankan status komisi yang telah `payable` atau `paid` agar tidak ter-downgrade kembali ke `pending_payment`.
 2. **Aktivasi Pasca-Pelunasan Klien (TC-AGN-COM-002):** Komisi berstatus awal `pending_payment` otomatis diaktivasi menjadi siap cair (`payable`) saat faktur komersial klien telah dilunasi penuh (`status = paid`).
-3. **Proteksi Konkurensi & Mutex Locking (TC-AGN-COM-011):** Pengajuan pencairan mandiri agen dilindungi oleh *Atomic Mutex Lock* (`Cache::lock`) selama 10 detik dan validasi kunci idempotensi (`idempotency_key`) untuk mencegah *double payout* akibat klik ganda atau percobaan penarikan paralel.
+3. **Proteksi Konkurensi & Mutex Locking (TC-AGN-COM-011):** Pengajuan pencairan mandiri agen dilindungi oleh *Atomic Mutex Lock* (`Cache::lock`) selama 10 detik dan validasi kunci idempotensi (`idempotency_key`) dengan pola *Double-Checked Locking* untuk mencegah *double payout* atau kegagalan transaksi saat kontensi jaringan.
 4. **Validasi Batas Nilai & Presisi Finansial:**
    - Penegakan batas minimum penarikan Rp 500.000 (`TC-AGN-COM-008`).
    - Pencegahan saldo minus (*overdraft protection*) dengan evaluasi presisi desimal `DECIMAL(15,2)` terhadap saldo siap cair.
@@ -856,4 +858,8 @@ Mengelola seluruh alur hak finansial mitra agen freelance, perhitungan komisi Da
 7. **Pembalikan Komisi (*Reversal*) & Pemotongan Saldo (*Clawback* - TC-AGN-COM-015):**
    - Jika Sales Order dibatalkan, komisi berstatus `pending_payment` maupun `payable` otomatis ditolak (`rejected`).
    - Jika komisi telah terlanjur ditransfer (`paid`), sistem mencatat entri pemotongan saldo (`type = 'deducted'`) yang otomatis mengurangi saldo siap cair agen pada transaksi berikutnya.
+8. **Validasi Prasyarat Profil & Alur Penolakan Resmi (`rejectPayout`):**
+   - Pengajuan pencairan komisi wajib memverifikasi kelengkapan profil perbankan agen (nama bank dan nomor rekening terdaftar) sebelum tiket dibuat.
+   - Penolakan tiket pencairan (`rejectPayout`) oleh tim Finance otomatis melepaskan alokasi dana tertahan (`total_requested`) kembali menjadi saldo siap cair (`payable_balance`) dengan pencatatan riwayat alasan penolakan pada kolom `notes`.
+   - Penyelesaian pencairan (`markAsPaid`) memverifikasi secara ketat tipe tiket pengajuan (`type = requested`) guna mencegah anomali eksekusi pembayaran langsung pada baris perolehan komisi.
 

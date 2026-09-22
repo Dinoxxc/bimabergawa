@@ -385,4 +385,66 @@ class CommissionPayoutServiceTest extends TestCase
 
         $this->service->markAsPaid($payout, 'proof.pdf');
     }
+
+    public function test_request_payout_rejects_agent_without_bank_details(): void
+    {
+        CommissionPayout::factory()->create([
+            'freelance_sales_id' => $this->agent->id,
+            'amount' => 5000000.00,
+            'type' => 'earned',
+            'status' => 'payable',
+        ]);
+
+        $this->agent->update([
+            'bank_name' => '',
+            'bank_account_number' => '',
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Profil perbankan agen (nama bank dan nomor rekening) wajib dilengkapi');
+
+        $this->service->requestPayout($this->agent->id, 1000000.00);
+    }
+
+    public function test_reject_payout_releases_locked_balance_and_records_reason(): void
+    {
+        CommissionPayout::factory()->create([
+            'freelance_sales_id' => $this->agent->id,
+            'amount' => 5000000.00,
+            'type' => 'earned',
+            'status' => 'payable',
+        ]);
+
+        // Ajukan Rp 2.000.000 -> sisa saldo siap cair menjadi Rp 3.000.000
+        $payout = $this->service->requestPayout($this->agent->id, 2000000.00);
+        $balance = $this->service->getAgentBalance($this->agent->id);
+        $this->assertSame(3000000.00, $balance['payable_balance']);
+        $this->assertSame(2000000.00, $balance['total_requested']);
+
+        // Finance menolak pengajuan pencairan karena nomor rekening sedang dalam audit
+        $rejectedPayout = $this->service->rejectPayout($payout, 'Rekening dalam proses audit kepatuhan', 1);
+
+        $this->assertSame('rejected', $rejectedPayout->status);
+        $this->assertStringContainsString('Rekening dalam proses audit kepatuhan', $rejectedPayout->notes);
+
+        // Saldo yang terkunci otomatis kembali menjadi saldo siap cair (Rp 5.000.000)
+        $refreshedBalance = $this->service->getAgentBalance($this->agent->id);
+        $this->assertSame(5000000.00, $refreshedBalance['payable_balance']);
+        $this->assertSame(0.00, $refreshedBalance['total_requested']);
+    }
+
+    public function test_mark_as_paid_rejects_non_requested_type(): void
+    {
+        $earnedPayout = CommissionPayout::factory()->create([
+            'freelance_sales_id' => $this->agent->id,
+            'amount' => 1000000.00,
+            'type' => 'earned',
+            'status' => 'payable',
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Hanya pengajuan pencairan komisi (type = requested)');
+
+        $this->service->markAsPaid($earnedPayout, 'proof.pdf');
+    }
 }

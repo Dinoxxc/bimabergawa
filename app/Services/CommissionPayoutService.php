@@ -208,13 +208,34 @@ class CommissionPayoutService
         $lock = Cache::lock($lockKey, 10);
 
         if (! $lock->get()) {
+            // Pola Double-Checked Locking: jika lock gagal, periksa apakah permintaan dengan idempotency key berhasil dibuat di thread sebelah
+            if ($idempotencyKey !== null && trim($idempotencyKey) !== '') {
+                $existing = CommissionPayout::where('idempotency_key', $idempotencyKey)->first();
+                if ($existing !== null) {
+                    return $existing;
+                }
+            }
+
             throw new RuntimeException('Permintaan pencairan sedang diproses. Harap tunggu.');
         }
 
         try {
+            // Pola Double-Checked Locking: setelah lock didapatkan, pastikan tidak ada record dibuat sebelum lock release
+            if ($idempotencyKey !== null && trim($idempotencyKey) !== '') {
+                $existing = CommissionPayout::where('idempotency_key', $idempotencyKey)->first();
+                if ($existing !== null) {
+                    return $existing;
+                }
+            }
+
             $agent = FreelanceSales::findOrFail($agentId);
             if ($agent->status !== 'approved') {
                 throw new InvalidArgumentException('Hanya agen resmi berstatus disetujui (approved) yang dapat mengajukan pencairan komisi.');
+            }
+
+            // Validasi kelengkapan data perbankan tujuan pencairan
+            if (empty($agent->bank_name) || empty($agent->bank_account_number)) {
+                throw new InvalidArgumentException('Profil perbankan agen (nama bank dan nomor rekening) wajib dilengkapi sebelum mengajukan pencairan.');
             }
 
             // Validasi batas minimum pencairan (default Rp 500.000)
@@ -319,6 +340,39 @@ class CommissionPayoutService
     }
 
     /**
+     * Penolakan pengajuan pencairan komisi oleh Finance atau Direktur.
+     * Mengembalikan alokasi saldo yang tertahan (total_requested) kembali menjadi saldo siap cair (payable_balance).
+     */
+    public function rejectPayout(CommissionPayout $payout, string $reason, ?int $rejectorUserId = null): CommissionPayout
+    {
+        if ($payout->type !== 'requested') {
+            throw new InvalidArgumentException('Hanya pengajuan pencairan komisi (type = requested) yang dapat ditolak.');
+        }
+
+        if ($payout->status === 'paid') {
+            throw new InvalidArgumentException('Pengajuan pencairan komisi yang telah dibayarkan tidak dapat ditolak.');
+        }
+
+        if ($payout->status === 'rejected') {
+            throw new InvalidArgumentException('Pengajuan pencairan komisi ini telah ditolak sebelumnya.');
+        }
+
+        $notes = $payout->notes ? $payout->notes.' | ' : '';
+        $notes .= sprintf(
+            'Ditolak%s: %s',
+            $rejectorUserId !== null ? sprintf(' oleh User ID [%d]', $rejectorUserId) : '',
+            $reason
+        );
+
+        $payout->update([
+            'status' => 'rejected',
+            'notes' => $notes,
+        ]);
+
+        return $payout;
+    }
+
+    /**
      * Eksekusi pencairan komisi dan pencatatan bukti transfer bank oleh tim Finance.
      */
     public function markAsPaid(
@@ -326,6 +380,10 @@ class CommissionPayoutService
         string $transferProofPath,
         ?string $notes = null
     ): CommissionPayout {
+        if ($payout->type !== 'requested') {
+            throw new InvalidArgumentException('Hanya pengajuan pencairan komisi (type = requested) yang dapat diproses pembayarannya.');
+        }
+
         if ($payout->status === 'paid') {
             throw new InvalidArgumentException('Tiket pencairan komisi ini telah diselesaikan sebelumnya.');
         }

@@ -282,4 +282,26 @@ class ProductSkuLifecycleTest extends TestCase
 
         $this->assertSame('miniature-circuit-breaker-16a-2', $product2->slug);
     }
+
+    public function test_product_with_cleared_slug_regenerates_slug_on_update(): void
+    {
+        $product = Product::create([
+            'brand_id' => $this->brand->id,
+            'category_id' => $this->category->id,
+            'name' => 'Original Product Name',
+            'slug' => 'original-slug',
+            'model_number' => 'ORIG-001',
+            'cost_price' => 50000.00,
+        ]);
+
+        $this->assertSame('original-slug', $product->slug);
+
+        // Update product by clearing the slug
+        $product->update([
+            'slug' => '',
+            'name' => 'Updated Product Name',
+        ]);
+
+        $this->assertSame('updated-product-name', $product->fresh()->slug);
+    }
 }

@@ -111,4 +111,28 @@ class ProductImageProcessingServiceTest extends TestCase
 
         $this->service->processAndStore('/path/to/nonexistent/image.jpg');
     }
+
+    public function test_process_and_store_auto_orients_and_processes_successfully(): void
+    {
+        $manager = new ImageManager(new Driver);
+        $tempFile = tempnam(sys_get_temp_dir(), 'img_orient_');
+        file_put_contents($tempFile, (string) $manager->createImage(640, 480)->encodeUsingFileExtension('jpeg'));
+
+        $uploadedFile = new UploadedFile(
+            $tempFile,
+            'camera-photo.jpg',
+            'image/jpeg',
+            null,
+            true
+        );
+
+        $result = $this->service->processAndStoreWithDimensions($uploadedFile, 'catalog');
+
+        $this->assertSame(640, $result['width']);
+        $this->assertSame(480, $result['height']);
+        $this->assertSame('image/webp', $result['mime_type']);
+        $this->assertTrue(Storage::disk('public')->exists($result['path']));
+
+        @unlink($tempFile);
+    }
 }

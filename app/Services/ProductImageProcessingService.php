@@ -56,6 +56,9 @@ class ProductImageProcessingService
     ): array {
         $image = $this->readImage($file);
 
+        // Koreksi rotasi otomatis berdasarkan metadata orientasi EXIF (misal unggahan kamera smartphone)
+        $image->orient();
+
         // Skala proporsional jika resolusi melebihi batas maksimum
         $image->scaleDown(width: $maxWidth, height: self::DEFAULT_MAX_HEIGHT);
 

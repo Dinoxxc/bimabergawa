@@ -279,4 +279,110 @@ class CommissionPayoutServiceTest extends TestCase
         $this->assertSame('rejected', $payout->status);
         $this->assertStringContainsString('Reversal', $payout->notes);
     }
+
+    public function test_calculate_commission_does_not_downgrade_already_payable_or_paid_commission(): void
+    {
+        $this->service->calculateCommission($this->salesOrder);
+        $this->service->markCommissionAsPayable($this->salesOrder);
+
+        $payout = CommissionPayout::where('sales_order_id', $this->salesOrder->id)->first();
+        $this->assertSame('payable', $payout->status);
+
+        // Rekalkulasi komisi ulang (misal: penyesuaian catatan)
+        $this->service->calculateCommission($this->salesOrder);
+
+        $payout->refresh();
+        $this->assertSame('payable', $payout->status); // Status tidak boleh turun ke pending_payment
+    }
+
+    public function test_reverse_commission_reverses_payable_commission_and_creates_clawback_for_paid_commission(): void
+    {
+        // 1. Uji pembalikan komisi yang sudah berstatus payable
+        $payablePayout = CommissionPayout::factory()->create([
+            'sales_order_id' => $this->salesOrder->id,
+            'freelance_sales_id' => $this->agent->id,
+            'type' => 'earned',
+            'status' => 'payable',
+            'amount' => 1000000.00,
+        ]);
+
+        $this->service->reverseCommissionForCancelledSalesOrder($this->salesOrder, 'Batal proyek');
+        $payablePayout->refresh();
+        $this->assertSame('rejected', $payablePayout->status);
+
+        // 2. Uji pencatatan deduction / clawback jika komisi sudah terlanjur dibayarkan (status = paid)
+        $paidPayout = CommissionPayout::factory()->create([
+            'sales_order_id' => $this->salesOrder->id,
+            'freelance_sales_id' => $this->agent->id,
+            'type' => 'earned',
+            'status' => 'paid',
+            'amount' => 1500000.00,
+        ]);
+
+        $this->service->reverseCommissionForCancelledSalesOrder($this->salesOrder, 'Klien wanprestasi');
+
+        $clawback = CommissionPayout::where('sales_order_id', $this->salesOrder->id)
+            ->where('type', 'deducted')
+            ->first();
+
+        $this->assertNotNull($clawback);
+        $this->assertSame('paid', $clawback->status);
+        $this->assertEquals('1500000.00', $clawback->amount);
+        $this->assertStringContainsString('Clawback', $clawback->notes);
+    }
+
+    public function test_get_agent_balance_accounts_for_clawback_deductions(): void
+    {
+        // Saldo earned payable Rp 5.000.000
+        CommissionPayout::factory()->create([
+            'freelance_sales_id' => $this->agent->id,
+            'amount' => 5000000.00,
+            'type' => 'earned',
+            'status' => 'payable',
+        ]);
+
+        // Pemotongan clawback Rp 1.500.000
+        CommissionPayout::factory()->create([
+            'freelance_sales_id' => $this->agent->id,
+            'amount' => 1500000.00,
+            'type' => 'deducted',
+            'status' => 'paid',
+        ]);
+
+        $balance = $this->service->getAgentBalance($this->agent->id);
+        $this->assertSame(1500000.00, $balance['total_deducted']);
+        $this->assertSame(3500000.00, $balance['payable_balance']); // 5 Juta - 1.5 Juta = 3.5 Juta
+    }
+
+    public function test_request_payout_masks_bank_account_in_notes_for_uu_pdp_compliance(): void
+    {
+        CommissionPayout::factory()->create([
+            'freelance_sales_id' => $this->agent->id,
+            'amount' => 5000000.00,
+            'type' => 'earned',
+            'status' => 'payable',
+        ]);
+
+        $payout = $this->service->requestPayout($this->agent->id, 1000000.00);
+
+        // Rekening agen adalah 1234567890 -> wajib di-mask menjadi ******7890
+        $this->assertStringNotContainsString('1234567890', $payout->notes);
+        $this->assertStringContainsString('7890', $payout->notes);
+        $this->assertStringContainsString('*', $payout->notes);
+    }
+
+    public function test_mark_as_paid_rejects_rejected_payout(): void
+    {
+        $payout = CommissionPayout::factory()->create([
+            'freelance_sales_id' => $this->agent->id,
+            'amount' => 1000000.00,
+            'type' => 'requested',
+            'status' => 'rejected',
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('telah ditolak tidak dapat dibayarkan');
+
+        $this->service->markAsPaid($payout, 'proof.pdf');
+    }
 }

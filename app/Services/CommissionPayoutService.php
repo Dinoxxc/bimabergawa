@@ -62,24 +62,42 @@ class CommissionPayoutService
 
         $calculatedAmount = round($dpp * ($tierRate / 100), 2);
 
-        // Catat entri komisi pada buku besar (commission_payouts) berstatus pending_payment
-        CommissionPayout::updateOrCreate(
-            [
-                'sales_order_id' => $salesOrder->id,
-                'freelance_sales_id' => $agentId,
-                'type' => 'earned',
-            ],
-            [
+        // Catat entri komisi pada buku besar (commission_payouts) tanpa menurunkan status yang sudah payable / paid
+        $existingPayout = CommissionPayout::where('sales_order_id', $salesOrder->id)
+            ->where('freelance_sales_id', $agentId)
+            ->where('type', 'earned')
+            ->first();
+
+        if ($existingPayout && in_array($existingPayout->status, ['payable', 'paid'], true)) {
+            $existingPayout->update([
                 'amount' => $calculatedAmount,
-                'status' => 'pending_payment',
                 'notes' => sprintf(
-                    'Hak komisi Sales Order %s (DPP: Rp %s, Rate: %.2f%%)',
+                    'Hak komisi Sales Order %s diperbarui (DPP: Rp %s, Rate: %.2f%%) [Status dipertahankan: %s]',
                     $salesOrder->order_number,
                     number_format($dpp, 2, ',', '.'),
-                    $tierRate
+                    $tierRate,
+                    $existingPayout->status
                 ),
-            ]
-        );
+            ]);
+        } else {
+            CommissionPayout::updateOrCreate(
+                [
+                    'sales_order_id' => $salesOrder->id,
+                    'freelance_sales_id' => $agentId,
+                    'type' => 'earned',
+                ],
+                [
+                    'amount' => $calculatedAmount,
+                    'status' => 'pending_payment',
+                    'notes' => sprintf(
+                        'Hak komisi Sales Order %s (DPP: Rp %s, Rate: %.2f%%)',
+                        $salesOrder->order_number,
+                        number_format($dpp, 2, ',', '.'),
+                        $tierRate
+                    ),
+                ]
+            );
+        }
 
         return new CommissionCalculationDTO(
             salesOrderId: $salesOrder->id,
@@ -104,13 +122,14 @@ class CommissionPayoutService
     }
 
     /**
-     * Hitung ringkasan saldo komisi agen: total perolehan, total terbayar, dan saldo siap cair.
+     * Hitung ringkasan saldo komisi agen: total perolehan, total terbayar, total potongan, dan saldo siap cair.
      *
      * @return array{
      *     agent_id: int,
      *     total_earned: float,
      *     total_paid: float,
      *     total_requested: float,
+     *     total_deducted: float,
      *     payable_balance: float
      * }
      */
@@ -141,13 +160,19 @@ class CommissionPayoutService
             })
             ->sum('amount');
 
-        $payableBalance = max(0.0, round($earnedPayable - $totalRequested - $totalPaid, 2));
+        // Total pemotongan / clawback akibat pembatalan pesanan yang telah dibayarkan
+        $totalDeducted = (float) CommissionPayout::where('freelance_sales_id', $agentId)
+            ->where('type', 'deducted')
+            ->sum('amount');
+
+        $payableBalance = max(0.0, round($earnedPayable - $totalRequested - $totalPaid - $totalDeducted, 2));
 
         return [
             'agent_id' => $agentId,
             'total_earned' => round($totalEarned, 2),
             'total_paid' => round($totalPaid, 2),
             'total_requested' => round($totalRequested, 2),
+            'total_deducted' => round($totalDeducted, 2),
             'payable_balance' => $payableBalance,
         ];
     }
@@ -205,9 +230,9 @@ class CommissionPayoutService
                 ));
             }
 
-            // Validasi kecukupan saldo siap cair
+            // Validasi kecukupan saldo siap cair (dengan toleransi presisi desimal floating point)
             $balance = $this->getAgentBalance($agentId);
-            if ($amount > $balance['payable_balance']) {
+            if (($amount - $balance['payable_balance']) > 0.005) {
                 throw new InvalidArgumentException(sprintf(
                     'Nominal pengajuan pencairan (Rp %s) tidak boleh melebihi saldo yang tersedia (Rp %s).',
                     number_format($amount, 0, ',', '.'),
@@ -225,6 +250,12 @@ class CommissionPayoutService
             // Generate nomor tiket pencairan resmi korporat (PBB/COM/YYYY/MM/XXXX)
             $payoutNumber = $this->documentNumberService->generateCommissionNumber();
 
+            // Masking nomor rekening perbankan untuk kepatuhan UU PDP No. 27/2022 pada catatan publik
+            $rawAccount = (string) ($agent->bank_account_number ?? '');
+            $maskedAccount = (strlen($rawAccount) > 4)
+                ? str_repeat('*', max(0, strlen($rawAccount) - 4)).substr($rawAccount, -4)
+                : '****';
+
             $payout = CommissionPayout::create([
                 'payout_number' => $payoutNumber,
                 'freelance_sales_id' => $agentId,
@@ -237,7 +268,7 @@ class CommissionPayoutService
                     'Pengajuan pencairan komisi mandiri agen: %s (%s - %s)%s',
                     $agent->name,
                     $agent->bank_name,
-                    $agent->bank_account_number,
+                    $maskedAccount,
                     $requiresDirector ? ' [Menunggu Approval Direktur]' : ''
                 ),
             ]);
@@ -259,15 +290,29 @@ class CommissionPayoutService
     /**
      * Persetujuan pengajuan pencairan komisi oleh Finance atau Direktur.
      */
-    public function approvePayout(CommissionPayout $payout, int $approverUserId): CommissionPayout
+    public function approvePayout(CommissionPayout $payout, int $approverUserId, bool $isDirector = false): CommissionPayout
     {
         if ($payout->status !== 'pending_payment' || $payout->type !== 'requested') {
             throw new InvalidArgumentException('Hanya pengajuan komisi berstatus pending_payment yang dapat disetujui.');
         }
 
+        $directorLimit = SystemSettingService::getFloat(
+            'commission.director_payout_approval_limit',
+            self::DEFAULT_DIRECTOR_PAYOUT_LIMIT
+        );
+
+        // Jika nominal komisi >= batas eskalasi Direktur, verifikasi kewenangan approval (TC-AGN-COM-016)
+        if ((float) $payout->amount >= $directorLimit && ! $isDirector) {
+            $payout->update([
+                'notes' => ($payout->notes ? $payout->notes.' | ' : '').sprintf('Diverifikasi oleh Finance User ID [%d] [Menunggu Approval Direktur]', $approverUserId),
+            ]);
+
+            return $payout;
+        }
+
         $payout->update([
             'status' => 'payable',
-            'notes' => ($payout->notes ? $payout->notes.' | ' : '').sprintf('Disetujui oleh User ID [%d]', $approverUserId),
+            'notes' => ($payout->notes ? $payout->notes.' | ' : '').sprintf('Disetujui oleh User ID [%d]%s', $approverUserId, $isDirector ? ' (Direktur)' : ''),
         ]);
 
         return $payout;
@@ -285,6 +330,10 @@ class CommissionPayoutService
             throw new InvalidArgumentException('Tiket pencairan komisi ini telah diselesaikan sebelumnya.');
         }
 
+        if ($payout->status === 'rejected') {
+            throw new InvalidArgumentException('Pengajuan pencairan komisi yang telah ditolak tidak dapat dibayarkan.');
+        }
+
         $payout->update([
             'status' => 'paid',
             'transfer_proof_path' => $transferProofPath,
@@ -297,6 +346,7 @@ class CommissionPayoutService
 
     /**
      * Pembatalan komisi (reversal) saat Sales Order dibatalkan oleh klien (TC-AGN-COM-015).
+     * Membatalkan komisi pending maupun payable, serta mencatat pemotongan saldo (clawback) jika komisi sudah terlanjur cair.
      */
     public function reverseCommissionForCancelledSalesOrder(SalesOrder $salesOrder, string $reason = ''): void
     {
@@ -306,13 +356,39 @@ class CommissionPayoutService
                 ->get();
 
             foreach ($earnedPayouts as $payout) {
-                if ($payout->status === 'pending_payment') {
+                if (in_array($payout->status, ['pending_payment', 'payable'], true)) {
                     $payout->update([
                         'status' => 'rejected',
                         'notes' => sprintf('Reversal komisi akibat pembatalan Sales Order: %s', $reason),
                     ]);
+                } elseif ($payout->status === 'paid') {
+                    // Jika komisi sudah terlanjur ditransfer ke agen, buat baris pemotongan saldo (deducted / clawback)
+                    CommissionPayout::create([
+                        'freelance_sales_id' => $payout->freelance_sales_id,
+                        'sales_order_id' => $salesOrder->id,
+                        'amount' => $payout->amount,
+                        'type' => 'deducted',
+                        'status' => 'paid',
+                        'notes' => sprintf('Reversal komisi (Clawback) akibat pembatalan Sales Order yang telah dibayarkan: %s', $reason),
+                    ]);
                 }
             }
         }, 3);
+    }
+
+    // Alias methods untuk integrasi modul lain
+    public function calculateAndCreateEarnedCommission(SalesOrder $salesOrder): ?CommissionCalculationDTO
+    {
+        return $this->calculateCommission($salesOrder);
+    }
+
+    public function activateCommissionOnInvoiceSettlement(SalesOrder|int $salesOrder): void
+    {
+        $this->markCommissionAsPayable($salesOrder);
+    }
+
+    public function getAgentBalanceSummary(int $agentId): array
+    {
+        return $this->getAgentBalance($agentId);
     }
 }

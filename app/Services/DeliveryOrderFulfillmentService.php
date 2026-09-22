@@ -54,23 +54,26 @@ class DeliveryOrderFulfillmentService
                 ->where('sales_order_id', $salesOrder->id);
         })->get();
 
+        // Kumpulkan pool kuantitas terkirim per SKU / item name untuk konsumsi berurutan (FIFO)
+        $shippedPool = [];
+        foreach ($deliveredItems as $dItem) {
+            $key = $dItem->product_id !== null ? 'p_'.$dItem->product_id : 'n_'.trim(strtolower($dItem->item_name));
+            $shippedPool[$key] = ($shippedPool[$key] ?? 0) + (int) $dItem->quantity_shipped;
+        }
+
         $result = [];
 
         foreach ($quotationItems as $qItem) {
             $orderedQty = (int) $qItem->quantity;
+            $key = $qItem->product_id !== null ? 'p_'.$qItem->product_id : 'n_'.trim(strtolower($qItem->item_name));
 
-            // Cari total kuantitas yang telah terkirim untuk item ini
-            $shippedQty = (int) $deliveredItems
-                ->filter(function (DeliveryOrderItem $dItem) use ($qItem) {
-                    if ($qItem->product_id !== null && $dItem->product_id !== null) {
-                        return (int) $dItem->product_id === (int) $qItem->product_id;
-                    }
+            $availableShipped = $shippedPool[$key] ?? 0;
+            $allocatedShipped = min($orderedQty, $availableShipped);
 
-                    return trim(strtolower($dItem->item_name)) === trim(strtolower($qItem->item_name));
-                })
-                ->sum('quantity_shipped');
+            // Kurangi kuantitas terpakai dari pool pengiriman (mencegah double-counting antar baris pesanan yang sama)
+            $shippedPool[$key] = max(0, $availableShipped - $allocatedShipped);
 
-            $remainingQty = max(0, $orderedQty - $shippedQty);
+            $remainingQty = max(0, $orderedQty - $allocatedShipped);
 
             $result[] = [
                 'quotation_item_id' => $qItem->id,
@@ -79,7 +82,7 @@ class DeliveryOrderFulfillmentService
                 'model_number' => $qItem->model_number,
                 'uom' => $qItem->uom ?? 'pcs',
                 'ordered_qty' => $orderedQty,
-                'shipped_qty' => $shippedQty,
+                'shipped_qty' => $allocatedShipped,
                 'remaining_qty' => $remainingQty,
                 'is_fulfilled' => ($remainingQty === 0),
             ];
@@ -91,6 +94,7 @@ class DeliveryOrderFulfillmentService
     /**
      * Validasi kelayakan kuantitas pengiriman sebelum surat jalan dibuat:
      * - Memastikan status Sales Order bukan 'cancelled' atau 'completed'.
+     * - Memastikan Sales Order telah disetujui resmi dan disetujui Direktur jika >= Rp 100 Juta (TC-ERP-DO-009).
      * - Memastikan kuantitas kirim tidak melebihi sisa pesanan (remaining_qty).
      *
      * @param  array<int, array{sales_order_item_id?: int, quotation_item_id?: int, product_id?: int, quantity_delivered?: int, quantity_shipped?: int, quantity?: int}>  $itemsToShip
@@ -106,6 +110,16 @@ class DeliveryOrderFulfillmentService
 
         if ($salesOrder->status === 'completed') {
             throw new InvalidArgumentException('Seluruh item pesanan pada Sales Order ini telah terkirim lengkap.');
+        }
+
+        // Validasi status persetujuan SO dan Quotation (TC-ERP-DO-009)
+        if ($salesOrder->quotation && in_array($salesOrder->quotation->status, ['draft', 'pending_director_approval', 'rejected'], true)) {
+            throw new InvalidArgumentException('Surat Jalan hanya dapat diterbitkan untuk Sales Order yang telah disetujui resmi.');
+        }
+
+        // Validasi kewajiban approval Direktur untuk SO >= Rp 100 Juta (TC-ERP-DO-009)
+        if ((float) $salesOrder->total_amount >= 100000000.00 && ! $salesOrder->is_approved_by_director) {
+            throw new InvalidArgumentException('Surat Jalan untuk Sales Order senilai Rp 100 Juta ke atas wajib disetujui oleh Direktur sebelum pengiriman.');
         }
 
         if (empty($itemsToShip)) {
@@ -320,6 +334,10 @@ class DeliveryOrderFulfillmentService
      */
     public function confirmDelivery(DeliveryOrder $deliveryOrder, ?string $podPath = null): DeliveryOrder
     {
+        if ($deliveryOrder->trashed()) {
+            throw new InvalidArgumentException('Surat Jalan yang telah dibatalkan tidak dapat dikonfirmasi pengirimannya.');
+        }
+
         $updateData = [
             'status' => 'delivered',
         ];
@@ -339,8 +357,21 @@ class DeliveryOrderFulfillmentService
      */
     public function cancelDeliveryOrder(DeliveryOrder $deliveryOrder, string $reason = ''): void
     {
-        DB::transaction(function () use ($deliveryOrder) {
-            $salesOrder = $deliveryOrder->salesOrder;
+        if ($deliveryOrder->status === 'delivered') {
+            throw new InvalidArgumentException('Surat Jalan yang telah berstatus delivered tidak dapat dibatalkan.');
+        }
+
+        DB::transaction(function () use ($deliveryOrder, $reason) {
+            $salesOrder = SalesOrder::where('id', $deliveryOrder->sales_order_id)
+                ->lockForUpdate()
+                ->first();
+
+            // Catat alasan pembatalan jika ada
+            if ($reason !== '') {
+                $deliveryOrder->update([
+                    'notes' => ($deliveryOrder->notes ? $deliveryOrder->notes.' | ' : '').'Dibatalkan: '.$reason,
+                ]);
+            }
 
             // Hapus surat jalan secara soft delete
             $deliveryOrder->delete();

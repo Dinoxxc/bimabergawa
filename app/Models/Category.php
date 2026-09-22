@@ -25,8 +25,12 @@ class Category extends Model
         'sort_order',
     ];
 
-    public function getEffectiveCode(): string
+    public function getEffectiveCode(array $visitedIds = []): string
     {
+        if ($this->id !== null) {
+            $visitedIds[] = (int) $this->id;
+        }
+
         if (! empty($this->code)) {
             $cleanCode = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $this->code));
             if ($cleanCode !== '') {
@@ -34,15 +38,16 @@ class Category extends Model
             }
         }
 
-        // Wariskan kode divisi dari kategori induk jika ada
+        // Wariskan kode divisi dari kategori induk jika ada (kebal siklus/rekursi tak hingga)
         if ($this->relationLoaded('parent') && $this->parent !== null) {
-            return $this->parent->getEffectiveCode();
-        }
-
-        if ($this->parent_id !== null) {
+            $parentId = (int) ($this->parent->id ?? $this->parent_id);
+            if (! in_array($parentId, $visitedIds, true)) {
+                return $this->parent->getEffectiveCode($visitedIds);
+            }
+        } elseif ($this->parent_id !== null && ! in_array((int) $this->parent_id, $visitedIds, true)) {
             $parent = Category::find($this->parent_id);
             if ($parent !== null) {
-                return $parent->getEffectiveCode();
+                return $parent->getEffectiveCode($visitedIds);
             }
         }
 

@@ -105,4 +105,52 @@ class DomainModelTest extends TestCase
         $this->assertTrue($quoSafe->isMarginSafe());
         $this->assertEquals('safe', $quoSafe->margin_status);
     }
+
+    /**
+     * Test Category and Brand getEffectiveCode resolution and cycle immunity.
+     */
+    public function test_category_and_brand_effective_code_resolution_and_cycle_immunity(): void
+    {
+        // 1. Direct code on Category
+        $catDirect = new Category(['name' => 'Circuit Breakers', 'code' => 'MCB']);
+        $this->assertSame('MCB', $catDirect->getEffectiveCode());
+
+        // 2. Name fallback on Category
+        $catFallback = new Category(['name' => 'Pumps and Valves', 'code' => '']);
+        $this->assertSame('PUM', $catFallback->getEffectiveCode());
+
+        // 3. Parent code inheritance
+        $parentCat = new Category(['name' => 'Electrical', 'code' => 'ELE']);
+        $childCat = new Category(['name' => 'Switchgear', 'code' => '']);
+        $childCat->setRelation('parent', $parentCat);
+        $this->assertSame('ELE', $childCat->getEffectiveCode());
+
+        // 4. Self-referencing cycle prevention ($cat->parent_id = $cat->id)
+        $selfCycleCat = new Category(['name' => 'Motors', 'code' => '']);
+        $selfCycleCat->id = 101;
+        $selfCycleCat->parent_id = 101;
+        $this->assertSame('MOT', $selfCycleCat->getEffectiveCode());
+
+        // 5. Two-node circular loop prevention (A -> B -> A)
+        $cycleA = new Category(['name' => 'Loop Alpha', 'code' => '']);
+        $cycleA->id = 201;
+        $cycleA->parent_id = 202;
+
+        $cycleB = new Category(['name' => 'Loop Beta', 'code' => '']);
+        $cycleB->id = 202;
+        $cycleB->parent_id = 201;
+
+        $cycleA->setRelation('parent', $cycleB);
+        $cycleB->setRelation('parent', $cycleA);
+
+        // Must terminate safely without infinite recursion
+        $this->assertSame('LOO', $cycleA->getEffectiveCode());
+
+        // 6. Brand effective code resolution and sanitization
+        $brandDirect = new Brand(['name' => 'Schneider Electric', 'code' => 'SCH']);
+        $this->assertSame('SCH', $brandDirect->getEffectiveCode());
+
+        $brandFallback = new Brand(['name' => 'Omron Industrial', 'code' => '']);
+        $this->assertSame('OMRO', $brandFallback->getEffectiveCode());
+    }
 }

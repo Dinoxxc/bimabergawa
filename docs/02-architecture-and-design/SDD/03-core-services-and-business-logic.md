@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.11.0 |
+| **Versi Dokumen** | 1.13.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -29,6 +29,7 @@
 | `1.10.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembersihan format penomoran dokumen menjadi standar korporat bersih `PBB/{TIPE}/{YYYY}/{MM}/{XXXX}` tanpa salt kriptografis |
 | `1.11.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi SkuGeneratorService untuk auto-generated internal SKU PBB format PBB-[DIV]-[BRAND]-[SEQUENCE], integrasi pencarian SKU internal pada BulkSkuNormalizationService, dan auto-derivation kode fallback |
 | `1.12.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penguatan SkuGeneratorService dengan pengurutan numerik CAST(SUBSTRING_INDEX), pewarisan kode divisi kategori hierarkis, proteksi penghapusan SKU pada ProductObserver update, dan integrasi penelusuran alfanumerik toleran murni pada BulkSkuNormalizationService |
+| `1.13.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi resmi DeliveryOrderFulfillmentService (alokasi kuantitas berurutan FIFO pool, penomoran parsial, validasi limit SO >= 100M, konfirmasi serah terima fisik & state machine pembatalan) dan CommissionPayoutService (kalkulasi DPP subtotal, aktivasi faktur lunas, ledger komisi mandiri via mutex lock & idempotensi, masking rekening UU PDP No. 27/2022, eskalasi approval direktur >= 25 Juta, dan pencatatan clawback reversal) |
 
 ---
 
@@ -819,3 +820,40 @@ class SkuGeneratorService
     }
 }
 ```
+
+---
+
+## 13. `DeliveryOrderFulfillmentService` (Pelacakan Kuantitas Fisik & Pemenuhan Logistik)
+
+Mengelola seluruh siklus hidup pengiriman fisik barang, penerbitan Surat Jalan parsial dan penuh, pelacakan sisa pesanan secara akurat tanpa *double counting*, serta transisi status pesanan penjualan:
+
+### 13.1 Karakteristik & Aturan Bisnis Pemenuhan Logistik
+1. **Alokasi Kuantitas Berurutan (*FIFO Consumption Pool*):** Menghitung sisa kuantitas (`remaining_qty`) dengan mengelompokkan riwayat pengiriman aktif ke dalam pool kuantitas per SKU / nama produk, lalu mengonsumsi pool tersebut secara FIFO antar baris pesanan untuk mencegah hilangnya sisa pesanan fiktif pada pesanan yang memiliki produk identik di beberapa baris item.
+2. **Penomoran Surat Jalan Parsial Monotonik:** Menghasilkan nomor surat jalan resmi berbasis Sales Order (`PBB/DOR/YYYY/MM/XXXX/01`, `/02`, dst.) dengan nomor parsial yang terus bertambah (*monotonically increasing*) guna menjamin kepatuhan audit pergudangan.
+3. **Validasi Batas Otorisasi & Nilai Transaksi (TC-ERP-DO-009):**
+   - Menolak penerbitan Surat Jalan untuk Sales Order berstatus `cancelled`, `completed`, atau penawarannya masih berstatus `draft` / belum disetujui resmi.
+   - Menolak penerbitan Surat Jalan untuk Sales Order bernilai $\ge$ Rp 100.000.000 jika belum memiliki persetujuan resmi Direktur (`is_approved_by_director = true`).
+4. **State Machine Serah Terima & Pembatalan:**
+   - Mengunci konfirmasi serah terima fisik (`confirmDelivery`) agar tidak dapat dieksekusi pada Surat Jalan yang telah di-soft-delete / batal.
+   - Menolak pembatalan Surat Jalan (`cancelDeliveryOrder`) jika barang telah berstatus diterima di lokasi proyek (`status = delivered`).
+   - Restorasi sisa kuantitas pesanan dan pemulihan status Sales Order kembali ke `processing` atau `partially_fulfilled` saat Surat Jalan dibatalkan.
+
+---
+
+## 14. `CommissionPayoutService` (Buku Besar Komisi & Mutasi Mandiri Agen)
+
+Mengelola seluruh alur hak finansial mitra agen freelance, perhitungan komisi Dasar Pengenaan Pajak (DPP), pencegahan penarikan ganda serentak, serta kepatuhan perlindungan data pribadi perbankan:
+
+### 14.1 Karakteristik & Aturan Bisnis Komisi Agen
+1. **Kalkulasi Otomatis DPP & Rate Tier:** Dihitung otomatis dari nilai subtotal sebelum PPN (DPP) saat Sales Order disetujui, menggunakan tarif komisi aktif tier agen atau kesepakatan penawaran. Rekalkulasi di masa mendatang mempertahankan status komisi yang telah `payable` atau `paid` agar tidak ter-downgrade kembali ke `pending_payment`.
+2. **Aktivasi Pasca-Pelunasan Klien (TC-AGN-COM-002):** Komisi berstatus awal `pending_payment` otomatis diaktivasi menjadi siap cair (`payable`) saat faktur komersial klien telah dilunasi penuh (`status = paid`).
+3. **Proteksi Konkurensi & Mutex Locking (TC-AGN-COM-011):** Pengajuan pencairan mandiri agen dilindungi oleh *Atomic Mutex Lock* (`Cache::lock`) selama 10 detik dan validasi kunci idempotensi (`idempotency_key`) untuk mencegah *double payout* akibat klik ganda atau percobaan penarikan paralel.
+4. **Validasi Batas Nilai & Presisi Finansial:**
+   - Penegakan batas minimum penarikan Rp 500.000 (`TC-AGN-COM-008`).
+   - Pencegahan saldo minus (*overdraft protection*) dengan evaluasi presisi desimal `DECIMAL(15,2)` terhadap saldo siap cair.
+5. **Eskalasi Persetujuan Direktur $\ge$ Rp 25 Juta (TC-AGN-COM-016):** Penarikan komisi bernilai besar ($\ge$ Rp 25.000.000) otomatis ditandai `[Menunggu Approval Direktur]` dan mewajibkan otorisasi persetujuan Direktur sebelum staf Finance dapat mencairkan dana.
+6. **Masking Nomor Rekening UU PDP No. 27/2022 (Aturan 3.8):** Nomor rekening perbankan agen pada kolom catatan umum (`notes`) wajib di-masking secara otomatis (`******7890`) untuk mencegah paparan data finansial sensitif pada catatan audit publik.
+7. **Pembalikan Komisi (*Reversal*) & Pemotongan Saldo (*Clawback* - TC-AGN-COM-015):**
+   - Jika Sales Order dibatalkan, komisi berstatus `pending_payment` maupun `payable` otomatis ditolak (`rejected`).
+   - Jika komisi telah terlanjur ditransfer (`paid`), sistem mencatat entri pemotongan saldo (`type = 'deducted'`) yang otomatis mengurangi saldo siap cair agen pada transaksi berikutnya.
+

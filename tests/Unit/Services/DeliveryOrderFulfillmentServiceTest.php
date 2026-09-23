@@ -507,4 +507,135 @@ class DeliveryOrderFulfillmentServiceTest extends TestCase
             ]
         );
     }
+
+    public function test_confirm_delivery_with_discrepancy_handles_missing_goods_short_shipment_without_defect(): void
+    {
+        // TC-ERP-DO-018: Kirim 50 pcs Item 1, kurir kehilangan 5 pcs di perjalanan (45 pcs baik, 0 cacat)
+        $dto = new DeliveryOrderFulfillmentDTO(
+            salesOrderId: $this->salesOrder->id,
+            items: [
+                ['quotation_item_id' => $this->item1->id, 'quantity_delivered' => 50],
+            ],
+            shippingMethod: 'Ekspedisi Baraka'
+        );
+        $do = $this->service->createFulfillment($dto);
+        $doItem = $do->items()->first();
+
+        $confirmedDo = $this->service->confirmDeliveryWithDiscrepancy(
+            deliveryOrder: $do,
+            itemDiscrepancies: [
+                [
+                    'delivery_order_item_id' => $doItem->id,
+                    'quantity_received' => 45,
+                    'quantity_defective' => 0,
+                    'defect_notes' => '1 dus kecil (5 unit) hilang/tercecer di pihak ekspedisi',
+                ],
+            ],
+            discrepancyNotes: 'Klaim asuransi ekspedisi untuk 5 unit'
+        );
+
+        // Status DO harus partially_delivered karena penerimaan < kuantitas kirim (short shipment)
+        $this->assertSame('partially_delivered', $confirmedDo->status);
+        $this->assertSame(45, $doItem->fresh()->quantity_received);
+        $this->assertSame(0, $doItem->fresh()->quantity_defective);
+
+        // Sisa pesanan Item 1 pada Sales Order harus otomatis menjadi 55 (100 pesanan - 45 diterima baik)
+        $remaining = $this->service->getRemainingQuantities($this->salesOrder);
+        $item1Remaining = collect($remaining)->firstWhere('quotation_item_id', $this->item1->id);
+        $this->assertSame(55, $item1Remaining['remaining_qty']);
+        $this->assertSame(45, $item1Remaining['shipped_qty']);
+        $this->assertFalse($item1Remaining['is_fulfilled']);
+        $this->assertSame('partially_fulfilled', $this->salesOrder->fresh()->status);
+    }
+
+    public function test_cancel_delivery_order_rejects_partially_delivered_order(): void
+    {
+        $dto = new DeliveryOrderFulfillmentDTO(
+            salesOrderId: $this->salesOrder->id,
+            items: [
+                ['quotation_item_id' => $this->item1->id, 'quantity_delivered' => 50],
+            ],
+            shippingMethod: 'Armada Internal PBB'
+        );
+        $do = $this->service->createFulfillment($dto);
+        $doItem = $do->items()->first();
+
+        $this->service->confirmDeliveryWithDiscrepancy(
+            deliveryOrder: $do,
+            itemDiscrepancies: [
+                [
+                    'delivery_order_item_id' => $doItem->id,
+                    'quantity_received' => 45,
+                    'quantity_defective' => 5,
+                ],
+            ]
+        );
+
+        // DO yang sudah diserahterimakan sebagian dilarang dibatalkan
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('telah berstatus partially_delivered tidak dapat dibatalkan');
+
+        $this->service->cancelDeliveryOrder($do);
+    }
+
+    public function test_confirm_delivery_finalizes_sales_order_status_to_completed(): void
+    {
+        // Kirim seluruh sisa pesanan (100 pcs item1 dan 50 pcs item2)
+        $dto = new DeliveryOrderFulfillmentDTO(
+            salesOrderId: $this->salesOrder->id,
+            items: [
+                ['quotation_item_id' => $this->item1->id, 'quantity_delivered' => 100],
+                ['quotation_item_id' => $this->item2->id, 'quantity_delivered' => 50],
+            ],
+            shippingMethod: 'Armada Internal PBB'
+        );
+        $do = $this->service->createFulfillment($dto);
+
+        // Konfirmasi serah terima fisik 100% diterima baik
+        $this->service->confirmDelivery($do, 'pod/final-receipt.pdf');
+
+        $this->assertSame('completed', $this->salesOrder->fresh()->status);
+    }
+
+    public function test_validation_and_fulfillment_matches_custom_non_catalog_item_by_name(): void
+    {
+        $quotation = Quotation::factory()->create(['status' => 'approved']);
+        $customItem = QuotationItem::factory()->create([
+            'quotation_id' => $quotation->id,
+            'product_id' => null, // Non-katalog / ad-hoc sourcing
+            'item_name' => 'Kabel Tray P31 Legrand 100x50',
+            'quantity' => 20,
+            'uom' => 'batang',
+            'unit_price' => 250000,
+            'total_price' => 5000000,
+        ]);
+
+        $so = SalesOrder::factory()->create([
+            'quotation_id' => $quotation->id,
+            'order_number' => 'PBB/SOR/2026/09/9876',
+            'status' => 'processing',
+            'total_amount' => 5550000.00,
+        ]);
+
+        // Kirim barang menggunakan pencocokan item_name
+        $dto = new DeliveryOrderFulfillmentDTO(
+            salesOrderId: $so->id,
+            items: [
+                [
+                    'item_name' => 'kabel tray p31 legrand 100x50',
+                    'quantity_delivered' => 15,
+                ],
+            ],
+            shippingMethod: 'Truk Logistik'
+        );
+
+        $do = $this->service->createFulfillment($dto);
+        $this->assertCount(1, $do->items);
+        $this->assertSame('Kabel Tray P31 Legrand 100x50', $do->items->first()->item_name);
+        $this->assertSame(15, $do->items->first()->quantity_shipped);
+
+        $remaining = $this->service->getRemainingQuantities($so);
+        $this->assertSame(5, $remaining[0]['remaining_qty']);
+        $this->assertSame(15, $remaining[0]['shipped_qty']);
+    }
 }

@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-ERP-05` |
-| **Versi Dokumen** | 1.4.0 |
+| **Versi Dokumen** | 1.5.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -20,6 +20,7 @@
 | `1.2.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan upload bukti tanda terima (POD) & status fulfillment |
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi 16 skenario uji mendalam & standardisasi status Not Executed |
 | `1.4.0` | 22 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario TC-ERP-DO-017 (Serah Terima dengan Barang Cacat & Siklus Surat Jalan Pengganti / Replacement DO) |
+| `1.5.0` | 23 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario TC-ERP-DO-018 (Kurang Kirim / Barang Hilang Ekspedisi Tanpa Cacat Fisik) & pengujian penolakan pembatalan DO status partially_delivered pada TC-ERP-DO-016 |
 
 ---
 
@@ -59,8 +60,9 @@
 | **`TC-ERP-DO-013`** | Audit | Pencatatan Lengkap Penerbitan dan Serah Terima pada Log | DO diterbitkan dan bukti POD diunggah | Periksa tabel `activity_log` | Tercatat: Pembuat Surat Jalan, Nomor Kendaraan, Waktu Serah Terima, dan File Bukti POD. | Not Executed |
 | **`TC-ERP-DO-014`** | Batas Nilai | Penanganan Surat Jalan dengan Lebih dari 50 Baris SKU | Transaksi proyek suplai gedung bertingkat | Buat DO dengan 60 jenis produk | DomPDF menghasilkan dokumen Surat Jalan multi-halaman dengan penomoran "Halaman 1 dari 2", tabel terpotong rapi tanpa tumpang tindih. | Not Executed |
 | **`TC-ERP-DO-015`** | Konkurensi | Penomoran Dokumen Surat Jalan Bebas Tabrakan (*Unique DO Numbering*) | 2 staf gudang menerbitkan Surat Jalan secara serentak | Klik tombol simpan DO di detik yang sama | `DocumentNumberService` menggunakan transaksi atomik, menghasilkan nomor berurutan `PBB/DOR/2026/09/0001` dan `PBB/DOR/2026/09/0002` tanpa duplikasi. | Not Executed |
-| **`TC-ERP-DO-016`** | Retur / Anomali | Penanganan Pengembalian Barang (*Returned / Delivery Failed*) | Pengiriman gagal karena lokasi proyek tutup | Staf mengubah status DO menjadi `delivery_failed` | Sisa kuantitas pesanan pada SO otomatis dikembalikan (*restored*) ke status siap kirim ulang, alasan kegagalan wajib dicatat. | Not Executed |
-| **`TC-ERP-DO-017`** | Defect & Retur | Serah Terima dengan Barang Cacat & Siklus Unit Pengganti (*Replacement DO*) | DO tahap 1 terbit 100 pcs MCB | Konfirmasi serah terima: 90 pcs baik, 10 pcs cacat bodi (foto terlampir) | Status DO menjadi `partially_delivered` (atau `discrepancy`), sisa pesanan pada SO otomatis kembali menjadi 10 pcs, status SO tetap `partially_fulfilled`. Logistik dapat langsung menerbitkan DO tahap 2 (10 pcs pengganti) sampai SO `completed` 100%. | Not Executed |
+| **`TC-ERP-DO-016`** | Retur / Anomali | Penanganan Pengembalian Barang (*Returned / Delivery Failed*) & Batas Pembatalan | Pengiriman gagal karena lokasi proyek tutup / DO status partially_delivered | Batalkan DO atau ubah status | Jika DO masih shipped, pembatalan mengembalikan kuantitas pesanan. Namun jika DO telah berstatus delivered atau partially_delivered, sistem melarang pembatalan demi kepatuhan hukum fisik serah terima barang. | Not Executed |
+| **`TC-ERP-DO-017`** | Defect & Retur | Serah Terima dengan Barang Cacat & Siklus Unit Pengganti (*Replacement DO*) | DO tahap 1 terbit 100 pcs MCB | Konfirmasi serah terima: 90 pcs baik, 10 pcs cacat bodi (foto terlampir) | Status DO menjadi `partially_delivered`, sisa pesanan pada SO otomatis kembali menjadi 10 pcs, status SO tetap `partially_fulfilled`. Logistik dapat langsung menerbitkan DO tahap 2 (10 pcs pengganti) sampai SO `completed` 100%. | Not Executed |
+| **`TC-ERP-DO-018`** | Kurang Kirim | Penanganan Kurang Kirim (*Short Shipment*) / Barang Hilang Ekspedisi | DO terbit 50 pcs item pengadaan | Konfirmasi serah terima: 45 pcs diterima baik, 0 pcs cacat, 5 pcs hilang di ekspedisi | Status DO menjadi `partially_delivered`, sisa pesanan pada SO otomatis bertambah 5 pcs, status SO tetap `partially_fulfilled`. Staf logistik dapat menerbitkan DO pengganti untuk 5 pcs yang hilang. | Not Executed |
 
 ---
 
@@ -96,7 +98,7 @@
    - Sisa kuantitas pesanan pada SO otomatis terhitung kembali menjadi 10 pcs.
    - Status Sales Order tetap `partially_fulfilled`.
 4. **Langkah 4:** Terbitkan DO tahap 2 untuk sisa 10 pcs pengganti (`PBB/DOR/YYYY/MM/XXXX/02`).
-5. **Langkah 5:** Konfirmasi serah terima DO tahap 2 dengan 10 pcs diterima baik.
+5. **Langkah 5:** Konfirmasi serah terima DO tahap 2 dengan 10 pcs diterima baik (`confirmDelivery()`).
 6. **Verifikasi Akhir:**
    - Sisa kuantitas pesanan pada SO menjadi 0 pcs.
-   - Status Sales Order terkunci menjadi `completed`.
+   - Status Sales Order terkunci secara otomatis menjadi `completed`.

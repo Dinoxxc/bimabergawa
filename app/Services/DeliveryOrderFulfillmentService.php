@@ -60,13 +60,17 @@ class DeliveryOrderFulfillmentService
             $key = $dItem->product_id !== null ? 'p_'.$dItem->product_id : 'n_'.trim(strtolower($dItem->item_name));
 
             // Evaluasi kuantitas efektif:
-            // 1. Jika DO telah berstatus 'delivered' atau 'partially_delivered', dan terdapat rekaman penerimaan fisik (received/defective):
-            //    gunakan quantity_received (hanya barang yang diterima baik yang dihitung mengurangi sisa pesanan).
-            // 2. Jika DO masih berstatus 'prepared' atau 'shipped' (dalam perjalanan):
+            // 1. Jika DO telah berstatus 'partially_delivered':
+            //    gunakan quantity_received murni (hanya barang yang riil diterima baik yang mengurangi sisa pesanan; barang cacat/hilang otomatis kembali ke sisa pesanan).
+            // 2. Jika DO berstatus 'delivered':
+            //    gunakan quantity_received jika > 0, atau fallback ke quantity_shipped untuk data serah terima penuh/historis.
+            // 3. Jika DO masih berstatus 'prepared' atau 'shipped' (dalam perjalanan):
             //    gunakan quantity_shipped (kuantitas dicadangkan agar tidak terjadi double-shipping).
             $doStatus = $dItem->deliveryOrder?->status ?? 'shipped';
-            if (in_array($doStatus, ['delivered', 'partially_delivered'], true) && ($dItem->quantity_received > 0 || $dItem->quantity_defective > 0)) {
+            if ($doStatus === 'partially_delivered') {
                 $effectiveQty = (int) $dItem->quantity_received;
+            } elseif ($doStatus === 'delivered') {
+                $effectiveQty = $dItem->quantity_received > 0 ? (int) $dItem->quantity_received : (int) $dItem->quantity_shipped;
             } else {
                 $effectiveQty = (int) $dItem->quantity_shipped;
             }
@@ -146,6 +150,7 @@ class DeliveryOrderFulfillmentService
             if ($r['product_id'] !== null) {
                 $remainingMap['p_'.$r['product_id']] = $r;
             }
+            $remainingMap['n_'.trim(strtolower($r['item_name']))] = $r;
         }
 
         $cumulativeRequested = [];
@@ -167,8 +172,9 @@ class DeliveryOrderFulfillmentService
                 ?? null;
 
             $productId = $shipItem['product_id'] ?? null;
+            $itemNameKey = isset($shipItem['item_name']) ? 'n_'.trim(strtolower((string) $shipItem['item_name'])) : null;
 
-            // Cocokkan item berdasarkan quotation_item_id atau product_id
+            // Cocokkan item berdasarkan quotation_item_id, product_id, atau item_name
             $matchedRemaining = null;
             if ($itemId !== null && isset($remainingMap[$itemId])) {
                 $matchedRemaining = $remainingMap[$itemId];
@@ -176,12 +182,14 @@ class DeliveryOrderFulfillmentService
                 $matchedRemaining = $remainingMap['p_'.$productId];
             } elseif ($itemId !== null && isset($remainingMap['p_'.$itemId])) {
                 $matchedRemaining = $remainingMap['p_'.$itemId];
+            } elseif ($itemNameKey !== null && isset($remainingMap[$itemNameKey])) {
+                $matchedRemaining = $remainingMap[$itemNameKey];
             }
 
             if ($matchedRemaining === null) {
                 throw new InvalidArgumentException(sprintf(
                     'Item pesanan dengan ID [%s] tidak ditemukan pada Sales Order ini.',
-                    (string) ($itemId ?? $productId)
+                    (string) ($itemId ?? $productId ?? ($shipItem['item_name'] ?? 'Unknown'))
                 ));
             }
 
@@ -233,6 +241,7 @@ class DeliveryOrderFulfillmentService
                 if ($r['product_id'] !== null) {
                     $remainingMap['p_'.$r['product_id']] = $r;
                 }
+                $remainingMap['n_'.trim(strtolower($r['item_name']))] = $r;
             }
 
             // Hitung indeks parsial DO untuk Sales Order ini (1, 2, 3...)
@@ -300,6 +309,7 @@ class DeliveryOrderFulfillmentService
                     ?? null;
 
                 $productId = $shipItem['product_id'] ?? null;
+                $itemNameKey = isset($shipItem['item_name']) ? 'n_'.trim(strtolower((string) $shipItem['item_name'])) : null;
 
                 $matched = null;
                 if ($itemId !== null && isset($remainingMap[$itemId])) {
@@ -308,12 +318,14 @@ class DeliveryOrderFulfillmentService
                     $matched = $remainingMap['p_'.$productId];
                 } elseif ($itemId !== null && isset($remainingMap['p_'.$itemId])) {
                     $matched = $remainingMap['p_'.$itemId];
+                } elseif ($itemNameKey !== null && isset($remainingMap[$itemNameKey])) {
+                    $matched = $remainingMap[$itemNameKey];
                 }
 
                 $finalProductId = $productId ?? $matched['product_id'] ?? null;
-                $finalItemName = $shipItem['item_name'] ?? $matched['item_name'] ?? 'Item Pengadaan';
-                $finalModelNumber = $shipItem['model_number'] ?? $matched['model_number'] ?? null;
-                $finalUom = $shipItem['uom'] ?? $matched['uom'] ?? 'pcs';
+                $finalItemName = $matched['item_name'] ?? $shipItem['item_name'] ?? 'Item Pengadaan';
+                $finalModelNumber = $matched['model_number'] ?? $shipItem['model_number'] ?? null;
+                $finalUom = $matched['uom'] ?? $shipItem['uom'] ?? 'pcs';
 
                 DeliveryOrderItem::create([
                     'delivery_order_id' => $deliveryOrder->id,
@@ -356,32 +368,47 @@ class DeliveryOrderFulfillmentService
             throw new InvalidArgumentException('Surat Jalan yang telah dibatalkan tidak dapat dikonfirmasi pengirimannya.');
         }
 
-        $updateData = [
-            'status' => 'delivered',
-        ];
+        return DB::transaction(function () use ($deliveryOrder, $podPath) {
+            $updateData = [
+                'status' => 'delivered',
+            ];
 
-        if ($podPath !== null && trim($podPath) !== '') {
-            $updateData['proof_of_delivery_path'] = $podPath;
-        }
-
-        $deliveryOrder->update($updateData);
-
-        // Pada serah terima normal 100%, set quantity_received = quantity_shipped jika belum diset
-        foreach ($deliveryOrder->items as $item) {
-            if ($item->quantity_received === 0 && $item->quantity_defective === 0) {
-                $item->update([
-                    'quantity_received' => $item->quantity_shipped,
-                    'quantity_defective' => 0,
-                ]);
+            if ($podPath !== null && trim($podPath) !== '') {
+                $updateData['proof_of_delivery_path'] = $podPath;
             }
-        }
 
-        return $deliveryOrder;
+            $deliveryOrder->update($updateData);
+
+            // Pada serah terima normal 100%, set quantity_received = quantity_shipped jika belum diset
+            foreach ($deliveryOrder->items as $item) {
+                if ($item->quantity_received === 0 && $item->quantity_defective === 0) {
+                    $item->update([
+                        'quantity_received' => $item->quantity_shipped,
+                        'quantity_defective' => 0,
+                    ]);
+                }
+            }
+
+            // Evaluasi ulang status Sales Order
+            $salesOrder = SalesOrder::where('id', $deliveryOrder->sales_order_id)->lockForUpdate()->first();
+            if ($salesOrder) {
+                $remainingList = $this->getRemainingQuantities($salesOrder);
+                $isFullyFulfilled = collect($remainingList)->every(fn ($item) => $item['remaining_qty'] === 0);
+
+                if ($isFullyFulfilled) {
+                    $salesOrder->update(['status' => 'completed']);
+                } else {
+                    $salesOrder->update(['status' => 'partially_fulfilled']);
+                }
+            }
+
+            return $deliveryOrder;
+        }, 3);
     }
 
     /**
-     * Konfirmasi serah terima fisik di lokasi proyek dengan pencatatan barang cacat / retur (TC-ERP-DO-017).
-     * Mengakomodasi penerimaan sebagian baik dan pengembalian unit cacat/rusak ke gudang,
+     * Konfirmasi serah terima fisik di lokasi proyek dengan pencatatan barang cacat / retur / hilang (TC-ERP-DO-017, TC-ERP-DO-018).
+     * Mengakomodasi penerimaan sebagian baik dan pengembalian unit cacat/rusak/hilang ke gudang,
      * serta meregenerasi sisa pesanan pada Sales Order agar dapat diterbitkan Surat Jalan Pengganti.
      *
      * @param  array<int, array{delivery_order_item_id?: int, quotation_item_id?: int, product_id?: int, quantity_received: int, quantity_defective?: int, defect_notes?: string}>  $itemDiscrepancies
@@ -405,7 +432,8 @@ class DeliveryOrderFulfillmentService
 
         return DB::transaction(function () use ($deliveryOrder, $itemDiscrepancies, $podPath, $returnProofPath, $discrepancyNotes) {
             $items = $deliveryOrder->items()->get()->keyBy('id');
-            $hasDefect = false;
+            $hasDiscrepancy = false;
+            $processedItemIds = [];
 
             foreach ($itemDiscrepancies as $disc) {
                 $doItemId = $disc['delivery_order_item_id'] ?? null;
@@ -424,6 +452,8 @@ class DeliveryOrderFulfillmentService
                     continue;
                 }
 
+                $processedItemIds[] = $targetItem->id;
+
                 $qtyReceived = max(0, (int) ($disc['quantity_received'] ?? 0));
                 $qtyDefective = max(0, (int) ($disc['quantity_defective'] ?? 0));
                 $defectNotes = $disc['defect_notes'] ?? null;
@@ -438,8 +468,8 @@ class DeliveryOrderFulfillmentService
                     ));
                 }
 
-                if ($qtyDefective > 0) {
-                    $hasDefect = true;
+                if ($qtyDefective > 0 || $qtyReceived < $targetItem->quantity_shipped) {
+                    $hasDiscrepancy = true;
                 }
 
                 $targetItem->update([
@@ -449,19 +479,18 @@ class DeliveryOrderFulfillmentService
                 ]);
             }
 
-            // Jika ada item yang belum tercakup di $itemDiscrepancies, defaultkan received = shipped
+            // Jika ada item yang belum tercakup di $itemDiscrepancies, defaultkan received = shipped (hanya untuk item yang tidak diproses)
             foreach ($items as $item) {
-                $refreshed = $item->fresh();
-                if ($refreshed->quantity_received === 0 && $refreshed->quantity_defective === 0) {
-                    $refreshed->update([
-                        'quantity_received' => $refreshed->quantity_shipped,
+                if (! in_array($item->id, $processedItemIds, true)) {
+                    $item->update([
+                        'quantity_received' => $item->quantity_shipped,
                         'quantity_defective' => 0,
                     ]);
                 }
             }
 
             $updateData = [
-                'status' => $hasDefect ? 'partially_delivered' : 'delivered',
+                'status' => $hasDiscrepancy ? 'partially_delivered' : 'delivered',
             ];
 
             if ($podPath !== null && trim($podPath) !== '') {
@@ -501,8 +530,11 @@ class DeliveryOrderFulfillmentService
      */
     public function cancelDeliveryOrder(DeliveryOrder $deliveryOrder, string $reason = ''): void
     {
-        if ($deliveryOrder->status === 'delivered') {
-            throw new InvalidArgumentException('Surat Jalan yang telah berstatus delivered tidak dapat dibatalkan.');
+        if (in_array($deliveryOrder->status, ['delivered', 'partially_delivered'], true)) {
+            throw new InvalidArgumentException(sprintf(
+                'Surat Jalan yang telah berstatus %s tidak dapat dibatalkan.',
+                $deliveryOrder->status
+            ));
         }
 
         DB::transaction(function () use ($deliveryOrder, $reason) {

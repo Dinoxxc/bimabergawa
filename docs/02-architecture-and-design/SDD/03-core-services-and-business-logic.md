@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.15.0 |
+| **Versi Dokumen** | 1.16.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -32,6 +32,7 @@
 | `1.13.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi resmi DeliveryOrderFulfillmentService (alokasi kuantitas berurutan FIFO pool, penomoran parsial, validasi limit SO >= 100M, konfirmasi serah terima fisik & state machine pembatalan) dan CommissionPayoutService (kalkulasi DPP subtotal, aktivasi faktur lunas, ledger komisi mandiri via mutex lock & idempotensi, masking rekening UU PDP No. 27/2022, eskalasi approval direktur >= 25 Juta, dan pencatatan clawback reversal) |
 | `1.14.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Peningkatan proteksi multi-baris batch pemenuhan surat jalan (cumulative quantity tracking), validasi data perbankan agen sebelum pengajuan pencairan komisi, penambahan alur penolakan pencairan resmi (rejectPayout) dengan pengembalian saldo tertahan, serta double-checked locking idempotensi |
 | `1.15.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi Golden Choice penanganan barang cacat & retur fisik lapangan (confirmDeliveryWithDiscrepancy) dengan restorasi otomatis sisa pesanan aktif dan penerbitan Surat Jalan Pengganti (Replacement Delivery Order) |
+| `1.16.0` | 23 Sep 2026 | Principal System Architect | Disetujui | Penguatan DeliveryOrderFulfillmentService: penanganan barang kurang kirim / hilang ekspedisi (short shipment), isolasi daftar item yang diproses pada fallback loop confirmDeliveryWithDiscrepancy, pencegahan pembatalan surat jalan partially_delivered, penutupan otomatis status Sales Order pada confirmDelivery, dan ketahanan pencocokan item kustom non-katalog |
 
 ---
 
@@ -839,14 +840,18 @@ Mengelola seluruh siklus hidup pengiriman fisik barang, penerbitan Surat Jalan p
    - Menolak penerbitan Surat Jalan untuk Sales Order bernilai $\ge$ Rp 100.000.000 jika belum memiliki persetujuan resmi Direktur (`is_approved_by_director = true`).
 4. **State Machine Serah Terima & Pembatalan:**
    - Mengunci konfirmasi serah terima fisik (`confirmDelivery`) agar tidak dapat dieksekusi pada Surat Jalan yang telah di-soft-delete / batal.
-   - Menolak pembatalan Surat Jalan (`cancelDeliveryOrder`) jika barang telah berstatus diterima di lokasi proyek (`status = delivered`).
+   - Menolak pembatalan Surat Jalan (`cancelDeliveryOrder`) jika barang telah berstatus diterima baik sebagian maupun penuh di lokasi proyek (`status = delivered` atau `status = partially_delivered`) guna menjamin integritas catatan serah terima fisik yang telah sah diakui klien.
    - Restorasi sisa kuantitas pesanan dan pemulihan status Sales Order kembali ke `processing` atau `partially_fulfilled` saat Surat Jalan dibatalkan.
 5. **Proteksi Batch Multi-Baris Kumulatif:** Pada satu permintaan pengiriman yang memuat beberapa baris item merujuk ke produk / item pesanan yang sama, sistem menghitung akumulasi total kuantitas seluruh baris (`cumulativeRequested`) dan menolak penerbitan jika total permintaan gabungan melebihi sisa pesanan belum terkirim.
-6. **Penanganan Barang Cacat & Retur Fisik Lapangan (*Discrepancy Receipt & Replacement Fulfillment* - Golden Choice):**
+6. **Penanganan Barang Cacat, Retur Fisik, & Kurang Kirim (*Discrepancy Receipt & Short Shipment* - Golden Choice):**
    - Saat serah terima fisik di lokasi proyek, staf logistik mencatat kuantitas riil yang diterima baik (`quantity_received`) dan kuantitas yang cacat/rusak/retur (`quantity_defective`) beserta catatan kerusakan (`defect_notes`) dan berkas bukti fisik (`return_proof_path`).
-   - Sisa pesanan (`remaining_qty`) pada Sales Order otomatis memperhitungkan barang yang cacat/rusak sehingga unit tersebut kembali menjadi saldo sisa pesanan yang belum terpenuhi.
-   - Status Sales Order tetap `partially_fulfilled` (atau dipulihkan dari `completed`), memungkinkan tim gudang segera menerbitkan Surat Jalan Parsial Pengganti (*Replacement Delivery Order*) bernomor urut berikutnya (`PBB/DOR/YYYY/MM/XXXX/02`).
+   - Jika terjadi kekurangan pengiriman (`quantity_received < quantity_shipped`) baik karena cacat fisik maupun barang hilang/kurang di ekspedisi, Surat Jalan otomatis berstatus `partially_delivered`, dan seluruh kuantitas yang belum diterima klien secara otomatis dikembalikan ke saldo sisa pesanan (`remaining_qty`) pada Sales Order untuk pengiriman ulang (*Replacement Delivery Order*).
+   - Loop fallback hanya menerapkan default penerimaan penuh pada item yang tidak tercantum dalam daftar discrepancy (mencegah *overwrite* barang hilang menjadi 100% diterima).
+   - Status Sales Order tetap `partially_fulfilled` (atau dipulihkan dari `completed`), memungkinkan tim gudang segera menerbitkan Surat Jalan Parsial Pengganti bernomor urut berikutnya (`PBB/DOR/YYYY/MM/XXXX/02`).
    - Penutupan Sales Order (`completed`) hanya terjadi jika seluruh akumulasi kuantitas yang *diterima baik* oleh klien telah mencapai 100% dari pesanan.
+7. **Penyelesaian Siklus Hidup Pesanan (*Order Lifecycle Finalization*):**
+   - Pemanggilan `confirmDelivery()` dibungkus dalam transaksi atomik database dengan penguncian pesimis `lockForUpdate()` pada entitas `SalesOrder`, secara otomatis mengevaluasi seluruh sisa pesanan, dan mengunci status Sales Order menjadi `completed` segera setelah seluruh item telah terkonfirmasi diterima 100%.
+   - Pencocokan item pengiriman pada `validateShippedQuantities()` dan `createFulfillment()` mendukung pemetaan fallback nama barang (`'n_'.trim(strtolower($item_name))`) untuk menjamin kelancaran pemenuhan pesanan kustom *ad-hoc sourcing* non-katalog.
 
 ---
 

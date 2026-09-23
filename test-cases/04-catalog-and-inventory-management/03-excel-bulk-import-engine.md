@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-CAT-03` |
-| **Versi Dokumen** | 1.4.0 |
+| **Versi Dokumen** | 1.6.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -21,6 +21,7 @@
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi 16 skenario uji mendalam & standardisasi status Not Executed |
 | `1.4.0` | 20 Sep 2026 | Principal QA Architect | Disetujui | Penambahan TC-CAT-IMP-017 untuk verifikasi auto-generation SKU internal PBB (PBB-DIV-BRD-XXXX) saat import katalog massal |
 | `1.5.0` | 20 Sep 2026 | Principal QA Architect | Disetujui | Penambahan TC-CAT-IMP-018 (proteksi immutabilitas & normalisasi SKU) dan TC-CAT-IMP-019 (pewarisan hierarkis kode divisi kategori) |
+| `1.6.0` | 23 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan format SKU 12 karakter [TIPE(1)][DIV(2)][BRAND(3)][URUTAN(6)] tanpa tanda hubung (contoh: SEL001000001) pada TC-CAT-IMP-017 s.d. TC-CAT-IMP-019 |
 
 ---
 
@@ -60,9 +61,9 @@
 | **`TC-CAT-IMP-014`** | Transaksi DB | Rollback Transaksi Database pada Kegagalan Chunk Kritis | Terjadi kegagalan koneksi database di tengah chunk 3 | Simulasi query failure pada chunk 3 | Transaksi database pada chunk 3 di-rollback penuh (`DB::rollBack()`), mencegah terciptanya data korup separuh baris. | Not Executed |
 | **`TC-CAT-IMP-015`** | Audit | Pencatatan Lengkap Eksekusi Import pada ActivityLog | Import 500 produk selesai | Periksa tabel `activity_log` | Tercatat: `causer_id` (Admin ID), Event (`catalog_bulk_import`), Ringkasan: 480 Berhasil Ditambahkan, 20 Diperbarui, 0 Gagal. | Not Executed |
 | **`TC-CAT-IMP-016`** | Notifikasi UI | Ringkasan Hasil Import pada Panel Notifikasi Filament | Proses import selesai di background | Cek panel lonceng notifikasi Filament | Muncul notifikasi hijau formal: "Import Selesai: 500 produk berhasil diproses", memuat tombol untuk mengunduh log jika ada baris error. | Not Executed |
-| **`TC-CAT-IMP-017`** | Positif | Pembangkitan Otomatis SKU Internal PBB Berformat `PBB-[DIV]-[BRAND]-[SEQUENCE]` | Berkas Excel diimpor tanpa kolom SKU internal PBB (hanya memuat model pabrikan) | Import dijalankan | `SkuGeneratorService` via `ProductObserver` secara otomatis menyematkan SKU unik internal `PBB-[DIV]-[BRAND]-[SEQUENCE]` pada setiap produk baru yang tersimpan di basis data. | Not Executed |
-| **`TC-CAT-IMP-018`** | Positif | Proteksi Immutabilitas SKU Internal PBB & Normalisasi saat Pembaruan Produk | Produk sudah memiliki SKU internal `PBB-ELE-SCH-0001` | Import dijalankan dengan kolom SKU bernilai kosong/null | `ProductObserver` mempertahankan SKU asli produk tanpa menimpanya menjadi null, mencegah hilangnya identitas inventaris rak. | Not Executed |
-| **`TC-CAT-IMP-019`** | Positif | Pewarisan Hierarkis Kode Divisi Kategori Induk saat Sub-kategori Tidak Berkode | Produk diimpor ke sub-kategori yang kolom `code`-nya kosong, namun kategori induknya memiliki kode `ELE` | Import dijalankan | `SkuGeneratorService` menelusuri kategori induk (`parent_id`) dan menggunakan kode divisi `ELE`, menghasilkan SKU berformat `PBB-ELE-[BRAND]-[SEQUENCE]`. | Not Executed |
+| **`TC-CAT-IMP-017`** | Positif | Pembangkitan Otomatis SKU Internal PBB Berformat 12 Karakter `[TIPE][DIV][BRAND][SEQUENCE]` | Berkas Excel diimpor tanpa kolom SKU internal PBB (hanya memuat model pabrikan) | Import dijalankan | `SkuGeneratorService` via `ProductObserver` secara otomatis menyematkan SKU unik internal 12 karakter `[TIPE(1)][DIV(2)][BRAND(3)][URUTAN(6)]` (contoh: `SEL001000001`) pada setiap produk baru yang tersimpan di basis data. | Not Executed |
+| **`TC-CAT-IMP-018`** | Positif | Proteksi Immutabilitas SKU Internal PBB & Normalisasi saat Pembaruan Produk | Produk sudah memiliki SKU internal `SEL001000001` | Import dijalankan dengan kolom SKU bernilai kosong/null | `ProductObserver` mempertahankan SKU asli produk tanpa menimpanya menjadi null, mencegah hilangnya identitas inventaris rak. | Not Executed |
+| **`TC-CAT-IMP-019`** | Positif | Pewarisan Hierarkis Kode Divisi Kategori Induk saat Sub-kategori Tidak Berkode | Produk diimpor ke sub-kategori yang kolom `code`-nya kosong, namun kategori induknya memiliki kode `EL` | Import dijalankan | `SkuGeneratorService` menelusuri kategori induk (`parent_id`) dan menggunakan kode divisi `EL`, menghasilkan SKU berformat 12 karakter `SEL[BRAND][SEQUENCE]`. | Not Executed |
 
 ---
 

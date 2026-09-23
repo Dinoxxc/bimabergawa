@@ -28,12 +28,12 @@ class ProductSkuLifecycleTest extends TestCase
 
         $this->brand = Brand::factory()->create([
             'name' => 'Schneider Electric',
-            'code' => 'SCH',
+            'code' => '001',
         ]);
 
         $this->category = Category::factory()->create([
             'name' => 'Otomasi & Kendali Industri',
-            'code' => 'AUT',
+            'code' => 'AU',
         ]);
     }
 
@@ -46,10 +46,12 @@ class ProductSkuLifecycleTest extends TestCase
             'slug' => 'schneider-electric-atv320u55n4b',
             'model_number' => 'ATV320U55N4B',
             'cost_price' => 4500000.00,
+            'availability_status' => 'ready_stock',
         ]);
 
         $this->assertNotNull($product->sku);
-        $this->assertSame('PBB-AUT-SCH-0001', $product->sku);
+        $this->assertSame(12, strlen($product->sku));
+        $this->assertSame('SAU001000001', $product->sku);
     }
 
     public function test_explicit_sku_is_honored_and_not_overwritten(): void
@@ -60,11 +62,11 @@ class ProductSkuLifecycleTest extends TestCase
             'name' => 'Special Custom Breaker',
             'slug' => 'special-custom-breaker',
             'model_number' => 'SPECIAL-001',
-            'sku' => 'PBB-CUSTOM-9999',
+            'sku' => 'CUSTOM000999',
             'cost_price' => 1000000.00,
         ]);
 
-        $this->assertSame('PBB-CUSTOM-9999', $product->sku);
+        $this->assertSame('CUSTOM000999', $product->sku);
     }
 
     public function test_sku_is_immutable_on_product_update(): void
@@ -76,13 +78,14 @@ class ProductSkuLifecycleTest extends TestCase
             'slug' => 'contactor-tesys-25a',
             'model_number' => 'LC1D25M7',
             'cost_price' => 350000.00,
+            'availability_status' => 'ready_stock',
         ]);
 
         $originalSku = $product->sku;
-        $this->assertSame('PBB-AUT-SCH-0001', $originalSku);
+        $this->assertSame('SAU001000001', $originalSku);
 
         // Ubah nama produk dan brand
-        $newBrand = Brand::factory()->create(['name' => 'ABB', 'code' => 'ABB']);
+        $newBrand = Brand::factory()->create(['name' => 'ABB', 'code' => '002']);
         $product->update([
             'name' => 'Contactor Renamed',
             'brand_id' => $newBrand->id,
@@ -101,6 +104,7 @@ class ProductSkuLifecycleTest extends TestCase
             'slug' => 'atv320u55n4b',
             'model_number' => 'ATV320U55N4B',
             'cost_price' => 4500000.00,
+            'availability_status' => 'ready_stock',
         ]);
 
         // 1. Ditemukan via Part Number Pabrikan (model_number)
@@ -108,13 +112,13 @@ class ProductSkuLifecycleTest extends TestCase
         $this->assertNotNull($matchedByModel);
         $this->assertSame($product->id, $matchedByModel->id);
 
-        // 2. Ditemukan via Internal SKU PBB (sku)
-        $matchedBySku = BulkSkuNormalizationService::matchSku('PBB-AUT-SCH-0001');
+        // 2. Ditemukan via Internal SKU PBB 12 Karakter (sku)
+        $matchedBySku = BulkSkuNormalizationService::matchSku('SAU001000001');
         $this->assertNotNull($matchedBySku);
         $this->assertSame($product->id, $matchedBySku->id);
 
-        // 2b. Ditemukan via Normalized SKU (variasi underscore / lowercase)
-        $matchedByNormalizedSku = BulkSkuNormalizationService::matchSku('pbb_aut_sch_0001');
+        // 2b. Ditemukan via Normalized SKU (variasi lowercase)
+        $matchedByNormalizedSku = BulkSkuNormalizationService::matchSku('sau001000001');
         $this->assertNotNull($matchedByNormalizedSku);
         $this->assertSame($product->id, $matchedByNormalizedSku->id);
 
@@ -132,7 +136,7 @@ class ProductSkuLifecycleTest extends TestCase
             'name' => 'Product Alpha',
             'slug' => 'product-alpha',
             'model_number' => 'ALPHA-01',
-            'sku' => 'PBB-UNIQUE-0001',
+            'sku' => 'UNIQ00000001',
             'cost_price' => 100000.00,
         ]);
 
@@ -145,7 +149,7 @@ class ProductSkuLifecycleTest extends TestCase
             'name' => 'Product Beta',
             'slug' => 'product-beta',
             'model_number' => 'BETA-02',
-            'sku' => 'PBB-UNIQUE-0001',
+            'sku' => 'UNIQ00000001',
             'cost_price' => 200000.00,
         ]);
     }
@@ -158,12 +162,12 @@ class ProductSkuLifecycleTest extends TestCase
             'name' => 'Manual Sku Product',
             'slug' => 'manual-sku-product',
             'model_number' => 'MANUAL-01',
-            'sku' => '  pbb_aut_sch_0099  ',
+            'sku' => '  sau_001_000099  ',
             'cost_price' => 500000.00,
         ]);
 
         // Harus dinormalisasi menjadi huruf kapital dan tanda hubung
-        $this->assertSame('PBB-AUT-SCH-0099', $product->sku);
+        $this->assertSame('SAU-001-000099', $product->sku);
     }
 
     public function test_sku_is_protected_against_accidental_wiping_on_update(): void
@@ -175,10 +179,11 @@ class ProductSkuLifecycleTest extends TestCase
             'slug' => 'protected-product',
             'model_number' => 'PROT-01',
             'cost_price' => 250000.00,
+            'availability_status' => 'ready_stock',
         ]);
 
         $originalSku = $product->sku;
-        $this->assertSame('PBB-AUT-SCH-0001', $originalSku);
+        $this->assertSame('SAU001000001', $originalSku);
 
         // Simulasi update dengan SKU null atau kosong (misal form tidak menyertakan SKU)
         $product->update([
@@ -220,7 +225,7 @@ class ProductSkuLifecycleTest extends TestCase
         $product->refresh();
 
         $this->assertNotNull($product->sku);
-        $this->assertSame('PBB-AUT-SCH-0001', $product->sku);
+        $this->assertSame('SAU001000001', $product->sku);
     }
 
     public function test_stripped_alphanumeric_matching_finds_internal_sku(): void
@@ -232,10 +237,11 @@ class ProductSkuLifecycleTest extends TestCase
             'slug' => 'stripped-match-test',
             'model_number' => 'STRIP-01',
             'cost_price' => 100000.00,
+            'availability_status' => 'ready_stock',
         ]);
 
-        // Query dengan teks alfanumerik tanpa tanda hubung (PBBAUTSCH0001)
-        $matched = BulkSkuNormalizationService::matchSku('PBBAUTSCH0001');
+        // Query dengan teks alfanumerik bertanda hubung atau spasi (SAU-001-000001)
+        $matched = BulkSkuNormalizationService::matchSku('SAU-001-000001');
 
         $this->assertNotNull($matched);
         $this->assertSame($product->id, $matched->id);
@@ -250,9 +256,10 @@ class ProductSkuLifecycleTest extends TestCase
             'slug' => 'exact-sku-test',
             'model_number' => 'EXACT-01',
             'cost_price' => 100000.00,
+            'availability_status' => 'ready_stock',
         ]);
 
-        $result = SkuParserService::parseAndMatch('PBB-AUT-SCH-0001');
+        $result = SkuParserService::parseAndMatch('SAU001000001');
 
         $this->assertSame(1, $result['matched_count']);
         $this->assertSame('exact', $result['matched'][0]['match_type']);

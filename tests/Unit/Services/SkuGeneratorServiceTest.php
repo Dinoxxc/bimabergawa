@@ -29,22 +29,22 @@ class SkuGeneratorServiceTest extends TestCase
 
         $this->schneider = Brand::factory()->create([
             'name' => 'Schneider Electric',
-            'code' => 'SCH',
+            'code' => '001',
         ]);
 
         $this->ebara = Brand::factory()->create([
             'name' => 'Ebara',
-            'code' => 'EBR',
+            'code' => '002',
         ]);
 
         $this->electrical = Category::factory()->create([
             'name' => 'Distribusi Daya Listrik',
-            'code' => 'ELE',
+            'code' => 'EL',
         ]);
 
         $this->mechanical = Category::factory()->create([
             'name' => 'Mekanikal & Pompa Industri',
-            'code' => 'MEC',
+            'code' => 'ME',
         ]);
     }
 
@@ -53,12 +53,14 @@ class SkuGeneratorServiceTest extends TestCase
         $product = Product::factory()->make([
             'brand_id' => $this->schneider->id,
             'category_id' => $this->electrical->id,
+            'availability_status' => 'ready_stock',
             'model_number' => 'TEST-MOD-01',
         ]);
 
         $sku = SkuGeneratorService::generate($product);
 
-        $this->assertSame('PBB-ELE-SCH-0001', $sku);
+        $this->assertSame(12, strlen($sku));
+        $this->assertSame('SEL001000001', $sku);
     }
 
     public function test_generate_increments_sequence_for_same_division_and_brand(): void
@@ -67,36 +69,40 @@ class SkuGeneratorServiceTest extends TestCase
         $p1 = Product::factory()->create([
             'brand_id' => $this->schneider->id,
             'category_id' => $this->electrical->id,
+            'availability_status' => 'ready_stock',
             'model_number' => 'SCH-MCB-1',
         ]);
-        $this->assertSame('PBB-ELE-SCH-0001', $p1->sku);
+        $this->assertSame('SEL001000001', $p1->sku);
 
         // Item 2
         $p2 = Product::factory()->create([
             'brand_id' => $this->schneider->id,
             'category_id' => $this->electrical->id,
+            'availability_status' => 'ready_stock',
             'model_number' => 'SCH-MCB-2',
         ]);
-        $this->assertSame('PBB-ELE-SCH-0002', $p2->sku);
+        $this->assertSame('SEL001000002', $p2->sku);
     }
 
     public function test_sequence_is_scoped_by_division_and_brand_combination(): void
     {
-        // Schneider Electrical: 0001
+        // Schneider Electrical: 000001
         $eleSch = Product::factory()->create([
             'brand_id' => $this->schneider->id,
             'category_id' => $this->electrical->id,
+            'availability_status' => 'ready_stock',
             'model_number' => 'ELE-SCH-01',
         ]);
-        $this->assertSame('PBB-ELE-SCH-0001', $eleSch->sku);
+        $this->assertSame('SEL001000001', $eleSch->sku);
 
-        // Ebara Mechanical: starts at 0001
+        // Ebara Mechanical: starts at 000001
         $mecEbr = Product::factory()->create([
             'brand_id' => $this->ebara->id,
             'category_id' => $this->mechanical->id,
+            'availability_status' => 'ready_stock',
             'model_number' => 'MEC-EBR-01',
         ]);
-        $this->assertSame('PBB-MEC-EBR-0001', $mecEbr->sku);
+        $this->assertSame('SME002000001', $mecEbr->sku);
     }
 
     public function test_auto_derives_codes_when_brand_or_category_code_is_empty(): void
@@ -113,16 +119,18 @@ class SkuGeneratorServiceTest extends TestCase
 
         $sku = SkuGeneratorService::generateFor($customCategory, $customBrand);
 
-        // Category "Solar Energy" -> "SOL", Brand "Danfoss Power" -> "DANF"
-        $this->assertStringStartsWith('PBB-SOL-DANF-', $sku);
-        $this->assertMatchesRegularExpression('/^PBB-SOL-DANF-\d{4}$/', $sku);
+        // Category "Solar Energy" -> "SO", Brand fallback -> "000"
+        $this->assertSame(12, strlen($sku));
+        $this->assertStringStartsWith('SSO000', $sku);
+        $this->assertMatchesRegularExpression('/^S[A-Z]{2}\d{9}$/', $sku);
     }
 
     public function test_fallback_to_gen_when_brand_or_category_is_null(): void
     {
         $sku = SkuGeneratorService::generateFor(null, null);
 
-        $this->assertSame('PBB-GEN-GEN-0001', $sku);
+        $this->assertSame(12, strlen($sku));
+        $this->assertSame('SGE000000001', $sku);
     }
 
     public function test_sequence_correctly_transitions_beyond_9999_items(): void
@@ -131,20 +139,20 @@ class SkuGeneratorServiceTest extends TestCase
         Product::factory()->create([
             'brand_id' => $this->schneider->id,
             'category_id' => $this->electrical->id,
-            'sku' => 'PBB-ELE-SCH-9999',
+            'sku' => 'SEL001009999',
             'model_number' => 'SIM-9999',
         ]);
 
         Product::factory()->create([
             'brand_id' => $this->schneider->id,
             'category_id' => $this->electrical->id,
-            'sku' => 'PBB-ELE-SCH-10000',
+            'sku' => 'SEL001010000',
             'model_number' => 'SIM-10000',
         ]);
 
         // Pembangkitan SKU berikutnya harus menghasilkan 10001 secara numerik
         $nextSku = SkuGeneratorService::generateFor($this->electrical, $this->schneider);
-        $this->assertSame('PBB-ELE-SCH-10001', $nextSku);
+        $this->assertSame('SEL001010001', $nextSku);
     }
 
     public function test_subcategory_inherits_parent_category_division_code_when_code_is_empty(): void
@@ -158,8 +166,8 @@ class SkuGeneratorServiceTest extends TestCase
 
         $sku = SkuGeneratorService::generateFor($mcbSubcategory, $this->schneider);
 
-        // Harus mewarisi kode 'ELE' dari parent category, bukan singkatan nama subkategori 'MIN'
-        $this->assertSame('PBB-ELE-SCH-0001', $sku);
+        // Harus mewarisi kode 'EL' dari parent category
+        $this->assertSame('SEL001000001', $sku);
     }
 
     public function test_code_sanitization_ignores_symbols_and_falls_back_gracefully(): void
@@ -176,7 +184,27 @@ class SkuGeneratorServiceTest extends TestCase
 
         $sku = SkuGeneratorService::generateFor($symbolCategory, $symbolBrand);
 
-        // Kategori "Instrumentation" -> "INS", Brand "General Electric" -> "GENE"
-        $this->assertSame('PBB-INS-GENE-0001', $sku);
+        // Category "Instrumentation" -> "IN", Brand symbols -> "000"
+        $this->assertSame(12, strlen($sku));
+        $this->assertSame('SIN000000001', $sku);
+    }
+
+    public function test_generate_maps_procurement_type_from_availability_status(): void
+    {
+        $stockProduct = Product::factory()->make([
+            'brand_id' => $this->schneider->id,
+            'category_id' => $this->electrical->id,
+            'availability_status' => 'ready_stock',
+        ]);
+        $this->assertSame('S', SkuGeneratorService::resolveType($stockProduct));
+
+        $indentProduct = Product::factory()->make([
+            'brand_id' => $this->schneider->id,
+            'category_id' => $this->electrical->id,
+            'availability_status' => 'indent_principal',
+        ]);
+        $this->assertSame('I', SkuGeneratorService::resolveType($indentProduct));
+        $indentSku = SkuGeneratorService::generate($indentProduct);
+        $this->assertSame('IEL001000001', $indentSku);
     }
 }

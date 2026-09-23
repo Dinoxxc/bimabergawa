@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-IDX` |
-| **Versi Dokumen** | 1.8.0 |
+| **Versi Dokumen** | 1.9.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -27,6 +27,7 @@
 | `1.6.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan relasi withTrashed() pada child item transaksi historis, Inquiry latestOfMany(), dan lifecycle hook restoring() pada ProductObserver |
 | `1.7.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penyempurnaan mitigasi 5 celah arsitektur: loop deterministik restoring slug, AgentTenantScope bypass internal & scoping CommissionPayout, global scope agent_comment_visibility pada InternalComment, full-chain withTrashed() transaksi historis, dan helper margin status Quotation |
 | `1.8.0` | 23 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan SDD-03 v1.16.0 (DeliveryOrderFulfillmentService: diskrepansi serah terima fisik/retur/short shipment, terminal cancellation lock, auto-finalisasi SalesOrder completed, dan isolasi loop fallback) |
+| `1.9.0` | 23 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan SDD-03 v1.17.0 & SDD-02 v1.12.0 (Standar Format SKU Internal PBB 12 Karakter Alfanumerik Murni [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] tanpa tanda hubung, kode brand numerik 3 digit, dan divisi 2 huruf) |
 
 ---
 

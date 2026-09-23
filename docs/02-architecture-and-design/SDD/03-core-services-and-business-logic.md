@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-03` |
-| **Versi Dokumen** | 1.16.0 |
+| **Versi Dokumen** | 1.17.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -33,6 +33,7 @@
 | `1.14.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Peningkatan proteksi multi-baris batch pemenuhan surat jalan (cumulative quantity tracking), validasi data perbankan agen sebelum pengajuan pencairan komisi, penambahan alur penolakan pencairan resmi (rejectPayout) dengan pengembalian saldo tertahan, serta double-checked locking idempotensi |
 | `1.15.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi Golden Choice penanganan barang cacat & retur fisik lapangan (confirmDeliveryWithDiscrepancy) dengan restorasi otomatis sisa pesanan aktif dan penerbitan Surat Jalan Pengganti (Replacement Delivery Order) |
 | `1.16.0` | 23 Sep 2026 | Principal System Architect | Disetujui | Penguatan DeliveryOrderFulfillmentService: penanganan barang kurang kirim / hilang ekspedisi (short shipment), isolasi daftar item yang diproses pada fallback loop confirmDeliveryWithDiscrepancy, pencegahan pembatalan surat jalan partially_delivered, penutupan otomatis status Sales Order pada confirmDelivery, dan ketahanan pencocokan item kustom non-katalog |
+| `1.17.0` | 23 Sep 2026 | Principal System Architect | Disetujui | Pembaruan standar format SKU internal PBB menjadi tepat 12 karakter alfanumerik murni [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] tanpa tanda hubung (contoh: SEL001000001), penyamaran kode brand 3 angka, penyeragaman divisi 2 huruf, dan kapasitas sekuensial 999.999 produk per brand |
 
 ---
 
@@ -752,9 +753,30 @@ Seluruh penanganan kesalahan logika bisnis menggunakan custom typed exceptions d
 
 ---
 
-## 12. `SkuGeneratorService` (Pembangkitan SKU Internal PBB Otomatis)
+## 12. `SkuGeneratorService` (Pembangkitan SKU Internal PBB Otomatis 12 Karakter)
 
-Menghasilkan format kode identitas inventaris internal PBB yang seragam, bersih, deterministik, dan siap cetak barcode/label rak gudang (`PBB-[DIV]-[BRAND]-[SEQUENCE]`):
+Menghasilkan format kode identitas inventaris internal resmi PT. Panca Bima Bergawa yang seragam, bersih, deterministik, dan siap cetak barcode/label rak gudang dengan panjang tepat **12 Karakter Alfanumerik Murni** (`[TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)]`, contoh: `SEL001000001`):
+
+### 12.1 Spesifikasi Struktur 12 Karakter
+1. **Digit 1: Tipe Pengadaan / Alur Stok (`[TIPE]`, 1 Huruf):**
+   - `S` = **S**tock (Ready Stock reguler di gudang, dipetakan dari `availability_status = ready_stock` atau default).
+   - `I` = **I**ndent (Barang indent resmi pabrikan / impor, dipetakan dari `availability_status = indent_principal`).
+   - `P` = **P**roject (Pengadaan khusus tender/proyek / non-katalog ad-hoc sourcing).
+2. **Digit 2–3: Kode Divisi Industri (`[DIVISI]`, 2 Huruf):**
+   - `EL` = Distribusi Daya Listrik (Elektrikal)
+   - `AU` = Otomasi & Kendali Industri
+   - `LT` = Pencahayaan Industri Komersial (Lighting)
+   - `IN` = Infrastruktur Pengkabelan & Panel
+   - `ME` = Mekanikal & Pemipaan Industri
+   - `SF` = Keselamatan Kerja & K3 (Safety)
+   - `MR` = Perkakas Teknik & MRO Pabrik
+   - `GE` = General / Fallback Kategori Umum
+3. **Digit 4–6: Kode Brand / Vendor Internal (`[BRAND]`, 3 Angka):**
+   - Kode nomor 3 digit (`001` s/d `999`), menyamarkan identitas prinsipal dari pihak luar untuk melindungi rantai pasok distribusi B2B PBB.
+   - Contoh: `001` = Schneider Electric, `002` = ABB, `006` = Kitz, `010` = Omron. Fallback: `000`.
+4. **Digit 7–12: Nomor Urut Master Produk (`[URUTAN]`, 6 Angka):**
+   - Sekuensial terurut `000001` s/d `999999` yang dihitung secara independen (*scoped*) per kombinasi prefix `[TIPE][DIVISI][BRAND]`.
+   - Kapasitas mencapai 999.999 produk per brand per divisi tanpa benturan.
 
 ```php
 namespace App\Services;
@@ -767,57 +789,89 @@ use Illuminate\Support\Facades\DB;
 class SkuGeneratorService
 {
     /**
-     * Membangkitkan internal SKU resmi PBB untuk model Product.
+     * Membangkitkan internal SKU resmi PBB 12 karakter untuk model Product.
      */
     public static function generate(Product $product): string
     {
         $category = $product->category ?? ($product->category_id ? Category::find($product->category_id) : null);
         $brand = $product->brand ?? ($product->brand_id ? Brand::find($product->brand_id) : null);
+        $type = self::resolveType($product);
 
-        return self::generateFor($category, $brand);
+        return self::generateFor($category, $brand, $type);
     }
 
     /**
-     * Membangkitkan internal SKU resmi PBB berdasarkan Category dan Brand:
-     * - Sanitasi alfanumerik huruf besar
+     * Memetakan status ketersediaan produk menjadi 1 karakter tipe (S/I/P).
+     */
+    public static function resolveType(?Product $product): string
+    {
+        if ($product === null) {
+            return 'S';
+        }
+
+        return match ($product->availability_status) {
+            'indent_principal' => 'I',
+            'project' => 'P',
+            default => 'S',
+        };
+    }
+
+    /**
+     * Membangkitkan internal SKU resmi PBB 12 karakter berdasarkan Category, Brand, dan Tipe:
+     * - Format: [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] (contoh: SEL001000001)
      * - Transaksi database atomik (3x deadlock auto-retry)
-     * - Pessimistic row locking (lockForUpdate) dengan pengurutan numerik CAST(SUBSTRING_INDEX(sku, '-', -1) AS UNSIGNED) DESC
+     * - Pessimistic row locking (lockForUpdate) dengan pengurutan numerik CAST(SUBSTRING(sku, 7) AS UNSIGNED) DESC
      * - Loop deterministik mencegah tabrakan indeks unik MySQL
      */
-    public static function generateFor(?Category $category = null, ?Brand $brand = null): string
+    public static function generateFor(?Category $category = null, ?Brand $brand = null, string $type = 'S'): string
     {
-        $categoryCode = $category?->getEffectiveCode() ?? 'GEN';
-        $brandCode = $brand?->getEffectiveCode() ?? 'GEN';
-
-        $categoryCode = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $categoryCode));
-        $brandCode = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $brandCode));
-
-        if ($categoryCode === '') {
-            $categoryCode = 'GEN';
-        }
-        if ($brandCode === '') {
-            $brandCode = 'GEN';
+        $typeChar = strtoupper(substr(trim($type), 0, 1));
+        if (! in_array($typeChar, ['S', 'I', 'P'], true)) {
+            $typeChar = 'S';
         }
 
-        $prefix = sprintf('PBB-%s-%s-', $categoryCode, $brandCode);
+        // Resolusi kode divisi 2 huruf
+        $rawCategoryCode = $category?->getEffectiveCode() ?? 'GE';
+        $cleanCategory = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $rawCategoryCode));
+        if (strlen($cleanCategory) < 2) {
+            $cleanCategory = str_pad($cleanCategory, 2, 'E');
+        }
+        $categoryCode = substr($cleanCategory, 0, 2);
+
+        // Resolusi kode brand 3 angka
+        $rawBrandCode = $brand?->getEffectiveCode() ?? '000';
+        $cleanBrand = (string) preg_replace('/[^0-9]/', '', $rawBrandCode);
+        if ($cleanBrand === '') {
+            $brandCode = '000';
+        } else {
+            $brandCode = sprintf('%03d', (int) $cleanBrand);
+            if (strlen($brandCode) > 3) {
+                $brandCode = substr($brandCode, -3);
+            }
+        }
+
+        $prefix = sprintf('%s%s%s', $typeChar, $categoryCode, $brandCode);
 
         return DB::transaction(function () use ($prefix) {
             $latestSku = Product::withTrashed()
                 ->where('sku', 'like', $prefix.'%')
                 ->lockForUpdate()
-                ->orderByRaw("CAST(SUBSTRING_INDEX(sku, '-', -1) AS UNSIGNED) DESC")
+                ->orderByRaw('CAST(SUBSTRING(sku, 7) AS UNSIGNED) DESC')
                 ->orderByDesc('sku')
                 ->value('sku');
 
             $nextSequence = 1;
-            if ($latestSku !== null && preg_match('/-(\d+)$/', $latestSku, $matches)) {
-                $nextSequence = ((int) $matches[1]) + 1;
+            if ($latestSku !== null && strlen($latestSku) >= 12) {
+                $rawSeq = substr($latestSku, 6);
+                if (is_numeric($rawSeq)) {
+                    $nextSequence = ((int) $rawSeq) + 1;
+                }
             }
 
-            $candidateSku = sprintf('%s%04d', $prefix, $nextSequence);
+            $candidateSku = sprintf('%s%06d', $prefix, $nextSequence);
             while (Product::withTrashed()->where('sku', $candidateSku)->exists()) {
                 $nextSequence++;
-                $candidateSku = sprintf('%s%04d', $prefix, $nextSequence);
+                $candidateSku = sprintf('%s%06d', $prefix, $nextSequence);
             }
 
             return $candidateSku;

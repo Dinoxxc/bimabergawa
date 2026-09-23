@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.10.0 |
+| **Versi Dokumen** | 1.12.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -28,6 +28,7 @@
 | `1.9.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Integrasi model Tahap A: `exchange_rate_applied`, `base_currency`, `idempotency_key` (Quotation/SO/Payout), `spec_template` (Category), `UnitOfMeasureObserver`, dan full-chain withTrashed() User->freelanceSales() |
 | `1.10.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Integrasi Dual-Identifier Architecture: penambahan atribut `code` pada Brand dan Category, atribut `sku` pada Product, serta SkuGeneratorService auto-hook pada ProductObserver |
 | `1.11.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembaruan ProductObserver dengan creating hook (auto-generate SKU & normalisasi manual), updating hook (proteksi penghapusan SKU tidak sengaja & auto-generation produk legacy), serta pewarisan kode divisi kategori induk hierarkis pada Category::getEffectiveCode() |
+| `1.12.0` | 23 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan standar SKU internal 12 karakter [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] tanpa tanda hubung (contoh: SEL001000001), penyeragaman kode brand numerik 3 digit, dan divisi 2 huruf |
 
 ---
 

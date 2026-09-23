@@ -189,7 +189,7 @@ e:\Project\bimabergawa/
 │   ├── 02-architecture-and-design/                    # SAD (01-05), SDD (01-05), UI-UX (01-04)
 │   ├── 03-integration-and-deployment/                 # API-Routing (01-04), CICD (01-04), Migration (01-04)
 │   └── 04-quality-and-security/                       # QA-Testing (01-04), Security-Compliance (01-04)
-├── test-cases/                                        # Test Case Suite Lengkap (23 Berkas, 374+ Skenario)
+├── test-cases/                                        # Test Case Suite Lengkap (23 Berkas, 414+ Skenario)
 │   ├── README.md                                      # Master Index Test Case & Traceability
 │   ├── 01-public-website/                             # Test Case Web Publik (01-04, 63 Skenario)
 │   ├── 02-internal-erp-crm/                           # Test Case Internal ERP (01-05, 81 Skenario)

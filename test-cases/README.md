@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-IDX` |
-| **Versi Dokumen** | 1.9.0 |
+| **Versi Dokumen** | 1.10.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -24,6 +24,7 @@
 | `1.7.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 5 skenario mitigasi celah arsitektur pada DOC-PBB-TC-ERP-06 (TC-ERP-INV-016 s.d. TC-ERP-INV-020), total skenario meningkat menjadi 404+ skenario |
 | `1.8.0` | 19 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 2 skenario pada DOC-PBB-TC-INF-01 (TC-INF-MIG-017 SystemSettingSeeder & TC-INF-MIG-018 ProductSampleSeeder), total skenario meningkat menjadi 406+ skenario |
 | `1.9.0` | 20 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 6 skenario DOC-PBB-TC-PUB-03 (Two-Key Verification, Signed URL, anti-IDOR, rate limit, & PDF guard) (TC-PUB-RFQ-017 s.d. TC-PUB-RFQ-022), total skenario meningkat menjadi 412+ skenario |
+| `1.10.0` | 23 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario TC-ERP-DO-017 (Barang Cacat & Replacement DO) dan TC-ERP-DO-018 (Kurang Kirim / Short Shipment) pada DOC-PBB-TC-ERP-05, total skenario meningkat menjadi 414+ skenario |
 
 ---
 
@@ -60,7 +61,7 @@ test-cases/
 │   ├── 02-crm-inquiry-and-kanban-management.md        # [DOC-PBB-TC-ERP-02] Kanban CRM, SLA Aging Warning, PIC Assignment
 │   ├── 03-quotation-builder-and-live-margin.md        # [DOC-PBB-TC-ERP-03] Multi-Item Quotation, Live Margin HPP, PPN 11%, PDF
 │   ├── 04-sales-order-and-approval-workflow.md        # [DOC-PBB-TC-ERP-04] Konversi SO, Limit Approval Direksi, Lock Penomoran
-│   └── 05-delivery-order-and-fulfillment.md           # [DOC-PBB-TC-ERP-05] Partial DO, Tracking Sisa Qty, Status Fulfilled
+│   ├── 05-delivery-order-and-fulfillment.md           # [DOC-PBB-TC-ERP-05] Partial DO, Tracking Sisa Qty, Status Fulfilled, Diskrepansi & Replacement DO
 │   └── 06-commercial-invoicing-and-audit-trail.md     # [DOC-PBB-TC-ERP-06] Faktur Komersial INV, Tempo Kredit, Verifikasi Bayar, Audit Trail
 │
 ├── 03-agent-commission-portal/                        # Domain 3: Portal Agen Freelance

@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.9.0 |
+| **Versi Dokumen** | 1.10.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -29,6 +29,7 @@
 | `1.7.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema Tahap A: kolom snapshot kurs valas (`exchange_rate_applied`, `base_currency`), `idempotency_key` pada transaksi komersial, `spec_template` JSON pada kategori, dan indeks Fulltext MySQL pada produk |
 | `1.8.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema Dual-Identifier Architecture: kolom `brands.code` (Indexed), `categories.code` (Indexed), dan `products.sku` (Unique Indexed) untuk auto-generated SKU internal PBB |
 | `1.9.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema penanganan barang cacat & retur fisik: kolom `discrepancy_notes`, `return_proof_path` pada `delivery_orders`, serta `quantity_received`, `quantity_defective`, `defect_notes` pada `delivery_order_items` |
+| `1.10.0` | 28 Sep 2026 | Principal System Architect | Disetujui | Standardisasi format internal SKU 12 karakter [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] (contoh: SEL001000001, IAU010000015) tanpa tanda hubung untuk densitas barcode & proteksi rantai pasok |
 
 ---
 
@@ -103,7 +104,7 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `name` | VARCHAR(255) | Nama Resmi Produk Industri |
 | `slug` | VARCHAR(255) | Unique, URL Friendly Slug |
 | `model_number` | VARCHAR(150) | Part Number / Tipe Model Pabrikan (Indexed) |
-| `sku` | VARCHAR(50) | Nullable, Unique, Internal SKU PBB (Format: PBB-DIV-BRD-XXXX) |
+| `sku` | VARCHAR(50) | Nullable, Unique, Internal SKU PBB 12 Karakter (Format: [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)], contoh: SEL001000001) |
 | `cost_price` | DECIMAL(15,2) | HPP Modal Internal Prinsipal (**Tersembunyi dari Publik/Agen**) |
 | `description` | LONGTEXT | Deskripsi detail teknis & aplikasi produk |
 | `datasheet_path` | VARCHAR(255) | Nullable, Path file brosur PDF resmi |

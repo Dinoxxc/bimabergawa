@@ -135,7 +135,7 @@ class BulkSkuNormalizationService
             return $product;
         }
 
-        // 2. Exact match langsung pada internal SKU PBB (PBB-DIV-BRD-XXXX)
+        // 2. Exact match langsung pada internal SKU PBB 12 karakter (SEL001000001)
         $product = Product::where(function ($q) use ($cleanInput) {
             $q->where('sku', $cleanInput)
                 ->orWhereRaw('LOWER(sku) = ?', [strtolower($cleanInput)]);

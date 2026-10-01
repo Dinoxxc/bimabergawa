@@ -71,6 +71,18 @@ class Quotation extends Model
         ];
     }
 
+    /**
+     * The attributes that should be hidden for serialization.
+     * Melindungi data rahasia HPP, margin profit, dan catatan direksi dari agen dan publik.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'total_cost',
+        'gross_profit_margin',
+        'director_notes',
+    ];
+
     protected static function booted(): void
     {
         static::addGlobalScope(new AgentTenantScope);

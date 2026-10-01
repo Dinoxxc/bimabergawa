@@ -47,6 +47,16 @@ class Product extends Model
         ];
     }
 
+    /**
+     * The attributes that should be hidden for serialization.
+     * Melindungi HPP modal dari kebocoran ke web publik, API, dan peran non-staf (Rule 3.3).
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'cost_price',
+    ];
+
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);

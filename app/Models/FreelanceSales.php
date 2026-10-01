@@ -42,6 +42,19 @@ class FreelanceSales extends Model
         ];
     }
 
+    /**
+     * The attributes that should be hidden for serialization.
+     * Melindungi data pribadi sensitif agen (UU PDP No. 27/2022) saat serialisasi JSON.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'nik',
+        'npwp_number',
+        'bank_account_number',
+        'ktp_file_path',
+    ];
+
     public function tier(): BelongsTo
     {
         return $this->belongsTo(CommissionTier::class, 'commission_tier_id');

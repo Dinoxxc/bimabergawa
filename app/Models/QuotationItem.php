@@ -43,6 +43,16 @@ class QuotationItem extends Model
         ];
     }
 
+    /**
+     * The attributes that should be hidden for serialization.
+     * Melindungi modal HPP per item dari kebocoran ke agen atau publik.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'cost_price',
+    ];
+
     public function quotation(): BelongsTo
     {
         return $this->belongsTo(Quotation::class)->withTrashed();

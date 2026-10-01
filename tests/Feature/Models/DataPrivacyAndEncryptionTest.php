@@ -6,6 +6,9 @@ namespace Tests\Feature\Models;
 
 use App\Models\CommissionTier;
 use App\Models\FreelanceSales;
+use App\Models\Product;
+use App\Models\Quotation;
+use App\Models\QuotationItem;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -56,5 +59,73 @@ class DataPrivacyAndEncryptionTest extends TestCase
         $this->assertEquals($plainNik, $loadedAgent->nik);
         $this->assertEquals($plainNpwp, $loadedAgent->npwp_number);
         $this->assertEquals($plainAccount, $loadedAgent->bank_account_number);
+
+        // 3. Serialization privacy check (UU PDP No. 27/2022): sensitive PII must not appear in toArray or toJson
+        $agentArray = $loadedAgent->toArray();
+        $this->assertArrayNotHasKey('nik', $agentArray, 'NIK must be hidden in toArray()');
+        $this->assertArrayNotHasKey('npwp_number', $agentArray, 'NPWP must be hidden in toArray()');
+        $this->assertArrayNotHasKey('bank_account_number', $agentArray, 'Bank account must be hidden in toArray()');
+        $this->assertArrayNotHasKey('ktp_file_path', $agentArray, 'KTP file path must be hidden in toArray()');
+
+        $agentJson = $loadedAgent->toJson();
+        $this->assertStringNotContainsString($plainNik, $agentJson);
+        $this->assertStringNotContainsString($plainAccount, $agentJson);
+    }
+
+    /**
+     * TC-SEC-PDP-002: Proteksi Kerahasiaan HPP Produk & Item Penawaran (Zero-Price Policy & Anti-HPP Leakage).
+     */
+    public function test_product_and_quotation_cost_price_is_hidden_from_serialization(): void
+    {
+        $product = Product::make([
+            'name' => 'Sensor Industri Schneider',
+            'cost_price' => 450000.00,
+            'model_number' => 'XS618B1PAL2',
+        ]);
+
+        $productArray = $product->toArray();
+        $this->assertArrayNotHasKey('cost_price', $productArray, 'cost_price must be hidden from Product toArray()');
+        $this->assertStringNotContainsString('450000', $product->toJson(), 'cost_price must not appear in Product toJson()');
+
+        // Direct PHP access for service calculation remains intact
+        $this->assertEquals(450000.00, (float) $product->cost_price);
+
+        $item = QuotationItem::make([
+            'item_name' => 'Inverter Altivar 5.5kW',
+            'cost_price' => 7850000.00,
+            'unit_price' => 9500000.00,
+        ]);
+
+        $itemArray = $item->toArray();
+        $this->assertArrayNotHasKey('cost_price', $itemArray, 'cost_price must be hidden from QuotationItem toArray()');
+        $this->assertStringNotContainsString('7850000', $item->toJson(), 'cost_price must not appear in QuotationItem toJson()');
+    }
+
+    /**
+     * TC-SEC-PDP-003: Proteksi Kerahasiaan Total Cost, Margin Laba, & Catatan Direksi pada Penawaran Harga.
+     */
+    public function test_quotation_margins_and_director_notes_are_hidden_from_serialization(): void
+    {
+        $quotation = Quotation::make([
+            'quotation_number' => 'PBB/QUO/2026/10/0001',
+            'subtotal' => 10000000.00,
+            'grand_total' => 11100000.00,
+            'total_cost' => 8000000.00,
+            'gross_profit_margin' => 20.00,
+            'director_notes' => 'Disetujui diskon khusus proyek MRT Jakarta.',
+        ]);
+
+        $quotationArray = $quotation->toArray();
+        $this->assertArrayNotHasKey('total_cost', $quotationArray, 'total_cost must be hidden from Quotation toArray()');
+        $this->assertArrayNotHasKey('gross_profit_margin', $quotationArray, 'gross_profit_margin must be hidden from Quotation toArray()');
+        $this->assertArrayNotHasKey('director_notes', $quotationArray, 'director_notes must be hidden from Quotation toArray()');
+
+        $quotationJson = $quotation->toJson();
+        $this->assertStringNotContainsString('8000000', $quotationJson);
+        $this->assertStringNotContainsString('Disetujui diskon khusus', $quotationJson);
+
+        // Direct property access for authorized staff remains accessible
+        $this->assertEquals(8000000.00, (float) $quotation->total_cost);
+        $this->assertEquals(20.00, (float) $quotation->gross_profit_margin);
     }
 }

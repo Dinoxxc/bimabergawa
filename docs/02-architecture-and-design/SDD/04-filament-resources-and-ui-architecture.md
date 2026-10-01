@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-04` |
-| **Versi Dokumen** | 1.5.1 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.6.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -27,6 +27,7 @@
 | `1.4.5` | 07 Sep 2026 | Principal System Architect | Disetujui | Arsitektur CMS Website Dinamis (`ManageWebsiteContent`, `ManageLegalPages`), ArticleResource, dan mekanisme Tag Cache Invalidation |
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi `InvoiceResource` (faktur komersial, tempo kredit, upload bukti transfer) & `ActivityLogResource` |
 | `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan kalkulasi reaktif `paid_amount` & `remaining_balance` pada tabel dan modal verifikasi pembayaran `InvoiceResource` |
+| `1.6.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penambahan Bab 3 Protokol Keamanan, Hardening, & Kontrol Akses Panel ERP Fase 4 (Passwordless OTP, HTTP Security Headers, Spatie RBAC gates, anti-IDOR scopes, & proteksi serialisasi model $hidden) |
 
 ---
 
@@ -381,3 +382,65 @@ Modul **Konten Website CMS** melayani kebutuhan *Full Dynamic Site CMS* (PRD Sec
 - **Model Terkait:** `App\Models\ActivityLog`.
 - **Fitur Antarmuka:**
   - Menampilkan waktu kejadian, subjek target (Quotation, Sales Order, Invoice, System Settings), nama eksekutor (*causer*), IP address, dan modal dialog *diff comparison* data sebelum vs sesudah.
+
+---
+
+## 3. Protokol Keamanan, Hardening, & Kontrol Akses Panel ERP (Fase 4 Security Suite)
+
+Untuk menjamin kerahasiaan data operasional internal, margin keuntungan, modal HPP, dan data pribadi mitra agen di subdomain internal (`app.bimabergawa.com`), arsitektur Fase 4 menerapkan 5 lapis pengamanan terpadu:
+
+### 3.1 Protokol Otentikasi Passwordless Email OTP
+Panel ERP tidak menggunakan password statis yang rentan terhadap kebocoran (*credential stuffing*). Seluruh staf internal dan mitra agen freelance wajib melakukan otentikasi melalui *Passwordless Email OTP*:
+1. **Pembangkitan Token Kriptografis (CSPRNG):**
+   - Kode OTP 6-digit dihasilkan menggunakan generator acak kriptografis `random_int(100000, 999999)`.
+   - Kode di-hash menggunakan SHA-256 sebelum disimpan ke backend cache (`otp:{email}`).
+   - Masa berlaku (*Time-to-Live*) tepat **300 detik (5 menit)**.
+2. **Pembatasan Laju Percobaan (*Rate Limiting & Anti-Brute-Force*):**
+   - Batas permintaan OTP: Maksimal 3 kali percobaan verifikasi per 10 menit per email/IP (`throttle:3,10`).
+   - Tombol "Kirim Ulang OTP" di antarmuka Livewire terkunci *cooldown* 60 detik dengan hitung mundur visual.
+3. **Penghangusan Seketika (*One-Time Burn*) & Regenerasi Sesi:**
+   - Token OTP langsung dihapus dari cache segera setelah berhasil diverifikasi guna mengeliminasi *replay attack*.
+   - Saat sesi otentikasi terbentuk, sistem mengeksekusi `session()->regenerate()` untuk mencegah eksploitasi *session fixation*.
+
+### 3.2 Hardening HTTP Security Headers Subdomain ERP (`app.bimabergawa.com`)
+Seluruh respons HTTP dari subdomain internal wajib menyertakan set header keamanan yang diinjeksikan melalui middleware `App\Http\Middleware\ApplySecurityHeaders`:
+- **`X-Frame-Options: SAMEORIGIN`:** Mencegah peretasan berbasis *Clickjacking* atau penyematan panel ERP dalam iframe berbahaya pihak ketiga.
+- **`X-Content-Type-Options: nosniff`:** Mencegah eksploitasi manipulasi *MIME-sniffing* saat staf mengunduh atau mengunggah lampiran PDF, gambar faktur, dan bukti transfer.
+- **`X-XSS-Protection: 1; mode=block`:** Mengaktifkan filter XSS peramban bawaan.
+- **`Referrer-Policy: strict-origin-when-cross-origin`:** Mencegah kebocoran parameter URL sensitif ke domain eksternal.
+- **`Content-Security-Policy (CSP)`:** Mengizinkan eksekusi skrip internal aman (`'self' 'unsafe-inline' 'unsafe-eval'`) yang dibutuhkan oleh reaktivitas Livewire 3 dan Alpine.js pada Filament Admin.
+- **`X-Robots-Tag: noindex, nofollow, noarchive, nosnippet`:** Menginstruksikan seluruh robot pencari (Googlebot, Bingbot, dll.) untuk tidak mengindeks, mencache, atau menampilkan pratinjau halaman ERP pada hasil pencarian publik.
+
+### 3.3 Penegakan Otorisasi Spatie RBAC & Model Policy Gate
+Akses ke setiap Filament Resource dan aksinya dikontrol secara terpusat oleh 5 peran resmi Spatie Permission:
+- **`ProductResource`:** Hanya Super Admin dan Sales PIC yang dapat melihat modal HPP (`cost_price`). Peran Logistik hanya melihat kuantitas fisik dan model produk.
+- **`InquiryResource`:** Sales PIC hanya dapat melihat inkuiri miliknya dan tim; Mitra Agen terisolasi pada inkuirinya sendiri.
+- **`QuotationResource`:** Tombol "Setujui Penawaran Margin Kritis" dikunci secara ketat dan hanya dapat dieksekusi oleh Super Admin / Direksi melalui Gate Otorisasi (`ApproveDirectorAction`).
+- **`InvoiceResource`:** Verifikasi status pembayaran lunas dan pengunggahan bukti transfer bank dibatasi secara eksklusif untuk peran **Finance** dan **Super Admin**.
+- **`ManageSystemSettings`:** Tab HPP & Margin dibatasi untuk Super Admin/Direksi; Tab Komersial & Pajak untuk Finance; Tab Logistik untuk Staf Gudang.
+
+### 3.4 Isolasi Data Multi-Tenant & Anti-IDOR (Global Scope Enforcement)
+Mencegah serangan *Insecure Direct Object References* (IDOR) dari akun agen freelance:
+- **`AgentTenantScope`:** Diterapkan secara global pada model `Inquiry`, `Quotation`, dan `CommissionPayout`. Membatasi kueri otomatis:
+  ```php
+  static::addGlobalScope('agent_tenant', function (Builder $builder) {
+      if (auth()->check() && auth()->user()->hasRole('freelance_sales')) {
+          $builder->where('freelance_sales_id', auth()->user()->freelance_sales_id);
+      }
+  });
+  ```
+  Staf internal (`super_admin`, `sales_pic`, `finance`, `logistics`) secara otomatis mendapat bypass agar operasional ERP tidak terhambat.
+- **Isolasi Catatan & Komentar Internal (`agent_comment_visibility`):** Model `InternalComment` memfilter komentar secara otomatis. Akun agen freelance hanya dapat membaca komentar berstatus `type = 'agent_visible'`. Seluruh catatan negosiasi internal staf, margin modal, dan arahan direksi 100% terlindung dari akses agen.
+
+### 3.5 Proteksi Serialisasi Data Sensitif pada Level Model Eloquent (`$hidden`)
+Mengatasi celah kebocoran data terdekripsi pasca-kueri saat objek model diubah menjadi array atau JSON (`toArray()` / `toJson()`):
+- **`Product` & `QuotationItem`:**
+  `protected $hidden = ['cost_price'];`
+  Memastikan modal HPP produk dan item penawaran tidak pernah bocor ke respons API, AJAX state, atau komponen antarmuka publik/agen.
+- **`Quotation`:**
+  `protected $hidden = ['total_cost', 'gross_profit_margin', 'director_notes'];`
+  Menjamin total modal penawaran, margin kotor, dan catatan internal direksi tidak dapat diintip melalui inspeksi payload jaringan.
+- **`FreelanceSales`:**
+  `protected $hidden = ['nik', 'npwp_number', 'bank_account_number', 'ktp_file_path'];`
+  Melindungi data pribadi sensitif agen freelance (PII terdekripsi) dari kebocoran tanpa sengaja pada response JSON, sesuai mandat kepatuhan UU PDP No. 27/2022.
+

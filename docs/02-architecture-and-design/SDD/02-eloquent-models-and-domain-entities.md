@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.12.0 |
+| **Versi Dokumen** | 1.13.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -29,6 +29,7 @@
 | `1.10.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Integrasi Dual-Identifier Architecture: penambahan atribut `code` pada Brand dan Category, atribut `sku` pada Product, serta SkuGeneratorService auto-hook pada ProductObserver |
 | `1.11.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembaruan ProductObserver dengan creating hook (auto-generate SKU & normalisasi manual), updating hook (proteksi penghapusan SKU tidak sengaja & auto-generation produk legacy), serta pewarisan kode divisi kategori induk hierarkis pada Category::getEffectiveCode() |
 | `1.12.0` | 23 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan standar SKU internal 12 karakter [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] tanpa tanda hubung (contoh: SEL001000001), penyeragaman kode brand numerik 3 digit, dan divisi 2 huruf |
+| `1.13.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penegakan proteksi serialisasi model Eloquent (array $hidden) pada Product, Quotation, QuotationItem, dan FreelanceSales untuk perlindungan HPP, margin laba, dan data pribadi UU PDP No. 27/2022 |
 
 ---
 
@@ -38,6 +39,7 @@ Seluruh model domain ditempatkan di direktori `app/Models/`, mewarisi `Illuminat
 
 - **Mass Assignment:** Menggunakan array `$fillable` eksplisit untuk seluruh kolom input formulir guna mencegah eksploitasi *mass assignment vulnerability*.
 - **Tipe Data Casts:** Menggunakan method `casts(): array` modern untuk casting desimal (`decimal:2`), boolean, datetime, date, array/json, dan enkripsi data sensitif (`'encrypted'`).
+- **Proteksi Kerahasiaan Serialisasi JSON ($hidden):** Model yang memuat modal HPP (`Product`, `QuotationItem`), margin laba/catatan direksi (`Quotation`), dan data pribadi agen (`FreelanceSales`) menerapkan array `$hidden` eksplisit untuk mencegah kebocoran data sensitif saat model di-serialize ke JSON/Array pada respons API atau komponen publik (Zero-Price Policy & UU PDP No. 27/2022).
 - **Integritas Relasi:** Menggunakan type-hinting resmi (`BelongsTo`, `HasMany`, `HasOne`, `MorphTo`, `MorphMany`).
 - **Proteksi Data Fisik (SoftDeletes):** Model master dan transaksi penting (`Product`, `Inquiry`, `Quotation`, `SalesOrder`, `DeliveryOrder`, `FreelanceSales`, `Invoice`) menerapkan trait `SoftDeletes` untuk menjamin kepatuhan audit retensi 10 tahun UU KUP.
 - **Enkripsi At-Rest (UU PDP No. 27/2022):** Model `FreelanceSales` mengenkripsi kolom identitas (`nik`, `npwp_number`, `bank_account_number`) menggunakan kunci simetris `APP_KEY`.
@@ -77,6 +79,10 @@ class Product extends Model
             'is_published' => 'boolean',
         ];
     }
+
+    protected $hidden = [
+        'cost_price',
+    ];
 
     public function brand(): BelongsTo
     {
@@ -416,6 +422,12 @@ class Quotation extends Model
         ];
     }
 
+    protected $hidden = [
+        'total_cost',
+        'gross_profit_margin',
+        'director_notes',
+    ];
+
     protected static function booted(): void
     {
         static::addGlobalScope(new AgentTenantScope());
@@ -524,6 +536,10 @@ class QuotationItem extends Model
             'exchange_rate_applied' => 'decimal:4',
         ];
     }
+
+    protected $hidden = [
+        'cost_price',
+    ];
 
     public function quotation(): BelongsTo
     {
@@ -816,6 +832,13 @@ class FreelanceSales extends Model
             'approved_at' => 'datetime',
         ];
     }
+
+    protected $hidden = [
+        'nik',
+        'npwp_number',
+        'bank_account_number',
+        'ktp_file_path',
+    ];
 
     public function tier(): BelongsTo
     {

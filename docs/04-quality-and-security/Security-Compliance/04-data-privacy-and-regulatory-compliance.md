@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SEC-04` |
-| **Versi Dokumen** | 1.3.0 |
+| **Versi Dokumen** | 1.4.0 |
 | **Tanggal Efektif** | September 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Legal & Regulatory Analyst | Ditinjau | Penyelarasan pasal UU PDP No. 27/2022 & retensi pajak UU KUP |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Spesifikasi teknis enkripsi field database & Spatie ActivityLog |
 | `1.3.0` | 05 Sep 2026 | Principal Security Architect | Disetujui | Pemisahan berkas mandiri kepatuhan privasi data & zero emoji |
+| `1.4.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penambahan Sub-bab 1.3 Proteksi Serialisasi Model Eloquent ($hidden) untuk pencegahan kebocoran data pribadi agen UU PDP dan modal HPP produk |
 
 ---
 
@@ -81,6 +82,22 @@ class AgentProfile extends Model
     }
 }
 ```
+
+### 1.3 Proteksi Serialisasi Model & Pencegahan Kebocoran JSON/Array (Model Serialization Privacy)
+
+Secara bawaan (*default behavior*), Eloquent mendekripsi kolom bertipe cast `'encrypted'` saat mengeksekusi metode `$model->toArray()` atau `$model->toJson()`. Untuk menjamin tidak ada kebocoran data sensitif ke ranah publik, respons API, atau devtools browser klien:
+
+1. **Perlindungan Data Pribadi Mitra Agen (`FreelanceSales`):**
+   - Kolom `nik`, `npwp_number`, `bank_account_number`, dan `ktp_file_path` wajib didaftarkan pada properti `protected $hidden`.
+   - Data pribadi hanya dapat dibaca melalui relasi backend terisolasi dan selalu disajikan dalam format bertopeng (*masked string*, misal: `******1234` untuk nomor rekening) saat ditampilkan di portal agen.
+2. **Perlindungan Modal HPP & Rahasia Bisnis (`Product` & `QuotationItem`):**
+   - Kolom `cost_price` wajib didaftarkan pada properti `protected $hidden`.
+   - Menjamin kepatuhan mutlak terhadap **Zero-Price Policy (Rule 3.3)** dan mencegah kebocoran angka modal prinsipal saat kartu produk dirender di komponen Blade/Alpine.js web publik.
+3. **Perlindungan Margin Keuntungan & Catatan Direksi (`Quotation`):**
+   - Kolom `total_cost`, `gross_profit_margin`, dan `director_notes` wajib didaftarkan pada properti `protected $hidden`.
+   - Menghalangi akun mitra agen freelance atau pengguna non-otorisasi melihat margin laba kotor perusahaan dan catatan internal persetujuan direksi.
+4. **Integritas Komputasi Internal:**
+   - Properti `$hidden` hanya menyembunyikan data saat serialisasi array/JSON. Seluruh layanan internal (`PricingAndMarginCalculatorService`, `CommissionPayoutService`) tetap dapat mengakses nilai asli melalui properti objek PHP langsung (`$product->cost_price`, `$quotation->total_cost`).
 
 ---
 

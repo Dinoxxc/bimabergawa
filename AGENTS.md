@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `AGY-PBB-AGENT-RULEBOOK` |
-| **Versi Dokumen** | 1.6.0 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.7.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Autonomous Agent & Engineering Operational Guidelines |
 
 ---
@@ -293,18 +293,18 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 
 ### Fase 3: Domain Publik (`bimabergawa.com`)
 - [ ] `feature/web-01-design-system-and-layout` : Master Layout Blade & Tailwind Design Tokens (Monokrom Minimalis), Font Outfit + Inter, Blade Lucide Icons, 0% emoji. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*
-- [ ] `feature/web-02-catalog-showcase-zero-price` : Showroom produk multi-brand, filter kategori, pencarian SKU, penegakan Zero-Price Policy (0% nominal rupiah). *(Rujukan: test-cases/01-public-website/02-product-catalog.md)*
-- [ ] `feature/web-03-rfq-cart-drawer` : Alpine.js RFQ Store, drawer sliding reaktif, localStorage persistence, quick-paste textarea integration. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md)*
-- [ ] `feature/web-04-inquiry-boq-submission` : Form request validation submit inkuiri publik, upload berkas BOQ privat (maks 5 MB), WhatsApp telemetri track. *(Rujukan: test-cases/01-public-website/04-inquiry-and-boq.md)*
+- [ ] `feature/web-02-catalog-showcase-zero-price` : Showroom produk multi-brand, filter kategori, pencarian SKU, penegakan Zero-Price Policy (0% nominal rupiah & $hidden cost_price). *(Rujukan: test-cases/01-public-website/02-product-catalog.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
+- [ ] `feature/web-03-rfq-cart-drawer` : Alpine.js RFQ Store (Zero-Price state tanpa nominal harga), drawer sliding reaktif, localStorage persistence, quick-paste textarea integration. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
+- [ ] `feature/web-04-inquiry-boq-submission` : Form request validation submit inkuiri publik, honeypot anti-spam (`_hp_company`), Cloudflare Turnstile, IP rate limiter (`throttle:5,10`), upload berkas BOQ privat (maks 5 MB), WhatsApp telemetri track. *(Rujukan: test-cases/01-public-website/04-inquiry-and-boq.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
 - [ ] `feature/web-05-company-profile-pages` : Profil resmi kantor Gd. Wirausaha Rasuna Said, sertifikasi kemitraan resmi, kontak, dan SEO meta. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*
 
 ### Fase 4: Subdomain Internal ERP (`app.bimabergawa.com`)
-- [ ] `feature/erp-01-passwordless-otp-auth` : Otentikasi Passwordless Email OTP (CSPRNG 6-digit, 300s TTL, SHA-256 cache, 60s cooldown, 3-attempt throttle). *(Rujukan: test-cases/02-internal-erp-crm/01-inquiries-crm.md)*
+- [ ] `feature/erp-01-passwordless-otp-auth` : Otentikasi Passwordless Email OTP (CSPRNG 6-digit, 300s TTL, SHA-256 cache, 60s cooldown, 3-attempt throttle), HTTP Security Headers (SAMEORIGIN, nosniff, CSP, noindex). *(Rujukan: test-cases/02-internal-erp-crm/01-inquiries-crm.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
 - [ ] `feature/erp-02-crm-inquiries-kanban` : Filament Inquiry Resource, Kanban SLA Stale Alert (>24h warning, >48h critical), assignment PIC. *(Rujukan: test-cases/02-internal-erp-crm/01-inquiries-crm.md)*
-- [ ] `feature/erp-03-quotation-builder-margin-guard` : Filament Quotation Builder, kalkulasi reactive Live Margin HPP Guard, tombol eskalasi Approval Direktur. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md)*
+- [ ] `feature/erp-03-quotation-builder-margin-guard` : Filament Quotation Builder, kalkulasi reactive Live Margin HPP Guard, tombol eskalasi Approval Direktur, proteksi $hidden margin & catatan internal. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
 - [ ] `feature/erp-04-sales-orders-management` : Konversi Quotation ke Sales Order, validasi approval limit Direksi $\ge$ Rp 100 Juta. *(Rujukan: test-cases/02-internal-erp-crm/03-sales-order.md)*
 - [ ] `feature/erp-05-delivery-orders-logistics` : Modul logistik Surat Jalan (DO), validasi pengiriman parsial, dan update status SO ke `completed`. *(Rujukan: test-cases/02-internal-erp-crm/04-delivery-order.md)*
-- [ ] `feature/erp-06-agent-commission-portal` : Panel Agen `/agent`, registrasi agen, inkuiri terisolasi (`AgentTenantScope`), buku besar komisi & form pencairan. *(Rujukan: test-cases/03-agent-commission-portal/)*
+- [ ] `feature/erp-06-agent-commission-portal` : Panel Agen `/agent`, registrasi agen, inkuiri terisolasi (`AgentTenantScope`), buku besar komisi & form pencairan, enkripsi PII tersembunyi ($hidden). *(Rujukan: test-cases/03-agent-commission-portal/, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
 - [ ] `feature/erp-07-excel-import-dompdf-export` : Import katalog Excel chunking 100 baris (RAM 512 MB), ekspor PDF standar ISO A4 kop Rasuna Said. *(Rujukan: test-cases/04-catalog-and-inventory-management/)*
 - [ ] `feature/erp-08-system-settings-management` : Halaman Filament `ManageSystemSettings` untuk pengaturan tarif PPN aktif dinamis, ambang batas margin approval, nomor hotline WA, dan profil kantor. *(Rujukan: docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
 

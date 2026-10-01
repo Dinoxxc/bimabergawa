@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-SEC-04` |
-| **Versi Dokumen** | 1.4.0 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.5.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Security/QA Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -20,6 +20,7 @@
 | `1.2.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Penambahan uji masking log sensitif & otomasi pembersihan log 90 hari |
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi 16 skenario uji mendalam & standardisasi status Not Executed |
 | `1.4.0` | 06 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi skenario uji `TC-SEC-PDP-010` untuk fluktuasi multi-siklus PPN via setting ERP & audit log |
+| `1.5.0` | 01 Okt 2026 | Principal QA Architect | Disetujui | Penambahan skenario `TC-SEC-PDP-017` s.d. `TC-SEC-PDP-019` proteksi serialisasi model $hidden (HPP, margin, catatan direksi, dan PII agen UU PDP) |
 
 ---
 
@@ -61,6 +62,9 @@
 | **`TC-SEC-PDP-014`** | Audit | Pelaporan Log Forensik Akses Berkas Identitas KTP | Admin membuka berkas KTP agen | Klik aksi "Lihat KTP" | Sistem mencatat 1 baris log akses: "Admin #1 mengakses berkas KTP Agen #5" untuk mencegah penyalahgunaan wewenang internal. | Not Executed |
 | **`TC-SEC-PDP-015`** | Batas Nilai | Penanganan Volume Log Harian Tinggi (> 10.000 Entri / Hari) | Aktivitas transaksi tinggi di panel ERP | Generate 10.000 log aktivitas | Indeks database MySQL pada kolom `log_name`, `created_at`, dan `causer_id` memastikan query filter log tetap responsif (< 100ms). | Not Executed |
 | **`TC-SEC-PDP-016`** | Notifikasi UU | Alur Notifikasi Insiden Kebocoran Data Sesuai UU PDP (3 x 24 Jam) | Simulasi insiden keamanan data | Pemicuan workflow *Data Breach Notification* | Sistem memuat templat resmi pemberitahuan tertulis kepada pihak terdampak dan otoritas pengawas pelindungan data pribadi. | Not Executed |
+| **`TC-SEC-PDP-017`** | Serialisasi / HPP | Proteksi Modal HPP Produk & Item Penawaran dari Serialisasi Array/JSON | Record `Product` dan `QuotationItem` tersimpan dengan `cost_price` | Panggil `$product->toArray()`, `$product->toJson()`, `$item->toArray()`, `$item->toJson()` | Kunci `cost_price` tidak ada pada output serialisasi array/JSON (`assertArrayNotHasKey('cost_price')`). Nilai `$product->cost_price` tetap dapat diakses langsung oleh Service Layer. | Passed |
+| **`TC-SEC-PDP-018`** | Serialisasi / Margin | Proteksi Total Modal, Margin Kotor, & Catatan Direksi dari Serialisasi Array/JSON | Record `Quotation` tersimpan dengan margin kotor dan catatan direksi | Panggil `$quotation->toArray()`, `$quotation->toJson()` | Kunci `total_cost`, `gross_profit_margin`, dan `director_notes` tidak ada pada output serialisasi (`assertArrayNotHasKey`). Service backend tetap dapat mengakses atribut langsung. | Passed |
+| **`TC-SEC-PDP-019`** | UU PDP / PII | Proteksi Data Pribadi Sensitif Agen Pasca-Dekripsi pada Serialisasi Array/JSON | Record `FreelanceSales` tersimpan dengan data identitas terenkripsi | Panggil `$sales->toArray()`, `$sales->toJson()` | Seluruh atribut PII (`nik`, `npwp_number`, `bank_account_number`, `ktp_file_path`) tidak muncul dalam array/JSON serialisasi, mencegah kebocoran data pribadi agen via API/Livewire. | Passed |
 
 ---
 
@@ -99,3 +103,16 @@
    - Quotation #1 tetap 11%, Quotation #2 tetap 12%, Quotation #3 tetap 13%, dan Quotation #4 tetap 11%.
    - Tidak ada mutasi atau perubahan angka pada transaksi historis lampau.
    - Tabel `activity_log` memverifikasi rekaman perubahan setting `tax_vat_rate` dari 11 -> 12 -> 13 -> 11 oleh user Super Admin secara berurutan.
+
+### 3.3 Prosedur Uji TC-SEC-PDP-017 s.d. TC-SEC-PDP-019 (Verifikasi Proteksi Serialisasi Model Eloquent)
+
+1. **Langkah 1:** Jalankan Feature Test Suite `DataPrivacyAndEncryptionTest` via CLI:
+   ```bash
+   php artisan test --filter=DataPrivacyAndEncryptionTest
+   ```
+2. **Verifikasi Teknis & Kepatuhan Keamanan:**
+   - Metode `test_sensitive_agent_profile_data_is_hidden_from_json_and_array_serialization` memverifikasi model `FreelanceSales` bahwa pemanggilan `toArray()` dan `toJson()` tidak memuat kunci `nik`, `npwp_number`, `bank_account_number`, dan `ktp_file_path`.
+   - Metode `test_product_and_quotation_cost_price_is_hidden_from_serialization` memverifikasi model `Product` dan `QuotationItem` bahwa pemanggilan `toArray()` dan `toJson()` tidak mengekspos atribut `cost_price`.
+   - Metode `test_quotation_margins_and_director_notes_are_hidden_from_serialization` memverifikasi model `Quotation` bahwa pemanggilan `toArray()` dan `toJson()` menyembunyikan atribut `total_cost`, `gross_profit_margin`, dan `director_notes`.
+   - Seluruh pengujian mengembalikan status hijau: `PASS Tests\Feature\Models\DataPrivacyAndEncryptionTest (6 tests, 26 assertions)`.
+

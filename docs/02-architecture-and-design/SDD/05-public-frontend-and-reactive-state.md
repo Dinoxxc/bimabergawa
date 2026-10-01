@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-05` |
-| **Versi Dokumen** | 1.4.0 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.5.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -20,6 +20,7 @@
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Optimasi client-side caching & synchronisation state perbandingan produk |
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
 | `1.4.0` | 20 Sep 2026 | Security & Frontend Architect | Disetujui | Penambahan alur 4 lapis keamanan pelacakan publik: Two-Key Verification, Temporary Signed URL, data masking, & private PDF download |
+| `1.5.0` | 01 Okt 2026 | Security & Frontend Architect | Disetujui | Penambahan Bab 6 Protokol Keamanan & Anti-Abuse Frontend Publik Fase 3 (CSRF, Honeypot antispam, Cloudflare Turnstile, IP Rate Limiter, isolasi state Alpine.js Zero-Price, & mitigasi scraping spek) |
 
 ---
 
@@ -263,3 +264,59 @@ Setiap halaman katalog menyematkan skema JSON-LD Schema.org secara otomatis untu
 }
 </script>
 ```
+
+---
+
+## 6. Protokol Keamanan & Anti-Abuse Frontend Publik (Fase 3 Hardening Matrix)
+
+Untuk melindungi etalase publik (`bimabergawa.com`) dari scraping agresif, spam bot pada form inkuiri, pemalsuan permintaan (*Cross-Site Request Forgery*), dan kebocoran data komersial, implementasi frontend publik pada Fase 3 wajib mengadopsi 6 lapis pertahanan (*Defense-in-Depth*):
+
+### 6.1 Proteksi CSRF Komprehensif (Cross-Site Request Forgery Guard)
+- Seluruh formulir Blade (`<form>`) pada domain publik wajib menyertakan token `@csrf`.
+- Permintaan AJAX / Fetch API di sisi klien (seperti submit keranjang RFQ dan tracking order) wajib menyertakan header `X-CSRF-TOKEN` yang diambil dari meta tag master layout:
+  ```html
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  ```
+- Kegagalan verifikasi token CSRF akan menghasilkan respon HTTP 419 (Page Expired) dan memicu pembaruan sesi otomatis tanpa mengekspos payload internal.
+
+### 6.2 Mekanisme Dual-Anti-Spam: Honeypot & Time-Trap Shield
+Untuk menangkal bot otomatis tanpa mengganggu pengalaman pengguna (*frictionless UX*):
+1. **Honeypot Input Trap (`_hp_company`):**
+   - Komponen formulir menyertakan input tersembunyi `_hp_company` menggunakan CSS tersembunyi (`opacity: 0; position: absolute; top: 0; left: 0; height: 0; width: 0; z-index: -1;`).
+   - Pengguna manusia normal tidak akan melihat atau mengisi kolom ini.
+   - Jika kolom `_hp_company` terisi oleh bot pengisi form otomatis, backend via `PublicInquiryRequest` akan langsung menolak permintaan dengan status silent drop atau error validasi generik.
+2. **Time-Trap Validation:**
+   - Formulir mencatat timestamp awal saat halaman dimuat.
+   - Pengiriman formulir yang terjadi dalam waktu kurang dari 3 detik sejak render halaman akan diklasifikasikan sebagai bot otomatis dan ditolak.
+
+### 6.3 Verifikasi Bot Adaptif Cloudflare Turnstile CAPTCHA
+- Pada formulir inkuiri massal, submit RFQ, dan pendaftaran mitra freelance, sistem mengintegrasikan widget **Cloudflare Turnstile** (non-intrusif, privasi tinggi, bebas tebak gambar).
+- Backend memverifikasi token turnstile ke endpoint Cloudflare API (`https://challenges.cloudflare.com/turnstile/v0/siteverify`) sebelum memproses payload bisnis.
+
+### 6.4 Pembatasan Laju Akses Bertingkat (Layered IP Rate Limiting)
+Mencegah serangan brute-force, scraping katalog, dan spam telemetri WhatsApp:
+- **Pencarian Katalog & Filter SKU:** Dibatasi maksimal 60 request per menit per alamat IP (`throttle:60,1`).
+- **Submit RFQ & Pengunggahan BOQ:** Dibatasi maksimal 5 request per 10 menit per IP (`throttle:5,10`).
+- **Telemetri Klik Tombol WhatsApp:** Dibatasi maksimal 10 event per menit per IP (`throttle:10,1`) guna mencegah manipulasi metrik lead CRM.
+- **Pengecekan Pelacakan Dokumen (`/lacak-rfq`):** Dibatasi maksimal 10 request verifikasi per menit per IP (`throttle:10,1`) untuk mencegah brute-force nomor dokumen transaksi.
+
+### 6.5 Isolasi Mutlak State Keranjang Alpine.js (Zero-Price Policy Store)
+- Objek state `Alpine.store('rfqCart')` yang tersimpan pada `localStorage` hanya diperbolehkan menyimpan atribut non-harga:
+  ```javascript
+  {
+    sku: "SEL001000001",
+    name: "Schneider Electric MCB Domae 1P 6A",
+    brand: "Schneider Electric",
+    quantity: 10,
+    unit: "PCS",
+    notes: "Proyek Gedung A"
+  }
+  ```
+- **Larangan Keras Atribut Finansial:** Dilarang keras menyematkan field harga (`price`, `nominal`, `cost_price`, `subtotal`, `discount`) pada state client, atribut `data-*` HTML, ataupun variabel JavaScript global.
+- DOM inspection pada browser klien tidak akan pernah menemukan angka harga nominal atau margin dasar HPP.
+
+### 6.6 Mitigasi Scraping Agresif pada Spesifikasi & Datasheet
+- Dokumen teknis PDF / Datasheet produk disajikan menggunakan URL dinamis yang terproteksi referer valid domain `bimabergawa.com`.
+- Direktori berkas privat (`storage/app/private/`) tidak dapat diakses langsung oleh web server publik.
+- User-Agent dari bot scraper umum (Scrapy, Python-requests, cURL tanpa header) secara otomatis diarahkan ke throttling ketat atau CAPTCHA challenge.
+

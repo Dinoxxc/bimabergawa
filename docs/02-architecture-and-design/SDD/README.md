@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-IDX` |
-| **Versi Dokumen** | 1.11.0 |
+| **Versi Dokumen** | 1.12.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -30,6 +30,7 @@
 | `1.9.0` | 23 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan SDD-03 v1.17.0 & SDD-02 v1.12.0 (Standar Format SKU Internal PBB 12 Karakter Alfanumerik Murni [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] tanpa tanda hubung, kode brand numerik 3 digit, dan divisi 2 huruf) |
 | `1.10.0` | 28 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan SDD-01 v1.10.0 (Kamus data skema basis data & standardisasi format SKU internal PBB 12 karakter alfanumerik murni) |
 | `1.11.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penyelarasan SDD-04 v1.6.0 (Protokol keamanan ERP Fase 4: OTP 300s, HTTP security headers, RBAC gates, anti-IDOR scopes, proteksi model $hidden) & SDD-05 v1.5.0 (Protokol keamanan publik Fase 3: CSRF, honeypot, Turnstile, rate limiting, isolasi Zero-Price Alpine store) |
+| `1.12.0` | 02 Okt 2026 | Principal Security Architect | Disetujui | Penyelarasan SDD-02 v1.14.0 (Penguatan keamanan Zero-Trust pada AgentTenantScope: isolasi blokir 1=0 untuk non-staf tanpa profil agen, dan global scope agent_comment_visibility pada InternalComment) |
 
 ---
 

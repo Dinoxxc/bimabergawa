@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `AGY-PBB-AGENT-RULEBOOK` |
-| **Versi Dokumen** | 1.7.0 |
+| **Versi Dokumen** | 1.8.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Autonomous Agent & Engineering Operational Guidelines |
 
@@ -123,8 +123,8 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
 ### 3.9 Isolasi Data Multi-Tenant Agen Freelance (Anti-IDOR)
 - Mitra Agen Freelance hanya boleh mengakses data inkuiri, penawaran, riwayat komisi, dan catatan publik miliknya sendiri.
 - Model `Inquiry`, `Quotation`, dan `CommissionPayout` wajib menerapkan Global Scope `AgentTenantScope` untuk membatasi kueri otomatis (`WHERE freelance_sales_id = auth()->user()->freelance_sales_id`).
-- `AgentTenantScope` wajib menyertakan bypass eksplisit untuk seluruh peran staf internal (`super_admin`, `sales_pic`, `finance`, `logistics`) agar staf tidak terkunci saat menguji atau membuka akun agen.
-- Model `InternalComment` wajib menerapkan Global Scope `agent_comment_visibility` otomatis sehingga akun agen freelance hanya dapat membaca komentar berstatus `type = 'agent_visible'` (0% kebocoran modal HPP atau instruksi direksi).
+- `AgentTenantScope` wajib menyertakan bypass eksplisit untuk seluruh peran staf internal (`super_admin`, `sales_pic`, `finance`, `logistics`) agar staf tidak terkunci saat menguji atau membuka akun agen. Pengguna terotentikasi non-staf tanpa profil agen diblokir total dari mengakses data transaksi (`1 = 0`).
+- Model `InternalComment` wajib menerapkan Global Scope `agent_comment_visibility` otomatis sehingga seluruh pengguna non-staf internal (termasuk agen freelance dan tamu) hanya dapat membaca komentar berstatus `type = 'agent_visible'` (0% kebocoran modal HPP atau instruksi direksi).
 - Endpoint pencairan komisi wajib memverifikasi kepemilikan record agen secara eksplisit sebelum melakukan mutasi saldo.
 
 ### 3.10 Efisiensi Memori Shared Hosting (Batas RAM 512 MB)

@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.13.0 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.14.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -30,6 +30,7 @@
 | `1.11.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Pembaruan ProductObserver dengan creating hook (auto-generate SKU & normalisasi manual), updating hook (proteksi penghapusan SKU tidak sengaja & auto-generation produk legacy), serta pewarisan kode divisi kategori induk hierarkis pada Category::getEffectiveCode() |
 | `1.12.0` | 23 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan standar SKU internal 12 karakter [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] tanpa tanda hubung (contoh: SEL001000001), penyeragaman kode brand numerik 3 digit, dan divisi 2 huruf |
 | `1.13.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penegakan proteksi serialisasi model Eloquent (array $hidden) pada Product, Quotation, QuotationItem, dan FreelanceSales untuk perlindungan HPP, margin laba, dan data pribadi UU PDP No. 27/2022 |
+| `1.14.0` | 02 Okt 2026 | Principal Security Architect | Disetujui | Penguatan keamanan Zero-Trust pada AgentTenantScope (pemblokiran penuh kueri non-staf tanpa profil agen dengan `1 = 0`) dan penegakan global scope `agent_comment_visibility` pada InternalComment (isolasi 0% bocor catatan internal untuk seluruh pengguna non-staf internal) |
 
 ---
 
@@ -1073,6 +1074,26 @@ class InternalComment extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope('agent_comment_visibility', function (Builder $builder) {
+            if (auth()->check()) {
+                $user = auth()->user();
+
+                // Staf internal memiliki akses penuh ke seluruh komentar (termasuk modal HPP & direksi)
+                if ($user->hasRole('super_admin') || $user->hasRole('sales_pic') || $user->hasRole('finance') || $user->hasRole('logistics')) {
+                    return;
+                }
+
+                // Seluruh pengguna non-staf internal (termasuk agen freelance) hanya dapat melihat komentar publik agen
+                $builder->where($builder->getModel()->getTable() . '.type', 'agent_visible');
+            } else {
+                // Pengguna tamu (guest / unauthenticated) dibatasi ke komentar publik agen
+                $builder->where($builder->getModel()->getTable() . '.type', 'agent_visible');
+            }
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -1090,7 +1111,7 @@ class InternalComment extends Model
 
     public function scopeInternalOnly(Builder $query): Builder
     {
-        return $query->where('type', 'internal');
+        return $query->whereIn('type', ['internal', 'internal_only']);
     }
 }
 ```
@@ -1268,17 +1289,15 @@ class AgentTenantScope implements Scope
             return;
         }
 
-        // Penegakan isolasi tenant untuk mitra agen freelance
-        if ($user->hasRole('freelance_sales') || $user->freelance_sales_id !== null) {
-            $freelanceSalesId = $user->freelance_sales_id
-                ?? FreelanceSales::where('user_id', $user->id)->value('id');
+        // Penegakan isolasi tenant untuk seluruh pengguna non-staf internal (Anti-IDOR Zero-Trust)
+        $freelanceSalesId = $user->freelance_sales_id
+            ?? FreelanceSales::where('user_id', $user->id)->value('id');
 
-            if ($freelanceSalesId) {
-                $builder->where($model->getTable() . '.freelance_sales_id', $freelanceSalesId);
-            } else {
-                // Pengguna ber-role agen tanpa profil valid dilarang melihat data agen lain
-                $builder->whereRaw('1 = 0');
-            }
+        if ($freelanceSalesId) {
+            $builder->where($model->getTable() . '.freelance_sales_id', $freelanceSalesId);
+        } else {
+            // Pengguna non-staf internal tanpa profil agen dilarang total mengakses data transaksi (Anti-IDOR)
+            $builder->whereRaw('1 = 0');
         }
     }
 }

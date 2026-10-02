@@ -204,10 +204,13 @@ class InvoiceModelTest extends TestCase
         ]);
         $agentUser->assignRole($roleAgent);
 
+        $roleSalesPic = Role::firstOrCreate(['name' => 'sales_pic']);
+
         $staffUser = User::create([
             'name' => 'Staff Sales PIC',
             'email' => 'staff_pic_'.time().'@example.com',
         ]);
+        $staffUser->assignRole($roleSalesPic);
 
         $inquiry = Inquiry::create([
             'inquiry_number' => 'INQ-CHAT-'.time(),

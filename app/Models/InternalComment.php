@@ -42,10 +42,11 @@ class InternalComment extends Model
                     return;
                 }
 
-                // Mitra agen freelance (berdasarkan role atau keterkaitan profile agen) hanya dapat melihat komentar publik agen
-                if ($user->hasRole('freelance_sales') || $user->freelance_sales_id !== null) {
-                    $builder->where('type', 'agent_visible');
-                }
+                // Seluruh pengguna non-staf internal (termasuk agen freelance) hanya dapat melihat komentar publik agen
+                $builder->where($builder->getModel()->getTable().'.type', 'agent_visible');
+            } else {
+                // Pengguna tamu (guest / unauthenticated) jika ada kueri dibatasi ke komentar publik agen
+                $builder->where($builder->getModel()->getTable().'.type', 'agent_visible');
             }
         });
     }

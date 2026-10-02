@@ -395,4 +395,49 @@ class AgentTenantScopeTest extends TestCase
         $this->assertGreaterThanOrEqual(2, $allInquiries->count());
         $this->assertTrue($allInquiries->contains('customer_name', 'Customer Public Direct'));
     }
+
+    /**
+     * TC-AGN-INQ-007: Pengguna Terotentikasi Non-Staf Tanpa Profil Agen Diblokir Penuh (Anti-IDOR Zero-Trust)
+     */
+    public function test_non_staff_user_without_agent_profile_is_blocked_from_inquiries_and_quotations(): void
+    {
+        $tier = CommissionTier::create([
+            'name' => 'Zero Trust Tier',
+            'min_monthly_margin' => 1000000.00,
+            'commission_rate' => 2.00,
+        ]);
+
+        $agent = FreelanceSales::create([
+            'commission_tier_id' => $tier->id,
+            'name' => 'Legitimate Agent',
+            'referral_code' => 'REF-LEGIT-'.time(),
+            'nik' => '3171010101010099',
+            'bank_name' => 'BCA',
+            'bank_account_number' => '12345678',
+            'bank_account_name' => 'Legitimate Agent',
+            'status' => 'approved',
+        ]);
+
+        // Inkuiri milik agen legitimate
+        $inquiry = Inquiry::create([
+            'inquiry_number' => 'INQ-LEGIT-'.time(),
+            'freelance_sales_id' => $agent->id,
+            'customer_name' => 'PT Pelanggan Agen',
+            'company_name' => 'PT Pelanggan Agen',
+            'phone_wa' => '081299998888',
+            'status' => 'new',
+        ]);
+
+        // User terotentikasi acak tanpa role staf dan tanpa profil agen
+        $randomUser = User::create([
+            'name' => 'Attacker / Random User',
+            'email' => 'random_user_'.time().'@example.com',
+        ]);
+
+        $this->actingAs($randomUser);
+
+        $visibleInquiries = Inquiry::all();
+        $this->assertCount(0, $visibleInquiries);
+        $this->assertNull(Inquiry::find($inquiry->id));
+    }
 }

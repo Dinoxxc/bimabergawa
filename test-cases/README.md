@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-IDX` |
-| **Versi Dokumen** | 1.11.0 |
+| **Versi Dokumen** | 1.12.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -26,6 +26,7 @@
 | `1.9.0` | 20 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 6 skenario DOC-PBB-TC-PUB-03 (Two-Key Verification, Signed URL, anti-IDOR, rate limit, & PDF guard) (TC-PUB-RFQ-017 s.d. TC-PUB-RFQ-022), total skenario meningkat menjadi 412+ skenario |
 | `1.10.0` | 23 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario TC-ERP-DO-017 (Barang Cacat & Replacement DO) dan TC-ERP-DO-018 (Kurang Kirim / Short Shipment) pada DOC-PBB-TC-ERP-05, total skenario meningkat menjadi 414+ skenario |
 | `1.11.0` | 01 Okt 2026 | Principal QA Architect | Disetujui | Penambahan 3 skenario DOC-PBB-TC-SEC-04 (TC-SEC-PDP-017 s.d. TC-SEC-PDP-019) untuk proteksi serialisasi model $hidden (HPP, margin, catatan internal, & PII agen), total skenario meningkat menjadi 417+ skenario |
+| `1.12.0` | 02 Okt 2026 | Principal QA Architect | Disetujui | Penyelarasan DOC-PBB-TC-AGN-02 v1.5.0: verifikasi otomatis Passed pada TC-AGN-INQ-002, 006, 007, 012, dan 018 via automated test suite |
 
 ---
 

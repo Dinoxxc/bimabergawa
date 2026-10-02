@@ -27,17 +27,15 @@ class AgentTenantScope implements Scope
             return;
         }
 
-        // Penegakan isolasi tenant untuk mitra agen freelance
-        if ($user->hasRole('freelance_sales') || $user->freelance_sales_id !== null) {
-            $freelanceSalesId = $user->freelance_sales_id
-                ?? FreelanceSales::where('user_id', $user->id)->value('id');
+        // Penegakan isolasi tenant untuk seluruh pengguna non-staf internal (Anti-IDOR)
+        $freelanceSalesId = $user->freelance_sales_id
+            ?? FreelanceSales::where('user_id', $user->id)->value('id');
 
-            if ($freelanceSalesId) {
-                $builder->where($model->getTable().'.freelance_sales_id', $freelanceSalesId);
-            } else {
-                // Agent role with no associated profile is blocked from accessing data
-                $builder->whereRaw('1 = 0');
-            }
+        if ($freelanceSalesId) {
+            $builder->where($model->getTable().'.freelance_sales_id', $freelanceSalesId);
+        } else {
+            // Pengguna non-staf internal tanpa profil agen dilarang total mengakses data transaksi (Anti-IDOR)
+            $builder->whereRaw('1 = 0');
         }
     }
 }

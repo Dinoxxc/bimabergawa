@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-05` |
-| **Versi Dokumen** | 1.5.0 |
+| **Versi Dokumen** | 1.6.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -21,6 +21,7 @@
 | `1.3.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan kepatuhan UU HPP PPN snapshot, toleransi pencarian SKU, & eliminasi total emoji |
 | `1.4.0` | 20 Sep 2026 | Security & Frontend Architect | Disetujui | Penambahan alur 4 lapis keamanan pelacakan publik: Two-Key Verification, Temporary Signed URL, data masking, & private PDF download |
 | `1.5.0` | 01 Okt 2026 | Security & Frontend Architect | Disetujui | Penambahan Bab 6 Protokol Keamanan & Anti-Abuse Frontend Publik Fase 3 (CSRF, Honeypot antispam, Cloudflare Turnstile, IP Rate Limiter, isolasi state Alpine.js Zero-Price, & mitigasi scraping spek) |
+| `1.6.0` | 02 Okt 2026 | Security & Frontend Architect | Disetujui | Penyelarasan urutan roadmap eksekusi: Domain Publik dialihkan menjadi Fase 4 (menggantikan Fase 3) setelah penyelesaian arsitektur Panel ERP |
 
 ---
 
@@ -267,9 +268,9 @@ Setiap halaman katalog menyematkan skema JSON-LD Schema.org secara otomatis untu
 
 ---
 
-## 6. Protokol Keamanan & Anti-Abuse Frontend Publik (Fase 3 Hardening Matrix)
+## 6. Protokol Keamanan & Anti-Abuse Frontend Publik (Fase 4 Hardening Matrix)
 
-Untuk melindungi etalase publik (`bimabergawa.com`) dari scraping agresif, spam bot pada form inkuiri, pemalsuan permintaan (*Cross-Site Request Forgery*), dan kebocoran data komersial, implementasi frontend publik pada Fase 3 wajib mengadopsi 6 lapis pertahanan (*Defense-in-Depth*):
+Untuk melindungi etalase publik (`bimabergawa.com`) dari scraping agresif, spam bot pada form inkuiri, pemalsuan permintaan (*Cross-Site Request Forgery*), dan kebocoran data komersial, implementasi frontend publik pada Fase 4 wajib mengadopsi 6 lapis pertahanan (*Defense-in-Depth*):
 
 ### 6.1 Proteksi CSRF Komprehensif (Cross-Site Request Forgery Guard)
 - Seluruh formulir Blade (`<form>`) pada domain publik wajib menyertakan token `@csrf`.

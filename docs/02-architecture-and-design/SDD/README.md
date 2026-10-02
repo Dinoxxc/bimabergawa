@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-IDX` |
-| **Versi Dokumen** | 1.12.0 |
+| **Versi Dokumen** | 1.13.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -31,6 +31,7 @@
 | `1.10.0` | 28 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan SDD-01 v1.10.0 (Kamus data skema basis data & standardisasi format SKU internal PBB 12 karakter alfanumerik murni) |
 | `1.11.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penyelarasan SDD-04 v1.6.0 (Protokol keamanan ERP Fase 4: OTP 300s, HTTP security headers, RBAC gates, anti-IDOR scopes, proteksi model $hidden) & SDD-05 v1.5.0 (Protokol keamanan publik Fase 3: CSRF, honeypot, Turnstile, rate limiting, isolasi Zero-Price Alpine store) |
 | `1.12.0` | 02 Okt 2026 | Principal Security Architect | Disetujui | Penyelarasan SDD-02 v1.14.0 (Penguatan keamanan Zero-Trust pada AgentTenantScope: isolasi blokir 1=0 untuk non-staf tanpa profil agen, dan global scope agent_comment_visibility pada InternalComment) |
+| `1.13.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Penyelarasan urutan roadmap eksekusi: SDD-04 Panel ERP sebagai Fase 3 dan SDD-05 Domain Publik sebagai Fase 4 guna memastikan kesiapan master data dan CRM sebelum publikasi etalase |
 
 ---
 
@@ -146,7 +147,7 @@ erDiagram
 | **Pengaturan Pajak PPN Dinamis** | [01-database-schema-and-indexing-design.md](01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](04-filament-resources-and-ui-architecture.md) | Tabel `system_settings` & `ManageSystemSettings` page untuk kontrol tarif PPN mandiri oleh Direksi Finance. |
 | **Notifikasi Multi-Kanal (Lonceng & Email)** | [01-database-schema-and-indexing-design.md](01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](04-filament-resources-and-ui-architecture.md) | Tabel `notifications` & Filament Database Notifications terintegrasi surel SMTP korporat. |
 | **Diskusi & Catatan Transaksi Berkonteks** | [01-database-schema-and-indexing-design.md](01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](04-filament-resources-and-ui-architecture.md) | Tabel `internal_comments` dengan `@User` mention, notifikasi otomatis, dan dual-layer chat isolasi agen freelance. |
-| **Keamanan & Hardening Fase 3 & 4** | [04-filament-resources-and-ui-architecture.md](04-filament-resources-and-ui-architecture.md), [05-public-frontend-and-reactive-state.md](05-public-frontend-and-reactive-state.md) | Defense-in-depth: CSRF, honeypot, Turnstile, rate limiter, Alpine Zero-Price store, Passwordless OTP 300s, HTTP security headers, Spatie RBAC gates, anti-IDOR scopes, dan model `$hidden` attributes. |
+| **Keamanan & Hardening Fase 3 (ERP) & Fase 4 (Publik)** | [04-filament-resources-and-ui-architecture.md](04-filament-resources-and-ui-architecture.md), [05-public-frontend-and-reactive-state.md](05-public-frontend-and-reactive-state.md) | Defense-in-depth: Passwordless OTP 300s, HTTP security headers, Spatie RBAC gates, anti-IDOR scopes, model $hidden attributes (Fase 3 ERP), serta CSRF, honeypot, Turnstile, rate limiter, dan Alpine Zero-Price store (Fase 4 Publik). |
 
 
 

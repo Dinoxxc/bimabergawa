@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `AGY-PBB-AGENT-RULEBOOK` |
-| **Versi Dokumen** | 1.8.0 |
+| **Versi Dokumen** | 1.9.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Autonomous Agent & Engineering Operational Guidelines |
 
@@ -291,14 +291,7 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 - [x] `feature/core-07-service-secure-upload` : `SecureFileUploadService` biner kernel `finfo` magic bytes & UUID v4 storage privat, mitigasi PHP masquerading & double extension, isolasi private disk non-publik, temporary signed URL 10 menit, dan sanitasi SVG XSS. *(Rujukan: test-cases/05-security-and-non-functional/03-file-upload-hardening-and-sanitization.md)*
 - [x] `feature/core-08-service-fulfillment-and-commission` : `DeliveryOrderFulfillmentService` pelacakan `remaining_qty` & `CommissionPayoutService` ledger mutasi komisi. *(Rujukan: test-cases/02-internal-erp-crm/04-delivery-order.md)*
 
-### Fase 3: Domain Publik (`bimabergawa.com`)
-- [ ] `feature/web-01-design-system-and-layout` : Master Layout Blade & Tailwind Design Tokens (Monokrom Minimalis), Font Outfit + Inter, Blade Lucide Icons, 0% emoji. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*
-- [ ] `feature/web-02-catalog-showcase-zero-price` : Showroom produk multi-brand, filter kategori, pencarian SKU, penegakan Zero-Price Policy (0% nominal rupiah & $hidden cost_price). *(Rujukan: test-cases/01-public-website/02-product-catalog.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
-- [ ] `feature/web-03-rfq-cart-drawer` : Alpine.js RFQ Store (Zero-Price state tanpa nominal harga), drawer sliding reaktif, localStorage persistence, quick-paste textarea integration. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
-- [ ] `feature/web-04-inquiry-boq-submission` : Form request validation submit inkuiri publik, honeypot anti-spam (`_hp_company`), Cloudflare Turnstile, IP rate limiter (`throttle:5,10`), upload berkas BOQ privat (maks 5 MB), WhatsApp telemetri track. *(Rujukan: test-cases/01-public-website/04-inquiry-and-boq.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
-- [ ] `feature/web-05-company-profile-pages` : Profil resmi kantor Gd. Wirausaha Rasuna Said, sertifikasi kemitraan resmi, kontak, dan SEO meta. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*
-
-### Fase 4: Subdomain Internal ERP (`app.bimabergawa.com`)
+### Fase 3: Subdomain Internal ERP (`app.bimabergawa.com`) & Portal Agen Freelance
 - [ ] `feature/erp-01-passwordless-otp-auth` : Otentikasi Passwordless Email OTP (CSPRNG 6-digit, 300s TTL, SHA-256 cache, 60s cooldown, 3-attempt throttle), HTTP Security Headers (SAMEORIGIN, nosniff, CSP, noindex). *(Rujukan: test-cases/02-internal-erp-crm/01-inquiries-crm.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
 - [ ] `feature/erp-02-crm-inquiries-kanban` : Filament Inquiry Resource, Kanban SLA Stale Alert (>24h warning, >48h critical), assignment PIC. *(Rujukan: test-cases/02-internal-erp-crm/01-inquiries-crm.md)*
 - [ ] `feature/erp-03-quotation-builder-margin-guard` : Filament Quotation Builder, kalkulasi reactive Live Margin HPP Guard, tombol eskalasi Approval Direktur, proteksi $hidden margin & catatan internal. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
@@ -307,6 +300,13 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 - [ ] `feature/erp-06-agent-commission-portal` : Panel Agen `/agent`, registrasi agen, inkuiri terisolasi (`AgentTenantScope`), buku besar komisi & form pencairan, enkripsi PII tersembunyi ($hidden). *(Rujukan: test-cases/03-agent-commission-portal/, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
 - [ ] `feature/erp-07-excel-import-dompdf-export` : Import katalog Excel chunking 100 baris (RAM 512 MB), ekspor PDF standar ISO A4 kop Rasuna Said. *(Rujukan: test-cases/04-catalog-and-inventory-management/)*
 - [ ] `feature/erp-08-system-settings-management` : Halaman Filament `ManageSystemSettings` untuk pengaturan tarif PPN aktif dinamis, ambang batas margin approval, nomor hotline WA, dan profil kantor. *(Rujukan: docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
+
+### Fase 4: Domain Publik (`bimabergawa.com`)
+- [ ] `feature/web-01-design-system-and-layout` : Master Layout Blade & Tailwind Design Tokens (Monokrom Minimalis), Font Outfit + Inter, Blade Lucide Icons, 0% emoji. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*
+- [ ] `feature/web-02-catalog-showcase-zero-price` : Showroom produk multi-brand, filter kategori, pencarian SKU, penegakan Zero-Price Policy (0% nominal rupiah & $hidden cost_price). *(Rujukan: test-cases/01-public-website/02-product-catalog.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
+- [ ] `feature/web-03-rfq-cart-drawer` : Alpine.js RFQ Store (Zero-Price state tanpa nominal harga), drawer sliding reaktif, localStorage persistence, quick-paste textarea integration. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
+- [ ] `feature/web-04-inquiry-boq-submission` : Form request validation submit inkuiri publik, honeypot anti-spam (`_hp_company`), Cloudflare Turnstile, IP rate limiter (`throttle:5,10`), upload berkas BOQ privat (maks 5 MB), WhatsApp telemetri track. *(Rujukan: test-cases/01-public-website/04-inquiry-and-boq.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
+- [ ] `feature/web-05-company-profile-pages` : Profil resmi kantor Gd. Wirausaha Rasuna Said, sertifikasi kemitraan resmi, kontak, dan SEO meta. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*
 
 ### Fase 5: Testing, QA Verification, & CI/CD
 - [ ] `test/01-pest-unit-and-feature-tests` : Eksekusi suite Pest (Unit Service, Feature Auth/Form, Architecture Test strict typing). *(Rujukan: test-cases/05-security-and-non-functional/)*

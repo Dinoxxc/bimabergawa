@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-04` |
-| **Versi Dokumen** | 1.6.0 |
+| **Versi Dokumen** | 1.7.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -28,6 +28,7 @@
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi `InvoiceResource` (faktur komersial, tempo kredit, upload bukti transfer) & `ActivityLogResource` |
 | `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan kalkulasi reaktif `paid_amount` & `remaining_balance` pada tabel dan modal verifikasi pembayaran `InvoiceResource` |
 | `1.6.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penambahan Bab 3 Protokol Keamanan, Hardening, & Kontrol Akses Panel ERP Fase 4 (Passwordless OTP, HTTP Security Headers, Spatie RBAC gates, anti-IDOR scopes, & proteksi serialisasi model $hidden) |
+| `1.7.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Penyelarasan urutan roadmap eksekusi: Panel ERP dan Portal Agen Freelance diprioritaskan menjadi Fase 3 (menggantikan Fase 4) untuk mematangkan master katalog dan alur operasional internal sebelum rilis etalase publik |
 
 ---
 
@@ -385,9 +386,9 @@ Modul **Konten Website CMS** melayani kebutuhan *Full Dynamic Site CMS* (PRD Sec
 
 ---
 
-## 3. Protokol Keamanan, Hardening, & Kontrol Akses Panel ERP (Fase 4 Security Suite)
+## 3. Protokol Keamanan, Hardening, & Kontrol Akses Panel ERP (Fase 3 Security Suite)
 
-Untuk menjamin kerahasiaan data operasional internal, margin keuntungan, modal HPP, dan data pribadi mitra agen di subdomain internal (`app.bimabergawa.com`), arsitektur Fase 4 menerapkan 5 lapis pengamanan terpadu:
+Untuk menjamin kerahasiaan data operasional internal, margin keuntungan, modal HPP, dan data pribadi mitra agen di subdomain internal (`app.bimabergawa.com`), arsitektur Fase 3 menerapkan 5 lapis pengamanan terpadu:
 
 ### 3.1 Protokol Otentikasi Passwordless Email OTP
 Panel ERP tidak menggunakan password statis yang rentan terhadap kebocoran (*credential stuffing*). Seluruh staf internal dan mitra agen freelance wajib melakukan otentikasi melalui *Passwordless Email OTP*:

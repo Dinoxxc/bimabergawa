@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-04` |
-| **Versi Dokumen** | 1.7.0 |
+| **Versi Dokumen** | 1.8.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -29,35 +29,89 @@
 | `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan kalkulasi reaktif `paid_amount` & `remaining_balance` pada tabel dan modal verifikasi pembayaran `InvoiceResource` |
 | `1.6.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penambahan Bab 3 Protokol Keamanan, Hardening, & Kontrol Akses Panel ERP Fase 4 (Passwordless OTP, HTTP Security Headers, Spatie RBAC gates, anti-IDOR scopes, & proteksi serialisasi model $hidden) |
 | `1.7.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Penyelarasan urutan roadmap eksekusi: Panel ERP dan Portal Agen Freelance diprioritaskan menjadi Fase 3 (menggantikan Fase 4) untuk mematangkan master katalog dan alur operasional internal sebelum rilis etalase publik |
+| `1.8.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Adopsi Arsitektur Panel Opsi B: Pemisahan 2 Panel Provider Mandiri di subdomain `app.bimabergawa.com` (`AdminPanelProvider` pada `/admin` & `AgentPanelProvider` pada `/mitra`) dengan root auto-redirection cerdas berbasis peran Spatie RBAC, standar kenyamanan tabel (Comfortable Table Spacing Density), dan isolasi resource mutlak 0% kebocoran HPP |
 
 ---
 
-## 1. Arsitektur Komponen Filament Admin (TALL Stack)
+## 1. Arsitektur Komponen Filament ERP & Topologi Dua Panel Mandiri (Option B Architecture)
 
-Panel internal ERP dibangun di atas **Filament Admin v3/v5** yang memanfaatkan reaktivitas **Livewire 3**, **Alpine.js**, dan komponen **Tailwind CSS**.
+Panel operasional internal dan portal kemitraan dibangun di atas **Filament Admin v3** yang memanfaatkan reaktivitas **Livewire 3**, **Alpine.js**, dan **Tailwind CSS**. Sistem mengadopsi arsitektur **Dua Panel Provider Mandiri (Option B)** di bawah subdomain tunggal `app.bimabergawa.com`:
 
 ```
-+─────────────────────────────────────────────────────────────────────────────+
-|                         STRUKTUR RESOURCE FILAMENT ERP                      |
-+─────────────────────────────────────────────────────────────────────────────+
- app/Filament/Resources/
- ├── ProductResource.php                 # Form Multi-Tab, Spek Repeater, HPP
- ├── InquiryResource.php                 # Kanban Pipeline, Telemetry & Stale Alert
- │   └── Pages/
- │       └── KanbanInquiries.php         # Board Drag-and-Drop 6 Kolom
- ├── QuotationResource.php               # Live Margin Calculator, Payment Terms
- │   └── Actions/
- │       ├── ConvertFromInquiryAction.php
- │       ├── ApproveDirectorAction.php
- │       └── SendWhatsAppAction.php
- ├── SalesOrderResource.php              # Locking PO & Status Pengiriman
- ├── DeliveryOrderResource.php           # Partial Shipment & Resi Ekspedisi
- ├── PartnerApplicationResource.php      # Screening Mitra & Approval Generator
- ├── CommissionTierResource.php          # Konfigurasi Mandiri Single/Multi-Tier
- ├── CommissionPayoutResource.php        # Tagihan Komisi & Uploader Slip Bank
- └── Pages/
-     └── ManageSystemSettings.php        # Pengaturan Pajak PPN Dinamis, Margin & Kontak
+                                  [SUBDOMAIN ERP: app.bimabergawa.com]
+                                                   │
+                           ┌───────────────────────┴───────────────────────┐
+                           ▼                                               ▼
+             [RUTE ROOT: GET /]                              [OTENTIKASI: /admin/login]
+        PanelRedirectionController                           Passwordless Email OTP (300s)
+                           │                                               │
+             ┌─────────────┴─────────────┐                                 │
+             ▼                           ▼                                 │
+    [Peran Staf Internal]       [Peran Mitra Agen]                         │
+  (Super Admin/Sales/Fin/Log)    (freelance_agent)                         ▼
+             │                           │                    [Redirect Berdasarkan Role]
+             ▼                           ▼                                 │
+    ┌─────────────────┐         ┌─────────────────┐                        │
+    │  PANEL INTERNAL │         │  PORTAL MITRA   │◄───────────────────────┘
+    │     /admin      │         │     /mitra      │
+    └────────┬────────┘         └────────┬────────┘
+             │                           │
+  [AdminPanelProvider]          [AgentPanelProvider]
+  • Master Katalog & HPP        • Inkuiri Milik Sendiri (Terisolasi)
+  • CRM Kanban & Stale Alert    • Ringkasan Omset & Komisi
+  • Quotation Builder Margin    • Pengajuan Pencairan Dana
+  • Sales Order & Approval      • Unduh Slip Transfer Bank
+  • Surat Jalan Parsial (DO)    • Chat Tim Sales (Tanpa HPP)
+  • Invoicing & Verifikasi Bank • 0% Resource Finansial Terdaftar
+  • System Settings Hub
 ```
+
+### 1.1 Struktur Direktori Komponen & Panel Provider
+
+```
+app/
+├── Http/
+│   └── Controllers/
+│       └── PanelRedirectionController.php      # Auto-redirect root GET / ke /admin atau /mitra
+├── Providers/
+│   └── Filament/
+│       ├── AdminPanelProvider.php              # Panel Staf Internal (Path: /admin, ID: admin)
+│       └── AgentPanelProvider.php              # Portal Agen Luar (Path: /mitra, ID: agent)
+├── Filament/
+│   ├── Resources/                              # Resource Panel Internal (/admin)
+│   │   ├── ProductResource.php                 # Master Produk, Spek Repeater, Modal HPP
+│   │   ├── CategoryResource.php                # Taksonomi Kategori Multi-Level
+│   │   ├── BrandResource.php                   # Master Brand Global Resmi
+│   │   ├── UnitResource.php                    # Master Satuan Unit Pengukuran (UOM)
+│   │   ├── CustomerResource.php                # Master Perusahaan & Kontak Klien B2B
+│   │   ├── InquiryResource.php                 # CRM Inquiries, Kanban Board, Stale Alert
+│   │   ├── QuotationResource.php               # Quotation Builder, Live Margin Guard
+│   │   ├── SalesOrderResource.php              # Sales Order, Locking PO, Approval Direksi
+│   │   ├── DeliveryOrderResource.php           # Partial Delivery Order, Ekspedisi & Resi
+│   │   ├── InvoiceResource.php                 # Faktur Komersial & Verifikasi Bukti Bank
+│   │   ├── FreelanceSalesResource.php          # Manajemen Profil Mitra Agen & Ledger
+│   │   ├── CommissionPayoutResource.php        # Verifikasi Pencairan Komisi & Upload Slip
+│   │   └── ActivityLogResource.php             # Viewer Jejak Audit Sistem (Super Admin)
+│   ├── Pages/                                  # Halaman Khusus Panel Internal (/admin)
+│   │   ├── Dashboard.php                       # Executive Operational Dashboard
+│   │   ├── ManageSystemSettings.php            # Pengaturan PPN Dinamis, Margin, & Hotline
+│   │   ├── ManageWebsiteContent.php            # CMS Konten Beranda & Profil Perusahaan
+│   │   └── ManageLegalPages.php                # CMS Kebijakan Privasi (UU PDP) & Syarat
+│   └── Agent/                                  # Resource Eksklusif Portal Agen (/mitra)
+│       ├── Resources/
+│       │   ├── AgentInquiryResource.php        # Inkuiri Agen (0% HPP, AgentTenantScope)
+│       │   └── AgentPayoutResource.php         # Riwayat Komisi & Form Pengajuan Klaim
+│       └── Pages/
+│           ├── AgentDashboard.php              # Kartu Metrik Performa & Saldo Komisi
+│           └── AgentProfilePage.php            # Profil Rekening Bank & Berkas KTP Privat
+```
+
+### 1.2 Standar Kepadatan Tampilan Tabel (Comfortable Table Spacing Density)
+Seluruh tabel Filament pada kedua panel (`AdminPanelProvider` dan `AgentPanelProvider`) menerapkan konfigurasi kepadatan **Lapang & Ergonomis (*Comfortable Spacing Density*)**:
+- Baris tabel memiliki padding vertikal optimal (`py-3.5` atau `py-4`) untuk mencegah kelelahan mata operator yang meninjau ratusan baris data transaksi harian.
+- Hairline border horizontal monokrom halus (`#e4e4e7` / Dark: `#27272a`) memisahkan antar baris dengan kontras seimbang.
+- Tipografi data menggunakan font **Inter** dengan *line-height* proporsional, serta kode SKU part number dalam font **JetBrains Mono**.
+- Selektor jumlah baris interaktif tersedia di footer tabel: pilihan `[ 10 ]`, `[ 25 ]` (default), `[ 50 ]`, dan `[ 100 ]` baris per halaman.
 
 ---
 

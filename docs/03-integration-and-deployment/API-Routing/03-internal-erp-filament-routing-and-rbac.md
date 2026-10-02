@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-API-03` |
-| **Versi Dokumen** | 1.3.0 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.4.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -19,32 +19,39 @@
 | `1.1.0` | 03 Sep 2026 | Security Specialist | Ditinjau | Penambahan rute Passwordless OTP Login & RBAC Spatie |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Pemisahan panel mandiri agen freelance di rute `/mitra` |
 | `1.3.0` | 05 Sep 2026 | Principal Integration Engineer | Disetujui | Pemisahan berkas spesifik rute ERP, otorisasi RBAC, & zero emoji |
+| `1.4.0` | 02 Okt 2026 | Principal Integration Engineer | Disetujui | Penyelarasan Arsitektur Panel Opsi B: Pendefinisian dua rute panel mandiri di subdomain `app.bimabergawa.com` — `/admin` untuk Panel Internal Staf dan `/mitra` untuk Portal Agen Freelance dengan rute root `GET /` auto-redirect cerdas via `PanelRedirectionController` serta isolasi total modul finansial |
 
 ---
 
-## 1. Topologi Subdomain ERP (`app.bimabergawa.com`)
+## 1. Topologi Subdomain ERP & Arsitektur Dua Panel (`app.bimabergawa.com`)
 
-Panel internal ERP terisolasi di bawah subdomain khusus `app.bimabergawa.com` untuk memastikan seluruh lalu lintas operasional terpisah secara logis dan tidak dapat diindeks oleh mesin pencari publik:
+Panel internal ERP dan portal kemitraan terisolasi di bawah subdomain khusus `app.bimabergawa.com` untuk memastikan seluruh lalu lintas operasional terpisah secara logis dan tidak dapat diindeks oleh mesin pencari publik:
 
 ```php
-// routes/web.php (Subdomain ERP Routing Group)
+// routes/erp.php (atau routes/web.php Subdomain ERP Routing Group)
 Route::domain(config('app.erp_domain', 'app.bimabergawa.com'))->group(function () {
-    // 1. Passwordless Email OTP Authentication
+    // 1. Root Intelligent Redirection (Auto-Routing Berdasarkan Peran)
+    Route::get('/', [PanelRedirectionController::class, 'index'])->name('erp.root');
+
+    // 2. Passwordless Email OTP Authentication Shared Flow
     Route::middleware('guest')->group(function () {
-        Route::get('/login', [AuthOtpController::class, 'showLoginForm'])->name('filament.admin.auth.login');
+        Route::get('/login', [AuthOtpController::class, 'showLoginForm'])->name('auth.otp.login');
         Route::post('/login/send-otp', [AuthOtpController::class, 'sendOtp'])->name('auth.otp.send');
         Route::post('/login/verify-otp', [AuthOtpController::class, 'verifyOtp'])->name('auth.otp.verify');
     });
 
-    // 2. Filament Admin Panel & Commercial Modules (Authenticated via OTP)
-    Route::middleware(['auth', 'verified', 'erp.role.guard'])->group(function () {
-        // Rute streaming dan unduh berkas PDF resmi
-        Route::get('/quotations/{quotation}/pdf', [QuotationPdfController::class, 'download'])
-            ->name('quotations.pdf.download');
-        Route::get('/delivery-orders/{deliveryOrder}/pdf', [DeliveryOrderPdfController::class, 'download'])
-            ->name('delivery-orders.pdf.download');
-            
-        // Rute unduh slip transfer komisi agen
+    // 3. Panel Staf Internal (/admin) - Dikelola oleh AdminPanelProvider
+    // Middleware: ['auth', 'verified', 'role:super_admin|sales_pic|finance|logistics']
+    
+    // 4. Portal Kemitraan Agen (/mitra) - Dikelola oleh AgentPanelProvider
+    // Middleware: ['auth', 'verified', 'role:freelance_agent']
+
+    // 5. Rute Download Dokumen Transaksi Berizin & Signed URL
+    Route::middleware(['auth', 'verified'])->group(function () {
+        Route::get('/admin/quotations/{quotation}/pdf', [QuotationPdfController::class, 'download'])
+            ->name('admin.quotations.pdf.download');
+        Route::get('/admin/delivery-orders/{deliveryOrder}/pdf', [DeliveryOrderPdfController::class, 'download'])
+            ->name('admin.delivery-orders.pdf.download');
         Route::get('/mitra/payouts/{payout}/slip', [CommissionPayoutController::class, 'downloadSlip'])
             ->name('mitra.payouts.slip');
     });
@@ -57,12 +64,15 @@ Route::domain(config('app.erp_domain', 'app.bimabergawa.com'))->group(function (
 
 1. **Request OTP (`POST /login/send-otp`):**
    - Menerima `email` pengguna terdaftar di tabel `users`.
-   - Mengenerate 6 digit angka acak cryptographically secure yang disimpan di cache Redis/Database dengan TTL 5 menit.
-   - Mengirim email notifikasi berisi 6 digit OTP.
+   - Mengenerate 6 digit angka acak CSPRNG (`random_int(100000, 999999)`) yang di-hash SHA-256 dan disimpan di cache dengan TTL 300 detik (5 menit).
+   - Mengirim email notifikasi berisi 6 digit OTP resmi.
 2. **Verify OTP (`POST /login/verify-otp`):**
    - Menerima `email` dan `otp_code`.
-   - Melakukan validasi kesesuaian dan masa berlaku kode.
-   - Menginisiasi sesi Laravel terenkripsi (`auth()->login($user)`) dan meregenerasi Session ID untuk mencegah *Session Fixation*.
+   - Melakukan validasi kesesuaian dan masa berlaku kode (maksimal 3x percobaan gagal).
+   - Menginisiasi sesi Laravel terenkripsi (`auth()->login($user)`), membakar token OTP (*one-time burn*), dan meregenerasi Session ID untuk mencegah *Session Fixation*.
+3. **Redirect Berbasis Peran (*Post-Login Dispatch*):**
+   - Staf internal (`super_admin`, `sales_pic`, `finance`, `logistics`) diarahkan ke `/admin`.
+   - Mitra agen freelance (`freelance_agent`) diarahkan ke `/mitra`.
 
 ---
 
@@ -70,15 +80,18 @@ Route::domain(config('app.erp_domain', 'app.bimabergawa.com'))->group(function (
 
 | Modul / Rute Filament | Peran Super Admin | Peran Sales Rep | Peran Finance | Peran Logistik | Peran Mitra Agen |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **`/` (Executive Dashboard)** | Akses Penuh | Terbatas PIC | Terbatas Finansial | Terbatas Pengiriman | Ditolak |
-| **`/inquiries` (Kanban CRM)** | Akses Penuh | Akses Penuh | Read-Only | Read-Only | Ditolak |
-| **`/quotations` (Builder)** | Akses Penuh | Akses Penuh | Read-Only | Ditolak | Ditolak |
-| **`/sales-orders` (SO Lock)** | Akses Penuh | Buat & Lihat | Verifikasi Bayar | Lihat Item | Ditolak |
-| **`/delivery-orders` (DO)** | Akses Penuh | Lihat Status | Read-Only | Buat & Update Resi| Ditolak |
-| **`/products` (Master Spek)**| Akses Penuh | Read-Only (HPP) | Read-Only | Read-Only | Ditolak |
-| **`/partners` (Screening)** | Akses Penuh | Ditolak | Ditolak | Ditolak | Ditolak |
-| **`/payouts` (Komisi Mitra)**| Akses Penuh | Ditolak | Proses & Upload | Ditolak | Ditolak |
-| **`/mitra` (Portal Agen)** | Akses Audit | Ditolak | Ditolak | Ditolak | Akses Mandiri |
+| **`/` (Root Redirection)** | Auto -> `/admin` | Auto -> `/admin` | Auto -> `/admin` | Auto -> `/admin` | Auto -> `/mitra` |
+| **`/admin` (Dashboard Internal)**| Akses Penuh | Terbatas PIC | Terbatas Finansial | Terbatas Pengiriman | Ditolak (403) |
+| **`/admin/inquiries` (Kanban CRM)**| Akses Penuh | Akses Penuh | Read-Only | Read-Only | Ditolak (403) |
+| **`/admin/quotations` (Builder)**| Akses Penuh | Akses Penuh | Read-Only | Ditolak | Ditolak (403) |
+| **`/admin/sales-orders` (SO Lock)**| Akses Penuh | Buat & Lihat | Verifikasi Bayar | Lihat Item | Ditolak (403) |
+| **`/admin/delivery-orders` (DO)**| Akses Penuh | Lihat Status | Read-Only | Buat & Update Resi| Ditolak (403) |
+| **`/admin/products` (Master Spek)**| Akses Penuh | Read-Only (HPP) | Read-Only | Read-Only | Ditolak (403) |
+| **`/admin/invoices` (Faktur)** | Akses Penuh | Ditolak | Verifikasi Bank | Ditolak | Ditolak (403) |
+| **`/admin/system-settings`** | Akses Penuh | Terbatas CRM | Terbatas Pajak | Terbatas Gudang | Ditolak (403) |
+| **`/mitra` (Portal Mandiri Agen)** | Akses Audit | Ditolak | Ditolak | Ditolak | Akses Mandiri |
+| **`/mitra/inquiries` (Inkuiri Agen)**| Akses Audit | Ditolak | Ditolak | Ditolak | Milik Sendiri |
+| **`/mitra/payouts` (Komisi)** | Akses Audit | Ditolak | Ditolak | Ditolak | Ajukan Mandiri |
 
 ---
 

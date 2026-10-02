@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-UIUX-04` |
-| **Versi Dokumen** | 1.5.1 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.6.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -26,18 +26,26 @@
 | `1.4.4` | 07 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi navigasi sidebar grup `KONTEN & WEBSITE CMS` (Artikel, Konten Web, & Legalitas), wireframe visual CMS, dan cache invalidation |
 | `1.5.0` | 08 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX Manajemen Faktur Penagihan Komersial (`InvoiceResource`), verifikasi bukti bayar transfer bank, dan widget riwayat jejak audit |
 | `1.5.1` | 08 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Penambahan kolom rincian nominal terbayar & sisa piutang pada wireframe daftar faktur serta formulir verifikasi cicilan parsial |
+| `1.6.0` | 02 Okt 2026 | Principal UI/UX & Lead Architect | Disetujui | Adopsi Arsitektur Panel Opsi B: Pembagian dua antarmuka mandiri di subdomain `app.bimabergawa.com` — Panel Staf Internal (`/admin`) dan Portal Agen Freelance (`/mitra`) dengan auto-redirect di rute root `GET /` serta standardisasi kepadatan tabel lapang (Comfortable Spacing Density) untuk kenyamanan visual operasional |
 
 ---
 
-## 1. Arsitektur Navigasi & Struktur Menu ERP Berbasis Peran
+## 1. Arsitektur Navigasi & Struktur Menu ERP Berbasis Dua Panel Mandiri (Option B)
 
-Panel ERP diakses melalui `app.domain.com` dengan otentikasi aman (*Passwordless Email OTP*) dan pembagian navigasi berbasis peran (RBAC):
+Aplikasi operasional diakses melalui subdomain `app.bimabergawa.com` dengan otentikasi aman (*Passwordless Email OTP*). Sistem menerapkan **Arsitektur Dua Panel Mandiri (Option B)** untuk memisahkan secara fisik dan visual antara kegiatan operasional internal kantor dan portal kemitraan luar:
 
+1. **Rute Root Cerdas (`app.bimabergawa.com/`):**
+   - Menjalankan `PanelRedirectionController` yang memeriksa status sesi dan peran (*role*) pengguna.
+   - Jika pengguna adalah staf internal (`super_admin`, `sales_pic`, `finance`, `logistics`), sistem otomatis mengarahkan ke **Panel Staf Internal (`/admin`)**.
+   - Jika pengguna adalah mitra agen freelance (`freelance_agent`), sistem otomatis mengarahkan ke **Portal Kemitraan (`/mitra`)**.
+   - Jika belum login (*guest*), diarahkan ke formulir masuk Passwordless Email OTP bersama.
+
+2. **Tata Letak Panel Staf Internal (`/admin`):**
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ [LOGO PBB ERP]  PT. PANCA BIMA BERGAWA   [Cari: Ctrl+K]  [Theme: Light/Dark]  [Notif: 2]  [Akun: Sales]│
 ├───────────────────────┬────────────────────────────────────────────────────────────────────────────────┤
-│ MENU UTAMA:           │ KONTEN UTAMA MODUL ERP                                                         │
+│ MENU UTAMA:           │ KONTEN UTAMA MODUL ERP (COMFORTABLE TABLE SPACING)                             │
 │                       │                                                                                │
 │ [Icon: Dashboard]     │                                                                                │
 │ [Icon: Kanban]        │                                                                                │
@@ -264,20 +272,27 @@ Menu **Pengaturan Sistem** (`/admin/system-settings`) merupakan pusat kendali op
 
 ---
 
-## 8. Standar Interaktivitas Tampilan Multimoda & Pagination (Multi-View & Pagination)
+## 8. Standar Interaktivitas Tampilan Multimoda, Kepadatan Tabel, & Pagination
 
 Untuk mengoptimalkan efisiensi kerja staf internal, penyajian data di dalam panel ERP tidak dibatasi pada satu format kaku, melainkan menggunakan tiga moda tampilan yang disesuaikan dengan karakteristik informasi:
 
-### 8.1 Standar Pagination Tabel Interaktif Mandiri
+### 8.1 Standar Kepadatan Tampilan Tabel Lapang (Comfortable Spacing Density)
+Sesuai arahan ergonomis operasional B2B, seluruh tabel data transaksi (`Quotation`, `SalesOrder`, `Invoice`, `DeliveryOrder`, `Inquiry`, dan `Product`) menerapkan konfigurasi **Lapang (*Comfortable Spacing Density*)**:
+- **Padding Vertikal Sel:** Menggunakan bantalan vertikal longgar (`py-3.5` atau `py-4` pada baris `td` dan `th`), memberikan ruang visual bernapas yang lega (*breathing room*).
+- **Kenyamanan Membaca Jangka Panjang:** Mencegah ketegangan mata operator dan manajer yang meneliti puluhan hingga ratusan baris data SKU teknis dan nominal angka sepanjang hari kerja.
+- **Pemisah Garis Halus (Hairline Dividers):** Garis batas monokrom tipis (`#e4e4e7` / Dark Mode: `#27272a`) dengan efek *hover row highlight* lembut (`hover:bg-zinc-50` / Dark: `hover:bg-zinc-800/50`) sehingga operator tidak salah membaca baris (*prevent line jumping*).
+- **Tipografi Data:** Menggunakan font **Inter** untuk teks umum dan nominal rupiah, serta **JetBrains Mono** tebal untuk kode part number/SKU.
+
+### 8.2 Standar Pagination Tabel Interaktif Mandiri
 - **Kontrol Lokal Per Halaman:** Kontrol pagination melekat langsung pada bagian bawah setiap tabel data secara interaktif, bukan diatur terpusat di pengaturan sistem.
 - **Pilihan Jumlah Baris:** Pengguna dapat memilih jumlah baris per halaman secara fleksibel sesuai ukuran monitor kerja:
   - `[ 10 Baris ]` : Ideal untuk layar laptop portabel 13-14 inci.
-  - `[ 25 Baris ]` : Standar default ergonomis kerja harian.
+  - `[ 25 Baris ]` : Standar default ergonomis kerja harian (Default Comfortable Spacing).
   - `[ 50 Baris ]` : Rekomendasi untuk audit cepat transaksi massal.
   - `[ 100 Baris ]` : Pilihan maksimal untuk rekonsiliasi data bulanan.
 - **Efisiensi Kueri SQL:** Pagination wajib menggunakan kueri basis data `LIMIT` dan `OFFSET` yang terindeks (dilarang memuat seluruh koleksi ke memori aplikasi).
 
-### 8.2 Tiga Moda Tampilan Antarmuka ERP (Multi-View Standards)
+### 8.3 Tiga Moda Tampilan Antarmuka ERP (Multi-View Standards)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐

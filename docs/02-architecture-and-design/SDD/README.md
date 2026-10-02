@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-IDX` |
-| **Versi Dokumen** | 1.13.0 |
+| **Versi Dokumen** | 1.14.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -32,6 +32,7 @@
 | `1.11.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penyelarasan SDD-04 v1.6.0 (Protokol keamanan ERP Fase 4: OTP 300s, HTTP security headers, RBAC gates, anti-IDOR scopes, proteksi model $hidden) & SDD-05 v1.5.0 (Protokol keamanan publik Fase 3: CSRF, honeypot, Turnstile, rate limiting, isolasi Zero-Price Alpine store) |
 | `1.12.0` | 02 Okt 2026 | Principal Security Architect | Disetujui | Penyelarasan SDD-02 v1.14.0 (Penguatan keamanan Zero-Trust pada AgentTenantScope: isolasi blokir 1=0 untuk non-staf tanpa profil agen, dan global scope agent_comment_visibility pada InternalComment) |
 | `1.13.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Penyelarasan urutan roadmap eksekusi: SDD-04 Panel ERP sebagai Fase 3 dan SDD-05 Domain Publik sebagai Fase 4 guna memastikan kesiapan master data dan CRM sebelum publikasi etalase |
+| `1.14.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Penyelarasan SDD-04 v1.8.0 (Adopsi Arsitektur Panel Opsi B: pemisahan AdminPanelProvider [/admin] & AgentPanelProvider [/mitra] dengan auto-routing cerdas root GET / serta penegakan standar kepadatan tabel Comfortable Spacing) |
 
 ---
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +14,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, HasRoles, Notifiable;
 
@@ -85,5 +87,30 @@ class User extends Authenticatable
     public function activityLogs(): MorphMany
     {
         return $this->morphMany(ActivityLog::class, 'causer');
+    }
+
+    /**
+     * Otorisasi hak akses panel Filament berdasarkan peran Spatie RBAC (Option B).
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        $panelId = $panel->getId();
+
+        // Panel Staf Internal (/admin)
+        if ($panelId === 'admin') {
+            return $this->hasAnyRole(['super_admin', 'sales_pic', 'finance', 'logistics']);
+        }
+
+        // Panel Portal Kemitraan Agen (/mitra)
+        if ($panelId === 'mitra' || $panelId === 'agent') {
+            return $this->hasAnyRole(['freelance_sales', 'mitra_agen', 'freelance_agent', 'super_admin'])
+                || ($this->freelance_sales_id !== null && ! $this->hasAnyRole(['sales_pic', 'finance', 'logistics']));
+        }
+
+        return false;
     }
 }

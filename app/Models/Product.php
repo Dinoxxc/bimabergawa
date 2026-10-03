@@ -19,6 +19,7 @@ class Product extends Model
     protected $fillable = [
         'brand_id',
         'category_id',
+        'primary_supplier_id',
         'successor_product_id',
         'name',
         'slug',
@@ -65,6 +66,11 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function primarySupplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'primary_supplier_id')->withTrashed();
     }
 
     public function successor(): BelongsTo

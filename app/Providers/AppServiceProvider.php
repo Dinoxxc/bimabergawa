@@ -29,6 +29,7 @@ use App\Models\Quotation;
 use App\Models\QuotationItem;
 use App\Models\QuotationPaymentTerm;
 use App\Models\SalesOrder;
+use App\Models\Supplier;
 use App\Models\SystemSetting;
 use App\Models\UnitOfMeasure;
 use App\Models\User;
@@ -78,6 +79,7 @@ class AppServiceProvider extends ServiceProvider
             'quotation_item' => QuotationItem::class,
             'quotation_payment_term' => QuotationPaymentTerm::class,
             'sales_order' => SalesOrder::class,
+            'supplier' => Supplier::class,
             'system_setting' => SystemSetting::class,
             'unit_of_measure' => UnitOfMeasure::class,
             'user' => User::class,

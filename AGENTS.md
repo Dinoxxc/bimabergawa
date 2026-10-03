@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `AGY-PBB-AGENT-RULEBOOK` |
-| **Versi Dokumen** | 1.8.0 |
+| **Versi Dokumen** | 1.11.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Autonomous Agent & Engineering Operational Guidelines |
 
@@ -26,9 +26,9 @@ PT. Panca Bima Bergawa (PBB) adalah entitas distributor resmi B2B (*Business-to-
 
 PBB melayani baik pengadaan barang katalog resmi maupun pengadaan barang kustom / *ad-hoc sourcing* non-katalog sesuai daftar kebutuhan (*Bill of Quantities / BOQ*) dari kontraktor MEP, pembuat panel (*panel builders*), pengelola gedung, dan bagian pemeliharaan (*maintenance*) pabrik manufaktur di seluruh Indonesia.
 
-### 1.1 Topologi Sistem Multi-Domain (Single Database Multi-Domain Architecture)
+### 1.1 Topologi Sistem Multi-Domain (Single Database Multi-Domain Architecture - Option B)
 
-Sistem digital PBB beroperasi di bawah arsitektur basis data tunggal (*Single Database Multi-Domain*) yang memisahkan secara ketat antara ranah etalase publik dan ranah operasional internal:
+Sistem digital PBB beroperasi di bawah arsitektur basis data tunggal (*Single Database Multi-Domain*) yang memisahkan ranah etalase publik dan ranah operasional internal melalui pendekatan **Dua Panel Mandiri (Option B)**:
 
 ```
                                   [BASIS DATA TERPUSAT: MYSQL 8.0 INNODB]
@@ -37,13 +37,20 @@ Sistem digital PBB beroperasi di bawah arsitektur basis data tunggal (*Single Da
                        ▼                                                           ▼
          [DOMAIN PUBLIK: bimabergawa.com]                            [SUBDOMAIN ERP: app.bimabergawa.com]
          ────────────────────────────────                            ────────────────────────────────────
-         • Company Profile Resmi Rasuna Said                         • Otentikasi Passwordless Email OTP (300s)
-         • Katalog Produk Multi-Brand (Zero-Price)                   • CRM Inquiries & Kanban SLA Stale Alert
-         • RFQ Cart Drawer (Alpine.js Store)                         • Quotation Builder + Live Margin HPP Guard
-         • Bulk SKU Quick Paste Parser                               • Sales Order & Approval Limit Direksi
-         • Direct WhatsApp Telemetri Track                           • Surat Jalan Logistik (Partial Delivery Order)
-         • Upload BOQ Proyek (PDF/XLSX Magic Bytes)                  • Portal Agen Freelance & Ledger Komisi (Multi-Tenant)
-                                                                     • Pengaturan Pajak PPN & Komersial Dinamis (system_settings)
+         • Company Profile Resmi Rasuna Said                         • Rute Root Cerdas: PanelRedirectionController
+         • Katalog Produk Multi-Brand (Zero-Price)                   • Otentikasi Passwordless Email OTP (300s)
+         • RFQ Cart Drawer (Alpine.js Store)                         • Standar Kepadatan: Comfortable Table Spacing
+         • Bulk SKU Quick Paste Parser                               • Panel Staf Internal (/admin) [AdminPanelProvider]:
+         • Direct WhatsApp Telemetri Track                             - CRM Inquiries & Kanban SLA Stale Alert
+         • Upload BOQ Proyek (PDF/XLSX Magic Bytes)                    - Quotation Builder + Live Margin HPP Guard
+                                                                       - Sales Order & Approval Limit Direksi
+                                                                       - Surat Jalan Logistik (Partial Delivery Order)
+                                                                       - Faktur Tagihan Invoicing & Verifikasi Bank
+                                                                       - Pengaturan PPN & Komersial (system_settings)
+                                                                     • Portal Agen Freelance (/mitra) [AgentPanelProvider]:
+                                                                       - Inkuiri Agen & Ledger Komisi (Multi-Tenant)
+                                                                       - Form Klaim Pencairan & Unduh Slip Transfer
+                                                                       - 0% Modul Finansial / Kebocoran Modal HPP
 ```
 
 ---
@@ -189,12 +196,12 @@ e:\Project\bimabergawa/
 │   ├── 02-architecture-and-design/                    # SAD (01-05), SDD (01-05), UI-UX (01-04)
 │   ├── 03-integration-and-deployment/                 # API-Routing (01-04), CICD (01-04), Migration (01-04)
 │   └── 04-quality-and-security/                       # QA-Testing (01-04), Security-Compliance (01-04)
-├── test-cases/                                        # Test Case Suite Lengkap (23 Berkas, 414+ Skenario)
+├── test-cases/                                        # Test Case Suite Lengkap (23 Berkas, 425+ Skenario)
 │   ├── README.md                                      # Master Index Test Case & Traceability
 │   ├── 01-public-website/                             # Test Case Web Publik (01-04, 63 Skenario)
-│   ├── 02-internal-erp-crm/                           # Test Case Internal ERP (01-05, 81 Skenario)
+│   ├── 02-internal-erp-crm/                           # Test Case Internal ERP (01-06, 85 Skenario)
 │   ├── 03-agent-commission-portal/                    # Test Case Portal Agen (01-03, 48 Skenario)
-│   ├── 04-catalog-and-inventory-management/           # Test Case Manajemen Katalog (01-03, 48 Skenario)
+│   ├── 04-catalog-and-inventory-management/           # Test Case Manajemen Katalog (01-03, 52 Skenario)
 │   ├── 05-security-and-non-functional/                # Test Case Keamanan & NFR (01-04, 64 Skenario)
 │   └── 06-integration-and-infrastructure/             # Test Case Seeder, Cron, & CI/CD (01-03, 48 Skenario)
 ├── app/
@@ -291,22 +298,24 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 - [x] `feature/core-07-service-secure-upload` : `SecureFileUploadService` biner kernel `finfo` magic bytes & UUID v4 storage privat, mitigasi PHP masquerading & double extension, isolasi private disk non-publik, temporary signed URL 10 menit, dan sanitasi SVG XSS. *(Rujukan: test-cases/05-security-and-non-functional/03-file-upload-hardening-and-sanitization.md)*
 - [x] `feature/core-08-service-fulfillment-and-commission` : `DeliveryOrderFulfillmentService` pelacakan `remaining_qty` & `CommissionPayoutService` ledger mutasi komisi. *(Rujukan: test-cases/02-internal-erp-crm/04-delivery-order.md)*
 
-### Fase 3: Domain Publik (`bimabergawa.com`)
+### Fase 3: Subdomain Internal ERP (`app.bimabergawa.com`) & Portal Agen Freelance (Option B)
+- [ ] `feature/erp-01-passwordless-otp-auth` : Otentikasi Passwordless Email OTP (CSPRNG 6-digit, 300s TTL, SHA-256 cache, 60s cooldown, 3-attempt throttle), Arsitektur Dua Panel (`AdminPanelProvider` pada `/admin` & `AgentPanelProvider` pada `/mitra`), Root Auto-Redirect `PanelRedirectionController`, Standar Kepadatan Tabel Lapang (*Comfortable Spacing Density*), dan HTTP Security Headers (SAMEORIGIN, nosniff, CSP, noindex). *(Rujukan: test-cases/02-internal-erp-crm/01-authentication-and-passwordless-otp.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
+- [ ] `feature/erp-02-crm-inquiries-kanban` : Filament Inquiry Resource, Kanban SLA Stale Alert (>24h warning, >48h critical), assignment PIC. *(Rujukan: test-cases/02-internal-erp-crm/02-crm-inquiry-and-kanban-management.md)*
+- [ ] `feature/erp-03-quotation-builder-margin-guard` : Filament Quotation Builder, kalkulasi reactive Live Margin HPP Guard, tombol eskalasi Approval Direktur, proteksi $hidden margin & catatan internal. *(Rujukan: test-cases/02-internal-erp-crm/03-quotation-builder-and-live-margin.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
+- [ ] `feature/erp-04-sales-orders-management` : Konversi Quotation ke Sales Order, validasi approval limit Direksi >= Rp 100 Juta. *(Rujukan: test-cases/02-internal-erp-crm/04-sales-order-and-approval-workflow.md)*
+- [ ] `feature/erp-05-delivery-orders-logistics` : Modul logistik Surat Jalan (DO), validasi pengiriman parsial, dan update status SO ke `completed`. *(Rujukan: test-cases/02-internal-erp-crm/05-delivery-order-and-fulfillment.md)*
+- [ ] `feature/erp-06-agent-commission-portal` : Portal Mandiri Agen `/mitra` (`AgentPanelProvider`), inkuiri terisolasi (`AgentTenantScope`), buku besar komisi & form pencairan, enkripsi PII tersembunyi ($hidden), dan 0% kebocoran modal HPP. *(Rujukan: test-cases/03-agent-commission-portal/, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
+- [ ] `feature/erp-07-excel-import-dompdf-export` : Import katalog Excel chunking 100 baris (RAM 512 MB), ekspor PDF standar ISO A4 kop Rasuna Said. *(Rujukan: test-cases/04-catalog-and-inventory-management/)*
+- [ ] `feature/erp-08-system-settings-management` : Halaman Filament `ManageSystemSettings` untuk pengaturan tarif PPN aktif dinamis, ambang batas margin approval, nomor hotline WA, dan profil kantor. *(Rujukan: docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
+- [ ] `feature/erp-09-suppliers-management` : Modul Manajemen Rekanan Vendor & Distributor Tingkat 1 (`SupplierResource`, relasi `primary_supplier_id` dan pivot Many-to-Many `product_suppliers` Multi-Sourcing Matrix, komparasi HPP modal beli & lead time multi-vendor, filter termin pembayaran, kontak PIC WA). *(Rujukan: test-cases/04-catalog-and-inventory-management/01-brand-and-category-taxonomy.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
+- [ ] `feature/erp-10-executive-reports-hub` : Pusat Pelaporan Eksekutif Bisnis & Finansial (`ReportsHub` 4-Tab: Performa Penjualan, Analisis Margin HPP & Profitabilitas, Umur Piutang AR Aging, Rekapitulasi Komisi Agen), One-Click WhatsApp Dispatch, dan Segel Verifikasi QR Code Dokumen Transaksi. *(Rujukan: test-cases/02-internal-erp-crm/06-commercial-invoicing-and-audit-trail.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
+
+### Fase 4: Domain Publik (`bimabergawa.com`)
 - [ ] `feature/web-01-design-system-and-layout` : Master Layout Blade & Tailwind Design Tokens (Monokrom Minimalis), Font Outfit + Inter, Blade Lucide Icons, 0% emoji. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*
 - [ ] `feature/web-02-catalog-showcase-zero-price` : Showroom produk multi-brand, filter kategori, pencarian SKU, penegakan Zero-Price Policy (0% nominal rupiah & $hidden cost_price). *(Rujukan: test-cases/01-public-website/02-product-catalog.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
 - [ ] `feature/web-03-rfq-cart-drawer` : Alpine.js RFQ Store (Zero-Price state tanpa nominal harga), drawer sliding reaktif, localStorage persistence, quick-paste textarea integration. *(Rujukan: test-cases/01-public-website/03-rfq-cart-drawer.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
 - [ ] `feature/web-04-inquiry-boq-submission` : Form request validation submit inkuiri publik, honeypot anti-spam (`_hp_company`), Cloudflare Turnstile, IP rate limiter (`throttle:5,10`), upload berkas BOQ privat (maks 5 MB), WhatsApp telemetri track. *(Rujukan: test-cases/01-public-website/04-inquiry-and-boq.md, docs/02-architecture-and-design/SDD/05-public-frontend-and-reactive-state.md)*
 - [ ] `feature/web-05-company-profile-pages` : Profil resmi kantor Gd. Wirausaha Rasuna Said, sertifikasi kemitraan resmi, kontak, dan SEO meta. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*
-
-### Fase 4: Subdomain Internal ERP (`app.bimabergawa.com`)
-- [ ] `feature/erp-01-passwordless-otp-auth` : Otentikasi Passwordless Email OTP (CSPRNG 6-digit, 300s TTL, SHA-256 cache, 60s cooldown, 3-attempt throttle), HTTP Security Headers (SAMEORIGIN, nosniff, CSP, noindex). *(Rujukan: test-cases/02-internal-erp-crm/01-inquiries-crm.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
-- [ ] `feature/erp-02-crm-inquiries-kanban` : Filament Inquiry Resource, Kanban SLA Stale Alert (>24h warning, >48h critical), assignment PIC. *(Rujukan: test-cases/02-internal-erp-crm/01-inquiries-crm.md)*
-- [ ] `feature/erp-03-quotation-builder-margin-guard` : Filament Quotation Builder, kalkulasi reactive Live Margin HPP Guard, tombol eskalasi Approval Direktur, proteksi $hidden margin & catatan internal. *(Rujukan: test-cases/02-internal-erp-crm/02-quotation-margin.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
-- [ ] `feature/erp-04-sales-orders-management` : Konversi Quotation ke Sales Order, validasi approval limit Direksi $\ge$ Rp 100 Juta. *(Rujukan: test-cases/02-internal-erp-crm/03-sales-order.md)*
-- [ ] `feature/erp-05-delivery-orders-logistics` : Modul logistik Surat Jalan (DO), validasi pengiriman parsial, dan update status SO ke `completed`. *(Rujukan: test-cases/02-internal-erp-crm/04-delivery-order.md)*
-- [ ] `feature/erp-06-agent-commission-portal` : Panel Agen `/agent`, registrasi agen, inkuiri terisolasi (`AgentTenantScope`), buku besar komisi & form pencairan, enkripsi PII tersembunyi ($hidden). *(Rujukan: test-cases/03-agent-commission-portal/, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
-- [ ] `feature/erp-07-excel-import-dompdf-export` : Import katalog Excel chunking 100 baris (RAM 512 MB), ekspor PDF standar ISO A4 kop Rasuna Said. *(Rujukan: test-cases/04-catalog-and-inventory-management/)*
-- [ ] `feature/erp-08-system-settings-management` : Halaman Filament `ManageSystemSettings` untuk pengaturan tarif PPN aktif dinamis, ambang batas margin approval, nomor hotline WA, dan profil kantor. *(Rujukan: docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
 
 ### Fase 5: Testing, QA Verification, & CI/CD
 - [ ] `test/01-pest-unit-and-feature-tests` : Eksekusi suite Pest (Unit Service, Feature Auth/Form, Architecture Test strict typing). *(Rujukan: test-cases/05-security-and-non-functional/)*

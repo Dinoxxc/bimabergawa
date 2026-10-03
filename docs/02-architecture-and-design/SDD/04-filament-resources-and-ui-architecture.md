@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-04` |
-| **Versi Dokumen** | 1.6.0 |
+| **Versi Dokumen** | 1.10.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -28,35 +28,96 @@
 | `1.5.0` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi `InvoiceResource` (faktur komersial, tempo kredit, upload bukti transfer) & `ActivityLogResource` |
 | `1.5.1` | 08 Sep 2026 | Principal System Architect | Disetujui | Penambahan kalkulasi reaktif `paid_amount` & `remaining_balance` pada tabel dan modal verifikasi pembayaran `InvoiceResource` |
 | `1.6.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penambahan Bab 3 Protokol Keamanan, Hardening, & Kontrol Akses Panel ERP Fase 4 (Passwordless OTP, HTTP Security Headers, Spatie RBAC gates, anti-IDOR scopes, & proteksi serialisasi model $hidden) |
+| `1.7.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Penyelarasan urutan roadmap eksekusi: Panel ERP dan Portal Agen Freelance diprioritaskan menjadi Fase 3 (menggantikan Fase 4) untuk mematangkan master katalog dan alur operasional internal sebelum rilis etalase publik |
+| `1.8.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Adopsi Arsitektur Panel Opsi B: Pemisahan 2 Panel Provider Mandiri di subdomain `app.bimabergawa.com` (`AdminPanelProvider` pada `/admin` & `AgentPanelProvider` pada `/mitra`) dengan root auto-redirection cerdas berbasis peran Spatie RBAC, standar kenyamanan tabel (Comfortable Table Spacing Density), dan isolasi resource mutlak 0% kebocoran HPP |
+| `1.9.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penambahan `SupplierResource` (Manajemen Rekanan Vendor & Distributor Prinsipal), Halaman Eksekutif `ReportsHub` (4 Tab: Penjualan, Margin HPP & Profitabilitas, Umur Piutang AR Aging, Rekapitulasi Komisi Agen), Fitur One-Click WhatsApp Dispatch & Digital QR Code Verification pada PDF transaksi |
+| `1.10.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi UI Multi-Sourcing Vendor Matrix pada `ProductResource` (Repeater Sumber Kulakan) dan `SupplierResource` (RelationManager Produk Tersuplai dengan perbandingan HPP & Lead Time) |
 
 ---
 
-## 1. Arsitektur Komponen Filament Admin (TALL Stack)
+## 1. Arsitektur Komponen Filament ERP & Topologi Dua Panel Mandiri (Option B Architecture)
 
-Panel internal ERP dibangun di atas **Filament Admin v3/v5** yang memanfaatkan reaktivitas **Livewire 3**, **Alpine.js**, dan komponen **Tailwind CSS**.
+Panel operasional internal dan portal kemitraan dibangun di atas **Filament Admin v3** yang memanfaatkan reaktivitas **Livewire 3**, **Alpine.js**, dan **Tailwind CSS**. Sistem mengadopsi arsitektur **Dua Panel Provider Mandiri (Option B)** di bawah subdomain tunggal `app.bimabergawa.com`:
 
 ```
-+─────────────────────────────────────────────────────────────────────────────+
-|                         STRUKTUR RESOURCE FILAMENT ERP                      |
-+─────────────────────────────────────────────────────────────────────────────+
- app/Filament/Resources/
- ├── ProductResource.php                 # Form Multi-Tab, Spek Repeater, HPP
- ├── InquiryResource.php                 # Kanban Pipeline, Telemetry & Stale Alert
- │   └── Pages/
- │       └── KanbanInquiries.php         # Board Drag-and-Drop 6 Kolom
- ├── QuotationResource.php               # Live Margin Calculator, Payment Terms
- │   └── Actions/
- │       ├── ConvertFromInquiryAction.php
- │       ├── ApproveDirectorAction.php
- │       └── SendWhatsAppAction.php
- ├── SalesOrderResource.php              # Locking PO & Status Pengiriman
- ├── DeliveryOrderResource.php           # Partial Shipment & Resi Ekspedisi
- ├── PartnerApplicationResource.php      # Screening Mitra & Approval Generator
- ├── CommissionTierResource.php          # Konfigurasi Mandiri Single/Multi-Tier
- ├── CommissionPayoutResource.php        # Tagihan Komisi & Uploader Slip Bank
- └── Pages/
-     └── ManageSystemSettings.php        # Pengaturan Pajak PPN Dinamis, Margin & Kontak
+                                  [SUBDOMAIN ERP: app.bimabergawa.com]
+                                                   │
+                           ┌───────────────────────┴───────────────────────┐
+                           ▼                                               ▼
+             [RUTE ROOT: GET /]                              [OTENTIKASI: /admin/login]
+        PanelRedirectionController                           Passwordless Email OTP (300s)
+                           │                                               │
+             ┌─────────────┴─────────────┐                                 │
+             ▼                           ▼                                 │
+    [Peran Staf Internal]       [Peran Mitra Agen]                         │
+  (Super Admin/Sales/Fin/Log)    (freelance_agent)                         ▼
+             │                           │                    [Redirect Berdasarkan Role]
+             ▼                           ▼                                 │
+    ┌─────────────────┐         ┌─────────────────┐                        │
+    │  PANEL INTERNAL │         │  PORTAL MITRA   │◄───────────────────────┘
+    │     /admin      │         │     /mitra      │
+    └────────┬────────┘         └────────┬────────┘
+             │                           │
+  [AdminPanelProvider]          [AgentPanelProvider]
+  • Master Katalog & HPP        • Inkuiri Milik Sendiri (Terisolasi)
+  • CRM Kanban & Stale Alert    • Ringkasan Omset & Komisi
+  • Quotation Builder Margin    • Pengajuan Pencairan Dana
+  • Sales Order & Approval      • Unduh Slip Transfer Bank
+  • Surat Jalan Parsial (DO)    • Chat Tim Sales (Tanpa HPP)
+  • Invoicing & Verifikasi Bank • 0% Resource Finansial Terdaftar
+  • Manajemen Vendor & Supplier
+  • Executive Reports Hub
+  • System Settings Hub
 ```
+
+### 1.1 Struktur Direktori Komponen & Panel Provider
+
+```
+app/
+├── Http/
+│   └── Controllers/
+│       └── PanelRedirectionController.php      # Auto-redirect root GET / ke /admin atau /mitra
+├── Providers/
+│   └── Filament/
+│       ├── AdminPanelProvider.php              # Panel Staf Internal (Path: /admin, ID: admin)
+│       └── AgentPanelProvider.php              # Portal Agen Luar (Path: /mitra, ID: agent)
+├── Filament/
+│   ├── Resources/                              # Resource Panel Internal (/admin)
+│   │   ├── ProductResource.php                 # Master Produk, Spek Repeater, Modal HPP
+│   │   ├── CategoryResource.php                # Taksonomi Kategori Multi-Level
+│   │   ├── BrandResource.php                   # Master Brand Global Resmi
+│   │   ├── SupplierResource.php                # Master Rekanan Vendor & Distributor Tingkat 1
+│   │   ├── UnitResource.php                    # Master Satuan Unit Pengukuran (UOM)
+│   │   ├── CustomerResource.php                # Master Perusahaan & Kontak Klien B2B
+│   │   ├── InquiryResource.php                 # CRM Inquiries, Kanban Board, Stale Alert
+│   │   ├── QuotationResource.php               # Quotation Builder, Live Margin Guard
+│   │   ├── SalesOrderResource.php              # Sales Order, Locking PO, Approval Direksi
+│   │   ├── DeliveryOrderResource.php           # Partial Delivery Order, Ekspedisi & Resi
+│   │   ├── InvoiceResource.php                 # Faktur Komersial & Verifikasi Bukti Bank
+│   │   ├── FreelanceSalesResource.php          # Manajemen Profil Mitra Agen & Ledger
+│   │   ├── CommissionPayoutResource.php        # Verifikasi Pencairan Komisi & Upload Slip
+│   │   └── ActivityLogResource.php             # Viewer Jejak Audit Sistem (Super Admin)
+│   ├── Pages/                                  # Halaman Khusus Panel Internal (/admin)
+│   │   ├── Dashboard.php                       # Executive Operational Dashboard
+│   │   ├── ReportsHub.php                      # Executive Business & Financial Reports Hub
+│   │   ├── ManageSystemSettings.php            # Pengaturan PPN Dinamis, Margin, & Hotline
+│   │   ├── ManageWebsiteContent.php            # CMS Konten Beranda & Profil Perusahaan
+│   │   └── ManageLegalPages.php                # CMS Kebijakan Privasi (UU PDP) & Syarat
+│   └── Agent/                                  # Resource Eksklusif Portal Agen (/mitra)
+│       ├── Resources/
+│       │   ├── AgentInquiryResource.php        # Inkuiri Agen (0% HPP, AgentTenantScope)
+│       │   └── AgentPayoutResource.php         # Riwayat Komisi & Form Pengajuan Klaim
+│       └── Pages/
+│           ├── AgentDashboard.php              # Kartu Metrik Performa & Saldo Komisi
+│           └── AgentProfilePage.php            # Profil Rekening Bank & Berkas KTP Privat
+```
+
+### 1.2 Standar Kepadatan Tampilan Tabel (Comfortable Table Spacing Density)
+Seluruh tabel Filament pada kedua panel (`AdminPanelProvider` dan `AgentPanelProvider`) menerapkan konfigurasi kepadatan **Lapang & Ergonomis (*Comfortable Spacing Density*)**:
+- Baris tabel memiliki padding vertikal optimal (`py-3.5` atau `py-4`) untuk mencegah kelelahan mata operator yang meninjau ratusan baris data transaksi harian.
+- Hairline border horizontal monokrom halus (`#e4e4e7` / Dark: `#27272a`) memisahkan antar baris dengan kontras seimbang.
+- Tipografi data menggunakan font **Inter** dengan *line-height* proporsional, serta kode SKU part number dalam font **JetBrains Mono**.
+- Selektor jumlah baris interaktif tersedia di footer tabel: pilihan `[ 10 ]`, `[ 25 ]` (default), `[ 50 ]`, dan `[ 100 ]` baris per halaman.
 
 ---
 
@@ -385,9 +446,158 @@ Modul **Konten Website CMS** melayani kebutuhan *Full Dynamic Site CMS* (PRD Sec
 
 ---
 
-## 3. Protokol Keamanan, Hardening, & Kontrol Akses Panel ERP (Fase 4 Security Suite)
+### 2.13 `SupplierResource` (Manajemen Rekanan Vendor & Distributor Tingkat 1)
 
-Untuk menjamin kerahasiaan data operasional internal, margin keuntungan, modal HPP, dan data pribadi mitra agen di subdomain internal (`app.bimabergawa.com`), arsitektur Fase 4 menerapkan 5 lapis pengamanan terpadu:
+- **Tujuan:** Pengelolaan basis data rekanan rantai pasok industri (*supply chain*), distributor resmi prinsipal tier-1, dan pabrikan pendukung pengadaan komponen B2B oleh peran **Super Admin**, **Sales PIC**, dan **Finance**.
+- **Model Terkait:** `App\Models\Supplier`.
+- **Rute Panel:** `/admin/suppliers`
+
+#### 1. Form Schema (`form`):
+1. **Section Identitas Rekanan Vendor:**
+   - `name`: Nama resmi badan usaha PT/CV vendor (contoh: *PT. Schneider Indonesia Distributor*, *PT. Kitz Valve Trading*).
+   - `code`: Kode unik internal vendor format alfabetik 3-6 karakter (`code`, contoh: `SUP-SCH`, `SUP-ABB`).
+   - `brand_id`: Relasi opsi ke `brands` (menandai jika vendor merupakan distributor utama brand tertentu).
+   - `is_active`: Toggle status aktif kerja sama.
+2. **Section Kontak PIC & Komunikasi:**
+   - `contact_person`: Nama lengkap PIC / Sales Representative rekanan.
+   - `phone`: Nomor telepon / WhatsApp resmi kantor/PIC untuk jalur konfirmasi stok dan negosiasi PO.
+   - `email`: Alamat email penawaran dan pemesanan (*purchasing*).
+3. **Section Alamat & Operasional:**
+   - `address`: Alamat kantor pusat atau gudang asal pengiriman barang rekanan.
+4. **Section Finansial & Komersial (Terbatas untuk Super Admin & Finance):**
+   - `payment_terms`: Ketentuan tempo pembayaran standar vendor (Pilihan: *100% Cash Before Delivery (CBD)*, *Cash on Delivery (COD)*, *Net 14 Hari*, *Net 30 Hari*, *Net 60 Hari*).
+   - `discount_structure`: Deskripsi skema diskon prinsipal (contoh: *Diskon Dasar 35% + Proyek 5%*).
+   - `notes`: Catatan evaluasi keandalan pengiriman (*lead time*) dan riwayat SLA vendor.
+
+#### 2. Konfigurasi Tabel Data (`table`):
+- **Kolom Tabel:**
+  - `name`: Nama vendor (dengan indikator status aktif).
+  - `code`: Badge kode unik (`SUP-XXX`).
+  - `brand.name`: Nama brand prinsipal yang disuplai.
+  - `contact_person`: Nama PIC rekanan.
+  - `phone`: Nomor telepon/WA PIC dengan aksi klik langsung.
+  - `payment_terms`: Badge termin pembayaran.
+  - `products_count`: Jumlah part number / SKU yang terhubung (`primary_supplier_id`).
+  - `is_active`: Status badge `[Active]` / `[Inactive]`.
+- **Filter Tabel:** Filter brand prinsipal, filter status aktif, dan filter termin pembayaran.
+- **Aksi Cepat:**
+  - `Action::make('hubungi_wa')` -> Membuka WhatsApp chat ke nomor PIC rekanan untuk menanyakan ketersediaan stok atau update harga beli modal.
+  - `Restore / Force Delete Action` -> Proteksi *soft deletes* data histori rekanan.
+
+#### 3. Integrasi Multi-Sourcing Vendor Matrix pada `ProductResource`:
+Pada form edit/create `ProductResource` di tab *"Sumber Kulakan & Rekanan Vendor"*, disediakan antarmuka pengadaan multi-vendor yang terhubung ke tabel pivot `product_suppliers`:
+- `supplier_id`: Dropdown pilihan rekanan vendor (terfilter `is_active = true`).
+- `supplier_sku`: Part number / kode katalog resmi versi rekanan vendor tersebut.
+- `purchase_price`: Harga beli modal kulakan dari vendor tersebut (HPP per supplier).
+- `currency`: Mata uang pembelian (IDR, USD, EUR).
+- `lead_time_days`: Estimasi hari pengadaan (0 hari = Ready Stock gudang vendor).
+- `min_order_qty`: Minimum Order Quantity (MOQ) pembelian.
+- `is_primary`: Toggle penanda rekanan prioritas utama (otomatis mensinkronkan `primary_supplier_id`).
+- `notes`: Catatan ketersediaan stok atau ketentuan khusus vendor.
+
+#### 4. RelationManager Produk Tersuplai pada `SupplierResource` (`SuppliedProductsRelationManager`):
+Pada halaman tinjauan rekanan vendor, staf internal dapat melihat seluruh katalog part number / SKU yang dapat disuplai oleh rekanan tersebut lengkap dengan kolom harga modal kulakan, lead time, MOQ, dan status *Primary* vs *Alternatif*.
+
+---
+
+### 2.14 `ReportsHub` (Executive Business & Financial Reports Hub)
+
+- **Tujuan:** Pusat pelaporan eksekutif bisnis, audit laba kotor, evaluasi arus kas piutang, dan performa penjualan terintegrasi untuk pengambilan keputusan strategis Direksi dan Departemen Keuangan.
+- **Model Terkait:** Agregasi dari `Inquiry`, `Quotation`, `SalesOrder`, `Invoice`, `CommissionPayout`, dan `Product`.
+- **Rute Panel:** `/admin/reports`
+- **Hak Akses Spatie RBAC:**
+  - Super Admin & Direksi: Akses penuh 4 Tab.
+  - Finance: Akses Tab 2 (Margin HPP), Tab 3 (AR Aging), dan Tab 4 (Komisi Agen).
+  - Sales PIC: Dibatasi hanya dapat melihat Tab 1 (Performa Penjualan & Konversi).
+  - Logistik & Mitra Agen: Dilarang total (403 Forbidden).
+
+#### Antarmuka 4 Tab Analisis Bisnis:
+
+1. **Tab 1: Laporan Performa Penjualan & Konversi (*Sales & Conversion Performance*):**
+   - **Metrik Utama (Stat Cards):**
+     - Total Inkuiri Masuk (Jumlah prospek baru).
+     - Rasio Konversi Penawaran (*Win-Loss Deal Ratio* %).
+     - Total Nilai Sales Order (Akumulasi omzet bruto terkonfirmasi).
+     - Nilai Rata-rata Penjualan (*Average Order Value / AOV*).
+   - **Visualisasi & Tabel Data:**
+     - Grafik tren omzet bulanan (Realisasi Penjualan vs Periode Lalu).
+     - Breakdown perolehan omzet per Brand Prinsipal (Schneider, ABB, Kitz, Omron, dll.).
+     - Matriks produktivitas per Sales PIC (Jumlah quotation terbit vs deal).
+   - **Filter Kontrol:** Rentang tanggal transaksi, pilihan Sales PIC, Brand, dan tipe inkuiri (Proyek vs Pengadaan Rutin).
+
+2. **Tab 2: Analisis Profitabilitas & Margin HPP (*Profitability & Margin Analysis*):**
+   - **Metrik Utama (Stat Cards):**
+     - Total Pendapatan Bersih (Total DPP Sales Order).
+     - Total Beban Pokok Pendapatan (Akumulasi Realisasi Modal HPP).
+     - Total Laba Kotor (*Gross Profit* dalam Rupiah).
+     - Rata-rata Margin Transaksi (% Margin Terbobot).
+   - **Visualisasi & Tabel Data:**
+     - Distribusi tingkat margin transaksi: Hijau (>= 15%), Kuning (8% - 14.99%), Merah Kritis (< 8%).
+     - Tabel daftar transaksi berskala margin kritis yang mendapatkan persetujuan khusus Direktur.
+     - Analisis marjin kontribusi per kategori produk (Elektrikal vs Mekanikal vs Otomasi).
+   - **Proteksi Kerahasiaan:** Nilai HPP dan margin 100% terlindung dari peran operasional non-manajemen.
+
+3. **Tab 3: Laporan Umur Piutang Komersial (*Accounts Receivable / AR Aging Report*):**
+   - **Metrik Utama (Stat Cards):**
+     - Total Piutang Belum Tertagih (*Total Outstanding AR*).
+     - Piutang Lancar (*Current / Belum Jatuh Tempo*).
+     - Piutang Jatuh Tempo 1 - 30 Hari (*Overdue Tier 1*).
+     - Piutang Jatuh Tempo 31 - 60 Hari (*Overdue Tier 2*).
+     - Piutang Kritis / Macet > 60 Hari (*Critical Overdue*).
+   - **Tabel Rekap Penagihan Faktur:**
+     - Menampilkan: Nama Perusahaan Klien, Nomor Invoice, Tanggal Jatuh Tempo, Nilai Faktur, Terbayar, Sisa Tagihan, dan Kategori Aging.
+     - Aksi Cepat: Tombol "Kirim Pengingat WA" (menghasilkan draft pesan penagihan formal ke bagian keuangan klien).
+
+4. **Tab 4: Rekapitulasi Komisi Agen Freelance (*Agent Commission Summary*):**
+   - **Metrik Utama (Stat Cards):**
+     - Total Akumulasi Komisi Terbit.
+     - Total Komisi Telah Dicairkan (*Paid*).
+     - Saldo Komisi Tertunda Siap Cair (*Payable Balance*).
+   - **Tabel Peringkat & Performa Mitra:**
+     - Tabel peringkat agen freelance berdasar perolehan omzet dan komisi.
+     - Status verifikasi berkas transfer perbankan oleh Finance.
+
+#### Ekspor Berkas Formal:
+- Tersedia tombol "Ekspor Spreadsheet (Excel/CSV)" dengan filter aktif.
+- Tersedia tombol "Cetak Ringkasan Eksekutif PDF" standar ISO A4 bebas emoji dengan kop resmi kantor Rasuna Said untuk rapat manajemen bulanan.
+
+---
+
+### 2.15 One-Click WhatsApp Dispatch & Digital QR Code Verification pada Dokumen Transaksi
+
+Untuk mempercepat siklus transaksi B2B dan mencegah risiko pemalsuan dokumen fisik di lapangan, sistem mengintegrasikan telemetri WhatsApp instan dan verifikasi QR Code kriptografis:
+
+#### 1. One-Click WhatsApp Dispatch:
+- Disematkan sebagai *header action* pada halaman detail transaksi:
+  - `QuotationResource`: Aksi *"Kirim Penawaran via WA"* -> Menghasilkan tautan resmi penawaran harga dengan validitas 14 hari.
+  - `SalesOrderResource`: Aksi *"Kirim Konfirmasi SO via WA"* -> Menghubungi procurement klien mengonfirmasi nomor PO yang diterima.
+  - `DeliveryOrderResource`: Aksi *"Kirim Resi Logistik via WA"* -> Mengirimkan detail kurir kargo, nomor resi, dan link lacak ke PIC penerima proyek.
+  - `InvoiceResource`: Aksi *"Kirim Pengingat Tagihan via WA"* -> Mengirimkan invoice resmi dan instruksi rekening korporat PBB.
+- **Mekanisme Teknis:**
+  - Membuka URL terenkode: `https://api.whatsapp.com/send?phone={phone_clean}&text={encoded_message}`.
+  - Teks pesan disusun otomatis dari template profesional `system_settings` (menyebutkan nomor referensi, nama PIC, rincian barang, dan tautan unduh dokumen).
+  - Setiap kali tombol diklik, sistem secara otomatis mencatat riwayat telemetri ke `ActivityLog` dengan keterangan *"WhatsApp dispatch executed"*.
+
+#### 2. Digital QR Code Verification pada Dokumen PDF:
+- Seluruh dokumen transaksi formal yang diterbitkan via DomPDF (`Quotation`, `SalesOrder`, dan `DeliveryOrder`) memuat QR Code otentisitas digital di pojok kanan bawah dokumen (di samping lembar tanda tangan / cap basah).
+- **Mekanisme Pembangkitan:**
+  - Dokumen memuat URL verifikasi unik bertanda tangan kriptografis: `https://app.bimabergawa.com/verify-doc/{type}/{verification_hash}`.
+  - Hash verifikasi dibangkitkan dari kombinasi: `hash('sha256', $documentNumber . $createdAt . config('app.key'))`.
+- **Halaman Hasil Pemindaian Publik (`/verify-doc/...`):**
+  - Halaman ringan berbasis Blade + Tailwind CSS yang dapat diakses oleh petugas pemeriksa lapangan, satpam proyek gudang, atau tim audit klien tanpa perlu login ERP.
+  - Menampilkan segel status otentikasi:
+    - Status Dokumen: `[ASLI & TERVERIFIKASI RESMI]`
+    - Entitas Penerbit: `PT. Panca Bima Bergawa (Gd. Wirausaha Rasuna Said)`
+    - Nomor Dokumen: Format korporat resmi (`PBB/...`)
+    - Tanggal Penerbitan & Otorisasi: Waktu tepat dokumen disetujui Direksi.
+    - Nama Perusahaan Tujuan: Memastikan dokumen tidak disalahgunakan untuk entitas lain.
+    - Status Surat Jalan: Khusus Surat Jalan, menampilkan kuantiti fisik barang yang disahkan keluar dari gudang.
+
+---
+
+## 3. Protokol Keamanan, Hardening, & Kontrol Akses Panel ERP (Fase 3 Security Suite)
+
+Untuk menjamin kerahasiaan data operasional internal, margin keuntungan, modal HPP, dan data pribadi mitra agen di subdomain internal (`app.bimabergawa.com`), arsitektur Fase 3 menerapkan 5 lapis pengamanan terpadu:
 
 ### 3.1 Protokol Otentikasi Passwordless Email OTP
 Panel ERP tidak menggunakan password statis yang rentan terhadap kebocoran (*credential stuffing*). Seluruh staf internal dan mitra agen freelance wajib melakukan otentikasi melalui *Passwordless Email OTP*:

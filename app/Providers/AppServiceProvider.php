@@ -25,10 +25,12 @@ use App\Models\Notification;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductSpecification;
+use App\Models\ProductSupplier;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
 use App\Models\QuotationPaymentTerm;
 use App\Models\SalesOrder;
+use App\Models\Supplier;
 use App\Models\SystemSetting;
 use App\Models\UnitOfMeasure;
 use App\Models\User;
@@ -74,10 +76,12 @@ class AppServiceProvider extends ServiceProvider
             'product' => Product::class,
             'product_image' => ProductImage::class,
             'product_specification' => ProductSpecification::class,
+            'product_supplier' => ProductSupplier::class,
             'quotation' => Quotation::class,
             'quotation_item' => QuotationItem::class,
             'quotation_payment_term' => QuotationPaymentTerm::class,
             'sales_order' => SalesOrder::class,
+            'supplier' => Supplier::class,
             'system_setting' => SystemSetting::class,
             'unit_of_measure' => UnitOfMeasure::class,
             'user' => User::class,

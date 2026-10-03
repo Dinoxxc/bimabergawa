@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             SystemSettingSeeder::class,
             ArticleCategorySeeder::class,
             ProductAndSkuSampleSeeder::class,
+            SupplierSeeder::class,
         ]);
     }
 }

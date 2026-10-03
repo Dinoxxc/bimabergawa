@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-IDX` |
-| **Versi Dokumen** | 1.12.0 |
+| **Versi Dokumen** | 1.13.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
@@ -27,6 +27,7 @@
 | `1.10.0` | 23 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario TC-ERP-DO-017 (Barang Cacat & Replacement DO) dan TC-ERP-DO-018 (Kurang Kirim / Short Shipment) pada DOC-PBB-TC-ERP-05, total skenario meningkat menjadi 414+ skenario |
 | `1.11.0` | 01 Okt 2026 | Principal QA Architect | Disetujui | Penambahan 3 skenario DOC-PBB-TC-SEC-04 (TC-SEC-PDP-017 s.d. TC-SEC-PDP-019) untuk proteksi serialisasi model $hidden (HPP, margin, catatan internal, & PII agen), total skenario meningkat menjadi 417+ skenario |
 | `1.12.0` | 02 Okt 2026 | Principal QA Architect | Disetujui | Penyelarasan DOC-PBB-TC-AGN-02 v1.5.0: verifikasi otomatis Passed pada TC-AGN-INQ-002, 006, 007, 012, dan 018 via automated test suite |
+| `1.13.0` | 03 Okt 2026 | Principal QA Architect | Disetujui | Penambahan 4 skenario DOC-PBB-TC-CAT-01 (TC-CAT-SUP-001 s.d. 004 Rekanan Vendor & Primary Supplier) dan 4 skenario DOC-PBB-TC-ERP-06 (TC-ERP-REP-001 s.d. 004 Reports Hub, AR Aging, & QR Verification), total skenario meningkat menjadi 425+ skenario |
 
 ---
 
@@ -103,11 +104,11 @@ test-cases/
 | `DOC-PBB-TC-ERP-03` | Quotation & Live Margin HPP | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-03` | `App\Services\QuotationCalculationService`, `App\Services\PdfExportService` |
 | `DOC-PBB-TC-ERP-04` | Sales Order & Approval Limit | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-03` | `App\Filament\Resources\SalesOrderResource`, `App\Services\DocumentNumberService` |
 | `DOC-PBB-TC-ERP-05` | Delivery Order & Partial DO | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-03` | `App\Filament\Resources\DeliveryOrderResource` |
-| `DOC-PBB-TC-ERP-06` | Faktur, Cicilan & Audit Trail | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-01`, `DOC-PBB-SDD-02` | `App\Models\Invoice`, `App\Filament\Resources\InvoiceResource`, `App\Models\ActivityLog` |
+| `DOC-PBB-TC-ERP-06` | Faktur, Cicilan & Audit Trail | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-01`, `DOC-PBB-SDD-02` | `App\Models\Invoice`, `App\Filament\Resources\InvoiceResource`, `App\Models\ActivityLog`, `App\Filament\Pages\ReportsHub`, `App\Http\Controllers\DocumentVerificationController` |
 | `DOC-PBB-TC-AGN-01` | Registrasi & Profil Agen | `DOC-PBB-PRD-01`, `DOC-PBB-SRS-04`, `DOC-PBB-SEC-04` | `App\Models\AgentProfile`, `App\Services\SecureFileUploadService` |
 | `DOC-PBB-TC-AGN-02` | Inkuiri, Chat Agen & Isolasi | `DOC-PBB-SRS-04`, `DOC-PBB-SAD-03`, `DOC-PBB-SDD-01`, `DOC-PBB-SDD-04` | `App\Models\Scopes\AgentTenantScope`, `App\Filament\Agent\Resources\AgentInquiryResource`, `App\Livewire\InternalCommentsTimeline` |
 | `DOC-PBB-TC-AGN-03` | Kalkulasi & Pencairan Komisi | `DOC-PBB-PRD-03`, `DOC-PBB-SRS-04`, `DOC-PBB-SDD-03` | `App\Services\CommissionPayoutService`, `App\Models\CommissionLedger` |
-| `DOC-PBB-TC-CAT-01` | Taksonomi Brand & Kategori | `DOC-PBB-SRS-02`, `DOC-PBB-SDD-04`, `DOC-PBB-MIG-02` | `App\Filament\Resources\BrandResource`, `App\Filament\Resources\CategoryResource` |
+| `DOC-PBB-TC-CAT-01` | Taksonomi Brand & Kategori | `DOC-PBB-SRS-02`, `DOC-PBB-SDD-04`, `DOC-PBB-MIG-02` | `App\Filament\Resources\BrandResource`, `App\Filament\Resources\CategoryResource`, `App\Filament\Resources\SupplierResource`, `App\Models\Supplier` |
 | `DOC-PBB-TC-CAT-02` | Master Produk & Pipeline WebP | `DOC-PBB-SRS-02`, `DOC-PBB-SDD-03`, `DOC-PBB-SEC-03` | `App\Services\ProductImageProcessingService`, `App\Filament\Resources\ProductResource` |
 | `DOC-PBB-TC-CAT-03` | Engine Import Massal Excel | `DOC-PBB-SRS-02`, `DOC-PBB-SDD-03`, `DOC-PBB-MIG-03` | `App\Imports\ProductsBulkImport`, `App\Services\BulkSkuNormalizationService` |
 | `DOC-PBB-TC-SEC-01` | Isolasi Subdomain & Anti-Bot | `DOC-PBB-SAD-01`, `DOC-PBB-API-03`, `DOC-PBB-SEC-02` | `App\Http\Middleware\SubdomainAccessControl` |

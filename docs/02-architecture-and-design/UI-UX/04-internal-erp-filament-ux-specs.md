@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-UIUX-04` |
-| **Versi Dokumen** | 1.5.1 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.7.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -26,18 +26,27 @@
 | `1.4.4` | 07 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi navigasi sidebar grup `KONTEN & WEBSITE CMS` (Artikel, Konten Web, & Legalitas), wireframe visual CMS, dan cache invalidation |
 | `1.5.0` | 08 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Spesifikasi UX Manajemen Faktur Penagihan Komersial (`InvoiceResource`), verifikasi bukti bayar transfer bank, dan widget riwayat jejak audit |
 | `1.5.1` | 08 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Penambahan kolom rincian nominal terbayar & sisa piutang pada wireframe daftar faktur serta formulir verifikasi cicilan parsial |
+| `1.6.0` | 02 Okt 2026 | Principal UI/UX & Lead Architect | Disetujui | Adopsi Arsitektur Panel Opsi B: Pembagian dua antarmuka mandiri di subdomain `app.bimabergawa.com` — Panel Staf Internal (`/admin`) dan Portal Agen Freelance (`/mitra`) dengan auto-redirect di rute root `GET /` serta standardisasi kepadatan tabel lapang (Comfortable Spacing Density) untuk kenyamanan visual operasional |
+| `1.7.0` | 03 Okt 2026 | Principal UI/UX & Lead Architect | Disetujui | Penambahan wireframe dan spesifikasi UX untuk Executive Reports Hub 4-Tab (`/admin/reports`), Manajemen Rekanan Vendor (`/admin/suppliers`), serta antarmuka One-Click WhatsApp Dispatch dan Segel Verifikasi QR Code Dokumen Transaksi |
 
 ---
 
-## 1. Arsitektur Navigasi & Struktur Menu ERP Berbasis Peran
+## 1. Arsitektur Navigasi & Struktur Menu ERP Berbasis Dua Panel Mandiri (Option B)
 
-Panel ERP diakses melalui `app.domain.com` dengan otentikasi aman (*Passwordless Email OTP*) dan pembagian navigasi berbasis peran (RBAC):
+Aplikasi operasional diakses melalui subdomain `app.bimabergawa.com` dengan otentikasi aman (*Passwordless Email OTP*). Sistem menerapkan **Arsitektur Dua Panel Mandiri (Option B)** untuk memisahkan secara fisik dan visual antara kegiatan operasional internal kantor dan portal kemitraan luar:
 
+1. **Rute Root Cerdas (`app.bimabergawa.com/`):**
+   - Menjalankan `PanelRedirectionController` yang memeriksa status sesi dan peran (*role*) pengguna.
+   - Jika pengguna adalah staf internal (`super_admin`, `sales_pic`, `finance`, `logistics`), sistem otomatis mengarahkan ke **Panel Staf Internal (`/admin`)**.
+   - Jika pengguna adalah mitra agen freelance (`freelance_agent`), sistem otomatis mengarahkan ke **Portal Kemitraan (`/mitra`)**.
+   - Jika belum login (*guest*), diarahkan ke formulir masuk Passwordless Email OTP bersama.
+
+2. **Tata Letak Panel Staf Internal (`/admin`):**
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ [LOGO PBB ERP]  PT. PANCA BIMA BERGAWA   [Cari: Ctrl+K]  [Theme: Light/Dark]  [Notif: 2]  [Akun: Sales]│
 ├───────────────────────┬────────────────────────────────────────────────────────────────────────────────┤
-│ MENU UTAMA:           │ KONTEN UTAMA MODUL ERP                                                         │
+│ MENU UTAMA:           │ KONTEN UTAMA MODUL ERP (COMFORTABLE TABLE SPACING)                             │
 │                       │                                                                                │
 │ [Icon: Dashboard]     │                                                                                │
 │ [Icon: Kanban]        │                                                                                │
@@ -46,10 +55,12 @@ Panel ERP diakses melalui `app.domain.com` dengan otentikasi aman (*Passwordless
 │ [Icon: SalesOrders]   │                                                                                │
 │ [Icon: DeliveryOrder] │                                                                                │
 │ [Icon: Invoices]      │                                                                                │
+│ [Icon: ReportsHub]    │                                                                                │
 │                       │                                                                                │
 │ MANAJEMEN MASTER:     │                                                                                │
 │ [Icon: Catalog]       │                                                                                │
 │ [Icon: Brands]        │                                                                                │
+│ [Icon: Suppliers]     │                                                                                │
 │ [Icon: Customers]     │                                                                                │
 │ [Icon: FreelanceAgent]│                                                                                │
 │ [Icon: SystemSettings]│                                                                                │
@@ -264,20 +275,27 @@ Menu **Pengaturan Sistem** (`/admin/system-settings`) merupakan pusat kendali op
 
 ---
 
-## 8. Standar Interaktivitas Tampilan Multimoda & Pagination (Multi-View & Pagination)
+## 8. Standar Interaktivitas Tampilan Multimoda, Kepadatan Tabel, & Pagination
 
 Untuk mengoptimalkan efisiensi kerja staf internal, penyajian data di dalam panel ERP tidak dibatasi pada satu format kaku, melainkan menggunakan tiga moda tampilan yang disesuaikan dengan karakteristik informasi:
 
-### 8.1 Standar Pagination Tabel Interaktif Mandiri
+### 8.1 Standar Kepadatan Tampilan Tabel Lapang (Comfortable Spacing Density)
+Sesuai arahan ergonomis operasional B2B, seluruh tabel data transaksi (`Quotation`, `SalesOrder`, `Invoice`, `DeliveryOrder`, `Inquiry`, dan `Product`) menerapkan konfigurasi **Lapang (*Comfortable Spacing Density*)**:
+- **Padding Vertikal Sel:** Menggunakan bantalan vertikal longgar (`py-3.5` atau `py-4` pada baris `td` dan `th`), memberikan ruang visual bernapas yang lega (*breathing room*).
+- **Kenyamanan Membaca Jangka Panjang:** Mencegah ketegangan mata operator dan manajer yang meneliti puluhan hingga ratusan baris data SKU teknis dan nominal angka sepanjang hari kerja.
+- **Pemisah Garis Halus (Hairline Dividers):** Garis batas monokrom tipis (`#e4e4e7` / Dark Mode: `#27272a`) dengan efek *hover row highlight* lembut (`hover:bg-zinc-50` / Dark: `hover:bg-zinc-800/50`) sehingga operator tidak salah membaca baris (*prevent line jumping*).
+- **Tipografi Data:** Menggunakan font **Inter** untuk teks umum dan nominal rupiah, serta **JetBrains Mono** tebal untuk kode part number/SKU.
+
+### 8.2 Standar Pagination Tabel Interaktif Mandiri
 - **Kontrol Lokal Per Halaman:** Kontrol pagination melekat langsung pada bagian bawah setiap tabel data secara interaktif, bukan diatur terpusat di pengaturan sistem.
 - **Pilihan Jumlah Baris:** Pengguna dapat memilih jumlah baris per halaman secara fleksibel sesuai ukuran monitor kerja:
   - `[ 10 Baris ]` : Ideal untuk layar laptop portabel 13-14 inci.
-  - `[ 25 Baris ]` : Standar default ergonomis kerja harian.
+  - `[ 25 Baris ]` : Standar default ergonomis kerja harian (Default Comfortable Spacing).
   - `[ 50 Baris ]` : Rekomendasi untuk audit cepat transaksi massal.
   - `[ 100 Baris ]` : Pilihan maksimal untuk rekonsiliasi data bulanan.
 - **Efisiensi Kueri SQL:** Pagination wajib menggunakan kueri basis data `LIMIT` dan `OFFSET` yang terindeks (dilarang memuat seluruh koleksi ke memori aplikasi).
 
-### 8.2 Tiga Moda Tampilan Antarmuka ERP (Multi-View Standards)
+### 8.3 Tiga Moda Tampilan Antarmuka ERP (Multi-View Standards)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -599,4 +617,150 @@ Modul **Invoices** menyediakan antarmuka bagi Finance dan Super Admin untuk mene
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                   [ Batal ]  [ Verifikasi & Tandai Lunas (Paid) ]      │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 13. Spesifikasi UX & Wireframe Executive Reports Hub (`/admin/reports`)
+
+Halaman pelaporan komprehensif bagi jajaran Direksi, Manajer Penjualan, dan Tim Keuangan (*Finance*) yang menyajikan visualisasi data transaksi, performa laba kotor, dan kesehatan arus kas secara terintegrasi:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ PUSAT LAPORAN BISNIS & KEUANGAN (EXECUTIVE REPORTS HUB)                     [ Ekspor Excel ] [ Cetak ] │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ TABS: [1. Performa Penjualan]  [2. Analisis Margin HPP]  [3. Umur Piutang AR]  [4. Komisi Agen]        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Periode: [ Bulan Ini: Sep 2026 v ]  Sales PIC: [ Semua Sales v ]  Brand: [ Semua Brand Prinsipal v ]   │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ KARTU METRIK EKSEKUTIF (TAB 1: PERFORMA PENJUALAN):                                                    │
+│ ┌──────────────────────┐ ┌──────────────────────┐ ┌──────────────────────┐ ┌─────────────────────────┐ │
+│ │ TOTAL PROSPEK MASUK  │ │ SALES ORDER DEAL     │ │ TOTAL OMZET BRUTO    │ │ RASIO KONVERSI (WIN)    │ │
+│ │ 48 Inkuiri           │ │ 24 Dokumen           │ │ Rp 1.485.000.000     │ │ 50.0%                   │ │
+│ │ [Trend: +12% MoM]    │ │ [Rata-rata: 61.8 Jt] │ │ [Target: 1.2 M - 123%]│ │ [SLA Lead: 1.2 Jam]     │ │
+│ └──────────────────────┘ └──────────────────────┘ └──────────────────────┘ └─────────────────────────┘ │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ BREAKDOWN PENJUALAN PER BRAND PRINSIPAL:                                                               │
+│ BRAND PRINSIPAL      | TOTAL TRANSAKSI | KONTRIBUSI OMZET      | PERSENTASE | PERFORMA VS BULAN LALU   │
+│ ─────────────────────┼─────────────────┼───────────────────────┼────────────┼──────────────────────────┤
+│ Schneider Electric   │ 14 Transaksi    │ Rp 780.000.000        │ 52.5%      │ [Tumbuh +18.4%]          │
+│ ABB Low Voltage      │ 5 Transaksi     │ Rp 320.000.000        │ 21.5%      │ [Stabil +2.1%]           │
+│ Kitz Industrial Valve│ 3 Transaksi     │ Rp 245.000.000        │ 16.5%      │ [Tumbuh +8.0%]           │
+│ Omron Automation     │ 2 Transaksi     │ Rp 140.000.000        │ 9.5%       │ [Turun -4.5%]            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ TAB 3: UMUR PIUTANG KOMERSIAL (ACCOUNTS RECEIVABLE AGING):                                             │
+│ ┌──────────────────────┐ ┌──────────────────────┐ ┌──────────────────────┐ ┌─────────────────────────┐ │
+│ │ TOTAL PIUTANG AKTIF  │ │ PIUTANG LANCAR (<30) │ │ JATUH TEMPO 31-60 HR │ │ KRITIS / MACET (>60 HR) │ │
+│ │ Rp 420.500.000       │ │ Rp 280.000.000       │ │ Rp 105.500.000       │ │ Rp 35.000.000           │ │
+│ └──────────────────────┘ └──────────────────────┘ └──────────────────────┘ └─────────────────────────┘ │
+│ REKAP PENAGIHAN JATUH TEMPO:                                                                           │
+│ KLIEN / PERUSAHAAN   | NO. FAKTUR      | JATUH TEMPO | SISA TAGIHAN  | STATUS AGING  | AKSI CEPAT      │
+│ ─────────────────────┼─────────────────┼─────────────┼───────────────┼───────────────┼─────────────────┤
+│ PT. Mitra Bangun     │ PBB/INV/2026/08/0022 │ 15 Sep 2026 │ Rp 35.000.000 │ [!] Kritis    │ [ WA Reminder ] │
+│ PT. Indah Karya      │ PBB/INV/2026/09/0002 │ 28 Sep 2026 │ Rp 52.500.000 │ [Waspada: H-2]│ [ WA Reminder ] │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 14. Spesifikasi UX & Wireframe Rekanan Vendor & Supplier (`/admin/suppliers`)
+
+Modul **Suppliers** memfasilitasi tim operasional dalam mengelola database rekanan prinsipal, distributor resmi, dan vendor rantai pasok pendukung:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ DAFTAR REKANAN VENDOR & DISTRIBUTOR (SUPPLIERS)                                [ + Tambah Rekanan ]    │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [ Filter: Brand Prinsipal v ]  [ Filter: Termin Pembayaran v ]  [ Filter: Status v ] [ Cari Vendor... ]│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ NAMA REKANAN VENDOR      | KODE    | BRAND DISTRIBUSI | KONTAK PIC     | TELEPON/WA   | TEMPO  | STATUS│
+├──────────────────────────┼─────────┼──────────────────┼────────────────┼──────────────┼────────┼───────┤
+│ PT. Schneider Prima Dist │ SUP-SCH │ Schneider        │ Hendra Wijaya  │ 08119876543  │ TOP 30 │[Aktif]│
+│ PT. Kitz Valve Indonesia │ SUP-KTZ │ Kitz             │ Bambang Priyono│ 08128889990  │ CBD    │[Aktif]│
+│ PT. Mega Daya Otomasi    │ SUP-OMR │ Omron            │ Siska Maharani │ 08137776655  │ TOP 14 │[Aktif]│
+│ CV. Aneka Baut & Sealing │ SUP-MRO │ Non-Brand (MRO)  │ Dedi Kurniawan │ 08561234567  │ COD    │[Aktif]│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Menampilkan 1-4 dari 4 Rekanan Vendor                                             Halaman [ 1 ] dari 1 │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 14.1 Wireframe Modal Tambah / Edit Rekanan Vendor
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ DATA REKANAN VENDOR / DISTRIBUTOR BARU                                                                 │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Nama Vendor / Badan Usaha : [ PT. Schneider Prima Distributor Indonesia                              ] │
+│ Kode Unik Vendor          : [ SUP-SCH           ]  Brand Terkait : [ Schneider Electric v            ] │
+│ Nama Kontak PIC           : [ Hendra Wijaya                                                          ] │
+│ Nomor Telepon / WhatsApp  : [ 08119876543                                                            ] │
+│ Alamat Email Purchasing   : [ sales.order@schneider-dist.co.id                                       ] │
+│ Alamat Gudang / Kantor    : [ Kawasan Industri MM2100 Blok C-4, Cikarang Barat, Bekasi               ] │
+│ Ketentuan Pembayaran      : [ Net 30 Hari (TOP 30) v ]  Status Kemitraan: [ (x) Aktif   ( ) Non-Aktif] │
+│ Struktur Diskon Prinsipal : [ Diskon Dasar 35% + Diskon Tambahan Proyek 5% (Net-Net)                  ] │
+│ Catatan Evaluasi Vendor   : [ Distributor resmi Tier-1. Pengiriman rata-rata 1-2 hari kerja dari PO. ] │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                        [ Batal ]  [ Simpan Data Vendor]│
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 15. Spesifikasi UX One-Click WhatsApp Dispatch & Segel Verifikasi QR Code Dokumen
+
+### 15.1 UX One-Click WhatsApp Dispatch pada Halaman Transaksi
+- **Lokasi:** Terletak pada *Header Actions* di pojok kanan atas tampilan `ViewQuotation`, `ViewSalesOrder`, `ViewDeliveryOrder`, dan `ViewInvoice`.
+- **Interaksi Pengguna:**
+  1. Operator mengklik tombol formal `[ Hubungi / Kirim WhatsApp ]`.
+  2. Sistem membuka tab baru peramban mengarah ke WhatsApp Web / WhatsApp Desktop klien.
+  3. Teks pesan telah terisi secara rapi (*pre-filled*) lengkap dengan nama PIC, nomor dokumen, ringkasan nominal, dan tautan dokumen aman.
+  4. Banner notifikasi hijau muncul di antarmuka ERP: `[Log Dicatat] Tautan WhatsApp berhasil di-generate dan aktivitas dicatat ke audit log`.
+
+### 15.2 Tata Letak Segel QR Code Otentisitas pada Dokumen PDF ISO A4
+Setiap dokumen cetak resmi (Quotation, Sales Order, Surat Jalan) menyertakan blok verifikasi digital di pojok kanan bawah:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ SYARAT & KETENTUAN PENGIRIMAN:                                HORMAT KAMI,                             │
+│ 1. Barang yang diterima wajib diperiksa kondisi fisiknya.     PT. PANCA BIMA BERGAWA                   │
+│ 2. Surat jalan ini sah apabila disertai tanda tangan & stempel.                                        │
+│                                                               ┌──────────┐                             │
+│ DITERIMA OLEH (PENGURUS PROYEK):                              │ [  QR  ] │ [ TANDA TANGAN DIGITAL ]    │
+│                                                               │   CODE   │ Nama : Ir. Bambang Soedirjo │
+│                                                               └──────────┘ Jabatan: Direktur Utama     │
+│ ______________________________                                PINDAI QR CODE UNTUK VERIFIKASI RESMI    │
+│ Tanda Tangan & Cap Perusahaan                                 https://app.bimabergawa.com/verify-doc/..│
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 15.3 Wireframe Tampilan Halaman Verifikasi Dokumen Publik Mobile (`/verify-doc/...`)
+Halaman responsif diakses saat inspektur gudang, satpam proyek, atau auditor klien memindai QR Code:
+
+```
+┌───────────────────────────────────────────────────────────────────┐
+│                     PT. PANCA BIMA BERGAWA                        │
+│            SISTEM VERIFIKASI DOKUMEN DIGITAL RESMI                │
+├───────────────────────────────────────────────────────────────────┤
+│ STATUS DOKUMEN:                                                   │
+│ ┌───────────────────────────────────────────────────────────────┐ │
+│ │ [STATUS: DOKUMEN ASLI & TERDAFTAR RESMI PADA DATABASE PBB]    │ │
+│ └───────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+│ RINCIAN OTENTISITAS DOKUMEN:                                      │
+│ • Jenis Dokumen      : Surat Jalan Logistik (Delivery Order)      │
+│ • Nomor Dokumen      : PBB/DOR/2026/09/0001/01                    │
+│ • Tanggal Penerbitan : 18 September 2026, Pukul 10:15 WIB         │
+│ • Nomor Sales Order  : PBB/SOR/2026/09/0001 (PO: 450012891)       │
+│ • Perusahaan Penerima: PT. Unilever Indonesia Tbk (Cikarang Plant)│
+│ • Petugas Otorisasi  : Logistik Pusat (Gudang Wirausaha Jakarta)  │
+│ • Ekspedisi & Resi   : Dakota Cargo - Resi: DKT-88192019          │
+│ • Status Muatan      : 2 Koli (55.00 Kg) - Parsial Batch 01       │
+│                                                                   │
+│ CATATAN KEAMANAN:                                                 │
+│ Dokumen ini diterbitkan secara sah oleh sistem ERP internal       │
+│ PT. Panca Bima Bergawa. Jika data fisik berbeda dengan rincian ini│
+│ segera hubungi Hotline Keamanan Operasional: 021-520-xxxx.        │
+├───────────────────────────────────────────────────────────────────┤
+│ PT. Panca Bima Bergawa | Gedung Wirausaha Rasuna Said Kav. C5 Jkt │
+└───────────────────────────────────────────────────────────────────┘
 ```

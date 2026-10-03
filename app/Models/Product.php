@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -19,6 +20,7 @@ class Product extends Model
     protected $fillable = [
         'brand_id',
         'category_id',
+        'primary_supplier_id',
         'successor_product_id',
         'name',
         'slug',
@@ -65,6 +67,27 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function primarySupplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'primary_supplier_id')->withTrashed();
+    }
+
+    public function suppliers(): BelongsToMany
+    {
+        return $this->belongsToMany(Supplier::class, 'product_suppliers')
+            ->using(ProductSupplier::class)
+            ->withPivot([
+                'supplier_sku',
+                'purchase_price',
+                'currency',
+                'lead_time_days',
+                'min_order_qty',
+                'is_primary',
+                'notes',
+            ])
+            ->withTimestamps();
     }
 
     public function successor(): BelongsTo

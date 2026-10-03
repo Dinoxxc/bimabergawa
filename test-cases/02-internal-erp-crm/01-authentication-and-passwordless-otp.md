@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-ERP-01` |
-| **Versi Dokumen** | 1.3.0 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.4.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Security Automation Engineer | Ditinjau | Penambahan uji token Passwordless OTP & mitigasi brute force |
 | `1.2.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Penyelarasan matriks hak akses 5 peran Spatie RBAC |
 | `1.3.0` | 05 Sep 2026 | Principal QA Architect | Disetujui | Ekspansi 16 skenario uji mendalam & standardisasi status Not Executed |
+| `1.4.0` | 02 Okt 2026 | Principal QA Architect | Disetujui | Penyelarasan pengujian Arsitektur Panel Opsi B: verifikasi auto-redirect rute root GET / ke /admin (staf internal) atau /mitra (mitra agen freelance) via PanelRedirectionController |
 
 ---
 
@@ -28,14 +29,17 @@
   - `DOC-PBB-PRD-03` (Spesifikasi Otentikasi Tanpa Sandi & Portal Internal ERP)
   - `DOC-PBB-SRS-04` (Kebutuhan Fungsional FR-ERP-01 s.d. FR-ERP-03)
   - `DOC-PBB-SDD-03` (Arsitektur Service Otentikasi OTP & Spatie Permissions)
+  - `DOC-PBB-SDD-04` (Arsitektur Dua Panel Mandiri /admin & /mitra)
+  - `DOC-PBB-API-03` (Rute Subdomain ERP & Topologi Panel)
   - `DOC-PBB-SEC-01` (Kebijakan Keamanan Sesi, HTTPS Cookie, & RBAC Matrix)
 - **Modul Sistem:** Modul Otentikasi, Manajemen Sesi, & Otorisasi RBAC ERP
 - **Target Kelas / Service / Controller:**
   - `App\Services\OtpAuthenticationService`
+  - `App\Http\Controllers\PanelRedirectionController`
   - `App\Filament\Pages\Auth\PasswordlessLogin`
   - `App\Http\Middleware\Authenticate`
   - `App\Jobs\SendOtpEmailJob`
-- **Target Method:** `requestOtp()`, `verifyOtp()`, `burnOtpToken()`, `throttleCheck()`, `regenerateSession()`
+- **Target Method:** `requestOtp()`, `verifyOtp()`, `burnOtpToken()`, `throttleCheck()`, `regenerateSession()`, `index()`
 
 ---
 
@@ -59,6 +63,7 @@
 | **`TC-ERP-AUTH-014`** | Keamanan | Pencegahan Eksploitasi Session Fixation | Sesi anonymous sebelum login | Tangkap Session ID sebelum dan sesudah verifikasi OTP | Session ID berubah total setelah proses otentikasi berhasil (`session()->regenerate()`), session lama tidak berlaku lagi. | Not Executed |
 | **`TC-ERP-AUTH-015`** | Keamanan | Penegakan Atribut Keamanan Cookie Sesi HTTPS | Sesi login aktif | Inspeksi cookie `pbb_erp_session` di browser | Memuat atribut: `HttpOnly = true`, `Secure = true`, `SameSite = Lax`, `Path = /`, Domain = `app.bimabergawa.com`. | Not Executed |
 | **`TC-ERP-AUTH-016`** | Batas Nilai | Otomasi Kunci Sesi Pengguna Tidak Aktif (*Inactivity Timeout 120 Menit*) | Pengguna login dan mendiamkan tab browser | Tidak ada aktivitas mouse/keyboard selama 121 menit | Pada request berikutnya (klik menu/refresh), sistem memutus sesi otomatis dan mengarahkan pengguna ke halaman login dengan notifikasi sesi habis. | Not Executed |
+| **`TC-ERP-AUTH-017`** | Positif | Auto-Redirect Rute Root (`GET /`) Berbasis Peran (Option B Dispatch) | Pengguna login dengan sesi aktif | Buka URL root `https://app.bimabergawa.com/` | Pengguna dengan peran staf internal diarahkan ke `https://app.bimabergawa.com/admin`. Pengguna dengan peran agen freelance diarahkan ke `https://app.bimabergawa.com/mitra`. Pengguna anonim (tamu) diarahkan ke form login. | Not Executed |
 
 ---
 

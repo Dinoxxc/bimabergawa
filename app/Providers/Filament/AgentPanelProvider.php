@@ -60,7 +60,7 @@ class AgentPanelProvider extends PanelProvider
                 FilamentOtpAuthenticate::class,
             ]);
 
-        if ($erpDomain = config('app.erp_domain', 'app.bimabergawa.com')) {
+        if (! app()->environment('local') && ($erpDomain = config('app.erp_domain', 'app.bimabergawa.com'))) {
             $panel->domain($erpDomain);
         }
 

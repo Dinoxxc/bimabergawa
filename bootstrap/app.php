@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->domain(config('app.erp_domain', 'app.bimabergawa.com'))
                 ->group(base_path('routes/erp.php'));
 
+            if (app()->environment('local')) {
+                Route::middleware(['web', ErpSecurityHeadersMiddleware::class])
+                    ->group(base_path('routes/erp.php'));
+            }
+
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         },

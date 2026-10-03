@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.15.0 |
+| **Versi Dokumen** | 1.16.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -32,6 +32,7 @@
 | `1.13.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penegakan proteksi serialisasi model Eloquent (array $hidden) pada Product, Quotation, QuotationItem, dan FreelanceSales untuk perlindungan HPP, margin laba, dan data pribadi UU PDP No. 27/2022 |
 | `1.14.0` | 02 Okt 2026 | Principal Security Architect | Disetujui | Penguatan keamanan Zero-Trust pada AgentTenantScope (pemblokiran penuh kueri non-staf tanpa profil agen dengan `1 = 0`) dan penegakan global scope `agent_comment_visibility` pada InternalComment (isolasi 0% bocor catatan internal untuk seluruh pengguna non-staf internal) |
 | `1.15.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penambahan Model `Supplier` (Model ke-29 domain ERP) untuk manajemen rekanan vendor & distributor tingkat 1, relasi `primarySupplier` pada `Product`, dan registrasi alias morph map 'supplier' |
+| `1.16.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penambahan Model `ProductSupplier` (Model ke-30 domain ERP / Pivot Model), relasi `Product::suppliers()` BelongsToMany withPivot, relasi `Supplier::suppliedProducts()`, dan registrasi alias morph map 'product_supplier' |
 
 ---
 
@@ -99,6 +100,21 @@ class Product extends Model
     public function primarySupplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class, 'primary_supplier_id')->withTrashed();
+    }
+
+    public function suppliers(): BelongsToMany
+    {
+        return $this->belongsToMany(Supplier::class, 'product_suppliers')
+            ->withPivot([
+                'supplier_sku',
+                'purchase_price',
+                'currency',
+                'lead_time_days',
+                'min_order_qty',
+                'is_primary',
+                'notes',
+            ])
+            ->withTimestamps();
     }
 
     public function successor(): BelongsTo
@@ -1311,9 +1327,69 @@ class Supplier extends Model
         return $this->hasMany(Product::class, 'primary_supplier_id');
     }
 
+    public function suppliedProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'product_suppliers')
+            ->withPivot([
+                'supplier_sku',
+                'purchase_price',
+                'currency',
+                'lead_time_days',
+                'min_order_qty',
+                'is_primary',
+                'notes',
+            ])
+            ->withTimestamps();
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+}
+```
+
+### 2.30 Model `ProductSupplier` (Pivot Model Multi-Sourcing Vendor Matrix)
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class ProductSupplier extends Pivot
+{
+    protected $table = 'product_suppliers';
+
+    protected $fillable = [
+        'product_id',
+        'supplier_id',
+        'supplier_sku',
+        'purchase_price',
+        'currency',
+        'lead_time_days',
+        'min_order_qty',
+        'is_primary',
+        'notes',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'purchase_price' => 'decimal:2',
+            'lead_time_days' => 'integer',
+            'min_order_qty' => 'integer',
+            'is_primary' => 'boolean',
+        ];
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class)->withTrashed();
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class)->withTrashed();
     }
 }
 ```
@@ -1464,6 +1540,7 @@ class AppServiceProvider extends ServiceProvider
             'commission_payout' => \App\Models\CommissionPayout::class,
             'freelance_sales'   => \App\Models\FreelanceSales::class,
             'supplier'          => \App\Models\Supplier::class,
+            'product_supplier'  => \App\Models\ProductSupplier::class,
             'article'           => \App\Models\Article::class,
         ]);
 

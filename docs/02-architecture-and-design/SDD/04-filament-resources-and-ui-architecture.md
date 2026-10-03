@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-04` |
-| **Versi Dokumen** | 1.9.0 |
+| **Versi Dokumen** | 1.10.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -31,6 +31,7 @@
 | `1.7.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Penyelarasan urutan roadmap eksekusi: Panel ERP dan Portal Agen Freelance diprioritaskan menjadi Fase 3 (menggantikan Fase 4) untuk mematangkan master katalog dan alur operasional internal sebelum rilis etalase publik |
 | `1.8.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Adopsi Arsitektur Panel Opsi B: Pemisahan 2 Panel Provider Mandiri di subdomain `app.bimabergawa.com` (`AdminPanelProvider` pada `/admin` & `AgentPanelProvider` pada `/mitra`) dengan root auto-redirection cerdas berbasis peran Spatie RBAC, standar kenyamanan tabel (Comfortable Table Spacing Density), dan isolasi resource mutlak 0% kebocoran HPP |
 | `1.9.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penambahan `SupplierResource` (Manajemen Rekanan Vendor & Distributor Prinsipal), Halaman Eksekutif `ReportsHub` (4 Tab: Penjualan, Margin HPP & Profitabilitas, Umur Piutang AR Aging, Rekapitulasi Komisi Agen), Fitur One-Click WhatsApp Dispatch & Digital QR Code Verification pada PDF transaksi |
+| `1.10.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penambahan spesifikasi UI Multi-Sourcing Vendor Matrix pada `ProductResource` (Repeater Sumber Kulakan) dan `SupplierResource` (RelationManager Produk Tersuplai dengan perbandingan HPP & Lead Time) |
 
 ---
 
@@ -482,6 +483,20 @@ Modul **Konten Website CMS** melayani kebutuhan *Full Dynamic Site CMS* (PRD Sec
 - **Aksi Cepat:**
   - `Action::make('hubungi_wa')` -> Membuka WhatsApp chat ke nomor PIC rekanan untuk menanyakan ketersediaan stok atau update harga beli modal.
   - `Restore / Force Delete Action` -> Proteksi *soft deletes* data histori rekanan.
+
+#### 3. Integrasi Multi-Sourcing Vendor Matrix pada `ProductResource`:
+Pada form edit/create `ProductResource` di tab *"Sumber Kulakan & Rekanan Vendor"*, disediakan antarmuka pengadaan multi-vendor yang terhubung ke tabel pivot `product_suppliers`:
+- `supplier_id`: Dropdown pilihan rekanan vendor (terfilter `is_active = true`).
+- `supplier_sku`: Part number / kode katalog resmi versi rekanan vendor tersebut.
+- `purchase_price`: Harga beli modal kulakan dari vendor tersebut (HPP per supplier).
+- `currency`: Mata uang pembelian (IDR, USD, EUR).
+- `lead_time_days`: Estimasi hari pengadaan (0 hari = Ready Stock gudang vendor).
+- `min_order_qty`: Minimum Order Quantity (MOQ) pembelian.
+- `is_primary`: Toggle penanda rekanan prioritas utama (otomatis mensinkronkan `primary_supplier_id`).
+- `notes`: Catatan ketersediaan stok atau ketentuan khusus vendor.
+
+#### 4. RelationManager Produk Tersuplai pada `SupplierResource` (`SuppliedProductsRelationManager`):
+Pada halaman tinjauan rekanan vendor, staf internal dapat melihat seluruh katalog part number / SKU yang dapat disuplai oleh rekanan tersebut lengkap dengan kolom harga modal kulakan, lead time, MOQ, dan status *Primary* vs *Alternatif*.
 
 ---
 

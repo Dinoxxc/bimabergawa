@@ -25,6 +25,7 @@ use App\Models\Notification;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductSpecification;
+use App\Models\ProductSupplier;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
 use App\Models\QuotationPaymentTerm;
@@ -75,6 +76,7 @@ class AppServiceProvider extends ServiceProvider
             'product' => Product::class,
             'product_image' => ProductImage::class,
             'product_specification' => ProductSpecification::class,
+            'product_supplier' => ProductSupplier::class,
             'quotation' => Quotation::class,
             'quotation_item' => QuotationItem::class,
             'quotation_payment_term' => QuotationPaymentTerm::class,

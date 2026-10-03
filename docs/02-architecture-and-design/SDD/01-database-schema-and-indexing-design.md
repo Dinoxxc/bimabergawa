@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.11.0 |
+| **Versi Dokumen** | 1.12.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -31,6 +31,7 @@
 | `1.9.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema penanganan barang cacat & retur fisik: kolom `discrepancy_notes`, `return_proof_path` pada `delivery_orders`, serta `quantity_received`, `quantity_defective`, `defect_notes` pada `delivery_order_items` |
 | `1.10.0` | 28 Sep 2026 | Principal System Architect | Disetujui | Standardisasi format internal SKU 12 karakter [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] (contoh: SEL001000001, IAU010000015) tanpa tanda hubung untuk densitas barcode & proteksi rantai pasok |
 | `1.11.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penambahan skema tabel `suppliers` (Rekanan Vendor & Distributor Tingkat 1) dan relasi `products.primary_supplier_id` untuk manajemen rantai pasok kulakan |
+| `1.12.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penambahan skema tabel pivot Many-to-Many `product_suppliers` (Multi-Sourcing Matrix) untuk pencatatan multi-supplier per produk, SKU vendor, variasi harga modal kulakan, lead time, MOQ, dan status primary |
 
 ---
 
@@ -151,6 +152,22 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `image_path` | VARCHAR(255) | Path berkas gambar terkompresi WebP |
 | `is_primary` | BOOLEAN | Default: false (Foto Utama) |
 | `sort_order` | INT | Default: 0 |
+
+#### Tabel: `product_suppliers` (Pivot Many-to-Many Multi-Sourcing Vendor)
+| Nama Kolom | Tipe Data | Keterangan & Atribut |
+|:---|:---|:---|
+| `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
+| `product_id` | BIGINT UNSIGNED | Foreign Key ke `products.id` (ON DELETE CASCADE) (Indexed) |
+| `supplier_id` | BIGINT UNSIGNED | Foreign Key ke `suppliers.id` (ON DELETE CASCADE) (Indexed) |
+| `supplier_sku` | VARCHAR(100) | Nullable, Nomor Part Number / SKU Resmi Versi Rekanan Vendor |
+| `purchase_price` | DECIMAL(15,2) | Default: 0.00, Harga Beli Modal Kulakan dari Vendor Terkait |
+| `currency` | VARCHAR(3) | Default: 'IDR', Mata Uang Harga Beli (IDR, USD, EUR) |
+| `lead_time_days` | INT UNSIGNED | Default: 0, Estimasi Waktu Pengadaan Barang (0 = Ready Stock Gudang Vendor) |
+| `min_order_qty` | INT UNSIGNED | Default: 1, Minimum Pembelian Order Kulakan (MOQ) |
+| `is_primary` | BOOLEAN | Default: false, Penanda Rekanan Prioritas Utama vs Rekanan Alternatif (Indexed) |
+| `notes` | TEXT | Nullable, Catatan Ketersediaan Stok, Diskon Ad-hoc, atau Ketentuan Khusus |
+| `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
+| *Constraints* | UNIQUE (`product_id`, `supplier_id`) | Mencegah Duplikasi Pendaftaran Supplier yang Sama pada 1 Produk |
 
 ---
 
@@ -522,6 +539,10 @@ CREATE FULLTEXT INDEX idx_products_fulltext ON products (name, model_number, des
 CREATE UNIQUE INDEX uq_quotations_idempotency ON quotations (idempotency_key);
 CREATE UNIQUE INDEX uq_sales_orders_idempotency ON sales_orders (idempotency_key);
 CREATE UNIQUE INDEX uq_commission_payouts_idempotency ON commission_payouts (idempotency_key);
+
+-- 11. Index Multi-Sourcing Vendor Matrix
+CREATE INDEX idx_prod_sup_lookup ON product_suppliers (product_id, is_primary, purchase_price);
+CREATE INDEX idx_prod_sup_supplier ON product_suppliers (supplier_id);
 ```
 
 ---

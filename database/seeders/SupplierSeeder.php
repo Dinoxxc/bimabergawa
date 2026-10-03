@@ -102,5 +102,43 @@ class SupplierSeeder extends Seeder
                     ->update(['primary_supplier_id' => $supplier->id]);
             }
         }
+
+        // Hubungkan produk ke pivot multi-sourcing product_suppliers
+        $schneiderSupplier = Supplier::where('code', 'SUP-SCH-001')->first();
+        $mroSupplier = Supplier::where('code', 'SUP-MRO-001')->first();
+
+        if ($schneiderSupplier) {
+            $schneiderProducts = Product::where('brand_id', $schneiderSupplier->brand_id)->get();
+            foreach ($schneiderProducts as $product) {
+                // Rekanan Utama (Primary Distributor)
+                $product->suppliers()->syncWithoutDetaching([
+                    $schneiderSupplier->id => [
+                        'supplier_sku' => 'SCH-'.$product->model_number,
+                        'purchase_price' => $product->cost_price ?: 75000.00,
+                        'currency' => 'IDR',
+                        'lead_time_days' => 0,
+                        'min_order_qty' => 1,
+                        'is_primary' => true,
+                        'notes' => 'Distributor Utama Tier-1 Schneider Indonesia (Ready Stock Cikarang).',
+                    ],
+                ]);
+
+                // Rekanan Alternatif / Sekunder (Sub-distributor / Rekanan Glodok dengan selisih harga 5%)
+                if ($mroSupplier) {
+                    $altPrice = $product->cost_price ? round(((float) $product->cost_price) * 1.05, 2) : 78750.00;
+                    $product->suppliers()->syncWithoutDetaching([
+                        $mroSupplier->id => [
+                            'supplier_sku' => 'LTC-'.$product->model_number,
+                            'purchase_price' => $altPrice,
+                            'currency' => 'IDR',
+                            'lead_time_days' => 1,
+                            'min_order_qty' => 1,
+                            'is_primary' => false,
+                            'notes' => 'Rekanan cadangan pasar Glodok jika stok gudang Cikarang kosong.',
+                        ],
+                    ]);
+                }
+            }
+        }
     }
 }

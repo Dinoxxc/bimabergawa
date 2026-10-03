@@ -105,75 +105,80 @@
         }
 
         .showcase-center {
-            margin: 40px 0;
-            max-width: 560px;
-        }
-
-        .system-category-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 5px 14px;
-            background-color: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 9999px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: #a1a1aa;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 620px;
+            margin: 32px 0;
         }
 
         .showcase-headline {
             font-family: 'Outfit', sans-serif;
-            font-size: 46px;
+            font-size: clamp(44px, 4.4vw, 58px);
             font-weight: 800;
-            line-height: 1.12;
-            letter-spacing: -0.035em;
+            line-height: 1.08;
+            letter-spacing: -0.04em;
             color: #ffffff;
-            margin-bottom: 20px;
-        }
-
-        .showcase-subtext {
-            font-size: 15px;
-            line-height: 1.65;
-            color: #a1a1aa;
-            margin-bottom: 32px;
-        }
-
-        .discreet-notice-card {
+            margin: 0;
+            min-height: 190px;
             display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            background-color: rgba(24, 24, 27, 0.5);
-            border: 1px solid rgba(39, 39, 42, 0.7);
-            border-radius: 8px;
-            padding: 16px 20px;
-            backdrop-filter: blur(8px);
+            align-items: center;
+            flex-wrap: wrap;
+            word-break: break-word;
         }
 
-        .notice-svg-icon {
-            color: #71717a;
+        .typewriter-cursor {
+            display: inline-block;
+            color: #a1a1aa;
+            font-weight: 300;
+            margin-left: 4px;
+            animation: blinkCursor 0.85s infinite;
+        }
+
+        @keyframes blinkCursor {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .showcase-bottom {
+            margin-top: auto;
+            padding-top: 28px;
+        }
+
+        .showcase-icons-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .tech-icon-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background-color: rgba(24, 24, 27, 0.6);
+            border: 1px solid rgba(39, 39, 42, 0.8);
+            color: #a1a1aa;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-top: 2px;
-            flex-shrink: 0;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .notice-heading {
-            font-family: 'Outfit', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            color: #e4e4e7;
-            margin-bottom: 4px;
+        .tech-icon-badge:hover {
+            color: #ffffff;
+            border-color: #52525b;
+            background-color: #18181b;
+            transform: translateY(-2px);
         }
 
-        .notice-body {
-            font-size: 13px;
-            line-height: 1.5;
-            color: #71717a;
+        .showcase-description {
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: #8e8e93;
+            max-width: 520px;
+            margin-bottom: 24px;
         }
 
         .showcase-footer {
@@ -183,7 +188,7 @@
             font-size: 12px;
             color: #52525b;
             border-top: 1px solid #18181b;
-            padding-top: 24px;
+            padding-top: 20px;
         }
 
         /* 2. Right Stage - Interaction Canvas */
@@ -442,55 +447,69 @@
         
         <!-- LEFT: Technical & Industrial Corporate Showcase -->
         <section class="stage-showcase">
-            <div>
-                <!-- Brand Header -->
-                <div class="brand-emblem-box">
-                    <div class="emblem-svg-wrap">
-                        <!-- Pure SVG Geometric Monogram Logo -->
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M2 17L12 22L22 17" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M2 12L12 17L22 12" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <div class="brand-meta-title">PT. Panca Bima Bergawa</div>
-                        <div class="brand-meta-sub">Internal System Portal</div>
-                    </div>
+            <!-- Top: Brand Header -->
+            <div class="brand-emblem-box">
+                <div class="emblem-svg-wrap">
+                    <!-- Pure SVG Geometric Monogram Logo -->
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                 </div>
-
-                <!-- Showcase Main Pitch -->
-                <div class="showcase-center">
-                    <div class="system-category-pill">
-                        <span>PORTAL AKSES INTERNAL</span>
-                    </div>
-
-                    <h1 class="showcase-headline">
-                        Panca Bima Bergawa Enterprise Resource Planning.
-                    </h1>
-                    <p class="showcase-subtext">
-                        Sistem tata kelola operasional terpadu dan manajemen proses internal PT. Panca Bima Bergawa. Akses ke dalam platform ini dibatasi secara ketat hanya bagi pengguna yang memiliki otorisasi resmi perusahaan.
-                    </p>
-
-                    <div class="discreet-notice-card">
-                        <div class="notice-svg-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="notice-heading">Akses Khusus Terotorisasi</div>
-                            <div class="notice-body">Seluruh aktivitas dan riwayat akses dalam lingkungan sistem ini dicatat dan diawasi oleh administrator keamanan perusahaan.</div>
-                        </div>
-                    </div>
+                <div>
+                    <div class="brand-meta-title">PT. Panca Bima Bergawa</div>
+                    <div class="brand-meta-sub">Internal System Portal</div>
                 </div>
             </div>
 
-            <!-- Showcase Footer -->
-            <footer class="showcase-footer">
-                <div>&copy; 2026 PT. Panca Bima Bergawa. Seluruh hak cipta dilindungi.</div>
-                <div style="font-family: 'JetBrains Mono', monospace;">Versi v1.5.0-ERP</div>
-            </footer>
+            <!-- Middle: Vertically Centered Typewriter Headline -->
+            <div class="showcase-center">
+                <h1 class="showcase-headline" aria-label="Panca Bima Bergawa Enterprise Resource Planning.">
+                    <span id="typewriter-target"></span><span class="typewriter-cursor">|</span>
+                </h1>
+            </div>
+
+            <!-- Bottom: Icons Row, Minimalist Description & Footer -->
+            <div class="showcase-bottom">
+                <div class="showcase-icons-row">
+                    <div class="tech-icon-badge" title="Sistem Keamanan">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <div class="tech-icon-badge" title="Pusat Data Relasional">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                        </svg>
+                    </div>
+                    <div class="tech-icon-badge" title="Integritas Jaringan">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                            <line x1="6" y1="6" x2="6.01" y2="6"/>
+                            <line x1="6" y1="18" x2="6.01" y2="18"/>
+                        </svg>
+                    </div>
+                    <div class="tech-icon-badge" title="Otentikasi Kriptografis">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <p class="showcase-description">
+                    Sistem tata kelola operasional terpadu dan manajemen proses internal PT. Panca Bima Bergawa
+                </p>
+
+                <footer class="showcase-footer">
+                    <div>&copy; 2026 PT. Panca Bima Bergawa. Seluruh hak cipta dilindungi.</div>
+                    <div style="font-family: 'JetBrains Mono', monospace;">Versi v1.5.0-ERP</div>
+                </footer>
+            </div>
         </section>
 
 
@@ -727,5 +746,31 @@
         </main>
 
     </div>
+
+    <!-- Typewriter Effect Script -->
+    <script>
+        (function() {
+            const text = "Panca Bima Bergawa Enterprise Resource Planning.";
+            const target = document.getElementById('typewriter-target');
+            if (!target) return;
+
+            let index = 0;
+            function typeWriter() {
+                if (index < text.length) {
+                    target.textContent += text.charAt(index);
+                    index++;
+                    setTimeout(typeWriter, 38);
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(typeWriter, 150);
+                });
+            } else {
+                setTimeout(typeWriter, 150);
+            }
+        })();
+    </script>
 </body>
 </html>

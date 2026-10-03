@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AuthOtpController;
+use App\Http\Controllers\PanelRedirectionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,12 +16,17 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return redirect()->to('/login');
+// 1. Root Intelligent Redirection (Option B Dispatch)
+Route::get('/', [PanelRedirectionController::class, 'index'])->name('erp.root');
+
+// 2. Passwordless Email OTP Authentication Flow
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthOtpController::class, 'showLoginForm'])->name('login');
+    Route::get('/auth/login', [AuthOtpController::class, 'showLoginForm'])->name('auth.otp.login');
+    Route::post('/login/send-otp', [AuthOtpController::class, 'sendOtp'])->name('auth.otp.send');
+    Route::post('/login/verify-otp', [AuthOtpController::class, 'verifyOtp'])->name('auth.otp.verify');
 });
 
-Route::middleware('guest')->group(function () {
-    Route::get('/login', function () {
-        return view('welcome'); // Placeholder until AuthOtpController is implemented in feature/erp-01
-    })->name('filament.admin.auth.login');
-});
+Route::post('/logout', [AuthOtpController::class, 'logout'])
+    ->middleware('auth')
+    ->name('auth.otp.logout');

@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `AGY-PBB-AGENT-RULEBOOK` |
-| **Versi Dokumen** | 1.10.0 |
+| **Versi Dokumen** | 1.11.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Autonomous Agent & Engineering Operational Guidelines |
 
@@ -196,12 +196,12 @@ e:\Project\bimabergawa/
 │   ├── 02-architecture-and-design/                    # SAD (01-05), SDD (01-05), UI-UX (01-04)
 │   ├── 03-integration-and-deployment/                 # API-Routing (01-04), CICD (01-04), Migration (01-04)
 │   └── 04-quality-and-security/                       # QA-Testing (01-04), Security-Compliance (01-04)
-├── test-cases/                                        # Test Case Suite Lengkap (23 Berkas, 414+ Skenario)
+├── test-cases/                                        # Test Case Suite Lengkap (23 Berkas, 425+ Skenario)
 │   ├── README.md                                      # Master Index Test Case & Traceability
 │   ├── 01-public-website/                             # Test Case Web Publik (01-04, 63 Skenario)
-│   ├── 02-internal-erp-crm/                           # Test Case Internal ERP (01-05, 81 Skenario)
+│   ├── 02-internal-erp-crm/                           # Test Case Internal ERP (01-06, 85 Skenario)
 │   ├── 03-agent-commission-portal/                    # Test Case Portal Agen (01-03, 48 Skenario)
-│   ├── 04-catalog-and-inventory-management/           # Test Case Manajemen Katalog (01-03, 48 Skenario)
+│   ├── 04-catalog-and-inventory-management/           # Test Case Manajemen Katalog (01-03, 52 Skenario)
 │   ├── 05-security-and-non-functional/                # Test Case Keamanan & NFR (01-04, 64 Skenario)
 │   └── 06-integration-and-infrastructure/             # Test Case Seeder, Cron, & CI/CD (01-03, 48 Skenario)
 ├── app/
@@ -307,6 +307,8 @@ Gunakan checklist ini untuk melacak status pengerjaan setiap sub-bagian. Perbaru
 - [ ] `feature/erp-06-agent-commission-portal` : Portal Mandiri Agen `/mitra` (`AgentPanelProvider`), inkuiri terisolasi (`AgentTenantScope`), buku besar komisi & form pencairan, enkripsi PII tersembunyi ($hidden), dan 0% kebocoran modal HPP. *(Rujukan: test-cases/03-agent-commission-portal/, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
 - [ ] `feature/erp-07-excel-import-dompdf-export` : Import katalog Excel chunking 100 baris (RAM 512 MB), ekspor PDF standar ISO A4 kop Rasuna Said. *(Rujukan: test-cases/04-catalog-and-inventory-management/)*
 - [ ] `feature/erp-08-system-settings-management` : Halaman Filament `ManageSystemSettings` untuk pengaturan tarif PPN aktif dinamis, ambang batas margin approval, nomor hotline WA, dan profil kantor. *(Rujukan: docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
+- [ ] `feature/erp-09-suppliers-management` : Modul Manajemen Rekanan Vendor & Distributor Tingkat 1 (`SupplierResource`, relasi `primary_supplier_id` pada `Product`, filter termin pembayaran, kontak PIC WA). *(Rujukan: test-cases/04-catalog-and-inventory-management/01-brand-and-category-taxonomy.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
+- [ ] `feature/erp-10-executive-reports-hub` : Pusat Pelaporan Eksekutif Bisnis & Finansial (`ReportsHub` 4-Tab: Performa Penjualan, Analisis Margin HPP & Profitabilitas, Umur Piutang AR Aging, Rekapitulasi Komisi Agen), One-Click WhatsApp Dispatch, dan Segel Verifikasi QR Code Dokumen Transaksi. *(Rujukan: test-cases/02-internal-erp-crm/06-commercial-invoicing-and-audit-trail.md, docs/02-architecture-and-design/SDD/04-filament-resources-and-ui-architecture.md)*
 
 ### Fase 4: Domain Publik (`bimabergawa.com`)
 - [ ] `feature/web-01-design-system-and-layout` : Master Layout Blade & Tailwind Design Tokens (Monokrom Minimalis), Font Outfit + Inter, Blade Lucide Icons, 0% emoji. *(Rujukan: test-cases/01-public-website/01-landing-and-navigation.md)*

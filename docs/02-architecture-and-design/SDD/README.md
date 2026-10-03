@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-IDX` |
-| **Versi Dokumen** | 1.14.0 |
+| **Versi Dokumen** | 1.15.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -33,6 +33,7 @@
 | `1.12.0` | 02 Okt 2026 | Principal Security Architect | Disetujui | Penyelarasan SDD-02 v1.14.0 (Penguatan keamanan Zero-Trust pada AgentTenantScope: isolasi blokir 1=0 untuk non-staf tanpa profil agen, dan global scope agent_comment_visibility pada InternalComment) |
 | `1.13.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Penyelarasan urutan roadmap eksekusi: SDD-04 Panel ERP sebagai Fase 3 dan SDD-05 Domain Publik sebagai Fase 4 guna memastikan kesiapan master data dan CRM sebelum publikasi etalase |
 | `1.14.0` | 02 Okt 2026 | Principal System Architect | Disetujui | Penyelarasan SDD-04 v1.8.0 (Adopsi Arsitektur Panel Opsi B: pemisahan AdminPanelProvider [/admin] & AgentPanelProvider [/mitra] dengan auto-routing cerdas root GET / serta penegakan standar kepadatan tabel Comfortable Spacing) |
+| `1.15.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penyelarasan SDD-01 v1.11.0 (Skema tabel `suppliers` & relasi `primary_supplier_id`), SDD-02 v1.15.0 (Model `Supplier` & morph map), SDD-04 v1.9.0 (`SupplierResource`, `ReportsHub` 4-Tab, One-Click WhatsApp Dispatch & Digital QR Code Verification) |
 
 ---
 
@@ -65,6 +66,8 @@ docs/02-architecture-and-design/SDD/
 ```mermaid
 erDiagram
     brands ||--o{ products : "supplies"
+    brands ||--o{ suppliers : "distributes"
+    suppliers ||--o{ products : "primary_supplier"
     categories ||--o{ categories : "sub-category"
     categories ||--o{ products : "categorizes"
     
@@ -149,6 +152,7 @@ erDiagram
 | **Notifikasi Multi-Kanal (Lonceng & Email)** | [01-database-schema-and-indexing-design.md](01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](04-filament-resources-and-ui-architecture.md) | Tabel `notifications` & Filament Database Notifications terintegrasi surel SMTP korporat. |
 | **Diskusi & Catatan Transaksi Berkonteks** | [01-database-schema-and-indexing-design.md](01-database-schema-and-indexing-design.md), [04-filament-resources-and-ui-architecture.md](04-filament-resources-and-ui-architecture.md) | Tabel `internal_comments` dengan `@User` mention, notifikasi otomatis, dan dual-layer chat isolasi agen freelance. |
 | **Keamanan & Hardening Fase 3 (ERP) & Fase 4 (Publik)** | [04-filament-resources-and-ui-architecture.md](04-filament-resources-and-ui-architecture.md), [05-public-frontend-and-reactive-state.md](05-public-frontend-and-reactive-state.md) | Defense-in-depth: Passwordless OTP 300s, HTTP security headers, Spatie RBAC gates, anti-IDOR scopes, model $hidden attributes (Fase 3 ERP), serta CSRF, honeypot, Turnstile, rate limiter, dan Alpine Zero-Price store (Fase 4 Publik). |
+| **Manajemen Vendor Rekanan & Reports Hub** | [01-database-schema-and-indexing-design.md](01-database-schema-and-indexing-design.md), [02-eloquent-models-and-domain-entities.md](02-eloquent-models-and-domain-entities.md), [04-filament-resources-and-ui-architecture.md](04-filament-resources-and-ui-architecture.md) | Tabel `suppliers`, `SupplierResource`, `ReportsHub` (4 Tab: Penjualan, Margin HPP, AR Aging, Komisi Agen), One-Click WhatsApp Dispatch & Digital QR Code Verification pada PDF transaksi. |
 
 
 

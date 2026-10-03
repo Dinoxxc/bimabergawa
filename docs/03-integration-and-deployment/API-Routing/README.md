@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-API-IDX` |
-| **Versi Dokumen** | 1.3.0 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.4.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | API Architect | Ditinjau | Penambahan endpoint Bulk SKU Parser, Pelacakan Resi, & Agen |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Pemisahan multi-domain `bimabergawa.com` vs `app.bimabergawa.com` |
 | `1.3.0` | 05 Sep 2026 | Principal Integration Engineer | Disetujui | Pemisahan suite modular menjadi 4 berkas mendalam dengan standar Anti-AI & Zero Emoji |
+| `1.4.0` | 03 Okt 2026 | Principal Integration Engineer | Disetujui | Penyelarasan API-03 v1.5.0 (Rute dan RBAC matrix `/admin/suppliers`, `/admin/reports` 4-Tab, serta verifikasi QR Code `/verify-doc/{type}/{hash}`) |
 
 ---
 

@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-01` |
-| **Versi Dokumen** | 1.10.0 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.11.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -30,6 +30,7 @@
 | `1.8.0` | 20 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema Dual-Identifier Architecture: kolom `brands.code` (Indexed), `categories.code` (Indexed), dan `products.sku` (Unique Indexed) untuk auto-generated SKU internal PBB |
 | `1.9.0` | 22 Sep 2026 | Principal System Architect | Disetujui | Penambahan skema penanganan barang cacat & retur fisik: kolom `discrepancy_notes`, `return_proof_path` pada `delivery_orders`, serta `quantity_received`, `quantity_defective`, `defect_notes` pada `delivery_order_items` |
 | `1.10.0` | 28 Sep 2026 | Principal System Architect | Disetujui | Standardisasi format internal SKU 12 karakter [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] (contoh: SEL001000001, IAU010000015) tanpa tanda hubung untuk densitas barcode & proteksi rantai pasok |
+| `1.11.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penambahan skema tabel `suppliers` (Rekanan Vendor & Distributor Tingkat 1) dan relasi `products.primary_supplier_id` untuk manajemen rantai pasok kulakan |
 
 ---
 
@@ -80,6 +81,23 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `sort_order` | INT | Default: 0, Urutan tampil di carousel |
 | `created_at`, `updated_at` | TIMESTAMP | Standar Laravel Timestamps |
 
+#### Tabel: `suppliers` (Rekanan Vendor & Distributor Resmi)
+| Nama Kolom | Tipe Data | Keterangan & Atribut |
+|:---|:---|:---|
+| `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
+| `name` | VARCHAR(200) | Nama PT/CV Supplier atau Distributor Resmi Prinsipal |
+| `code` | VARCHAR(50) | Unique, Kode Identitas Supplier (contoh: `SUP-SCH-001`, `SUP-ABB-002`) (Indexed) |
+| `brand_id` | BIGINT UNSIGNED | Nullable, Foreign Key ke `brands.id` (ON DELETE SET NULL) |
+| `contact_person` | VARCHAR(150) | Nama PIC Sales / Account Manager Distributor |
+| `phone` | VARCHAR(50) | Nomor Telepon / WhatsApp Resmi Pemesanan |
+| `email` | VARCHAR(150) | Nullable, Email Resmi Pengiriman Purchase Order (PO Beli) |
+| `address` | TEXT | Nullable, Alamat Gudang / Kantor Pengambilan Barang |
+| `payment_terms` | VARCHAR(100) | Nullable, Syarat Pembayaran Kulakan (CBD, COD, Net 14, Net 30, Net 45) |
+| `discount_structure` | VARCHAR(255) | Nullable, Struktur Diskon Katalog Prinsipal (contoh: *Pricelist Schneider - 35%*) |
+| `notes` | TEXT | Nullable, Catatan Khusus Lead Time & Kebijakan Retur |
+| `is_active` | BOOLEAN | Default: true, Status Aktif Rekanan |
+| `created_at`, `updated_at`, `deleted_at` | TIMESTAMP | Standar Timestamps & Soft Deletes (`deleted_at` nullable) |
+
 #### Tabel: `categories`
 | Nama Kolom | Tipe Data | Keterangan & Atribut |
 |:---|:---|:---|
@@ -100,6 +118,7 @@ Tabel master untuk menyimpan seluruh satuan pengukuran unit (UOM) dinamis multi-
 | `id` | BIGINT UNSIGNED | Primary Key, Auto Increment |
 | `brand_id` | BIGINT UNSIGNED | Foreign Key ke `brands.id` (ON DELETE RESTRICT) |
 | `category_id` | BIGINT UNSIGNED | Foreign Key ke `categories.id` (ON DELETE RESTRICT) |
+| `primary_supplier_id` | BIGINT UNSIGNED | Nullable, Foreign Key ke `suppliers.id` (ON DELETE SET NULL) |
 | `successor_product_id` | BIGINT UNSIGNED | Nullable, Self-referencing FK ke `products.id` (Produk Pengganti) |
 | `name` | VARCHAR(255) | Nama Resmi Produk Industri |
 | `slug` | VARCHAR(255) | Unique, URL Friendly Slug |

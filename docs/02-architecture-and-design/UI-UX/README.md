@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-UIUX-IDX` |
-| **Versi Dokumen** | 1.3.0 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.4.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -19,6 +19,7 @@
 | `1.1.0` | 03 Sep 2026 | Design Lead | Ditinjau | Penambahan layout perbandingan produk 4 item & UX Quotation Builder |
 | `1.2.0` | 05 Sep 2026 | Principal System Architect & UI Lead | Disetujui | Kalibrasi total gaya High-Contrast Monochrome Minimalist (Authentik/StudioPress style) |
 | `1.3.0` | 05 Sep 2026 | Principal UI/UX & Lead Architect | Disetujui | Penegasan Standar Anti-AI Design, eliminasi total karakter emoji, & standardisasi icon formal |
+| `1.4.0` | 03 Okt 2026 | Principal UI/UX & Lead Architect | Disetujui | Penyelarasan UIUX-04 v1.7.0 (Wireframe Executive Reports Hub 4-Tab, Manajemen Rekanan Vendor, dan Segel Verifikasi Dokumen QR Code PDF) |
 
 ---
 

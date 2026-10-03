@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-API-03` |
-| **Versi Dokumen** | 1.4.0 |
+| **Versi Dokumen** | 1.5.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -20,6 +20,7 @@
 | `1.2.0` | 05 Sep 2026 | Principal System Architect | Disetujui | Pemisahan panel mandiri agen freelance di rute `/mitra` |
 | `1.3.0` | 05 Sep 2026 | Principal Integration Engineer | Disetujui | Pemisahan berkas spesifik rute ERP, otorisasi RBAC, & zero emoji |
 | `1.4.0` | 02 Okt 2026 | Principal Integration Engineer | Disetujui | Penyelarasan Arsitektur Panel Opsi B: Pendefinisian dua rute panel mandiri di subdomain `app.bimabergawa.com` — `/admin` untuk Panel Internal Staf dan `/mitra` untuk Portal Agen Freelance dengan rute root `GET /` auto-redirect cerdas via `PanelRedirectionController` serta isolasi total modul finansial |
+| `1.5.0` | 03 Okt 2026 | Principal Integration Engineer | Disetujui | Penambahan rute dan RBAC matrix untuk `/admin/suppliers` (Manajemen Rekanan Vendor), `/admin/reports` (Executive Reports Hub 4-Tab), serta rute verifikasi QR Code publik `/verify-doc/{type}/{hash}` |
 
 ---
 
@@ -55,6 +56,10 @@ Route::domain(config('app.erp_domain', 'app.bimabergawa.com'))->group(function (
         Route::get('/mitra/payouts/{payout}/slip', [CommissionPayoutController::class, 'downloadSlip'])
             ->name('mitra.payouts.slip');
     });
+
+    // 6. Rute Verifikasi Publik QR Code Dokumen Transaksi (Tanpa Login)
+    Route::get('/verify-doc/{type}/{hash}', [DocumentVerificationController::class, 'verify'])
+        ->name('document.verify');
 });
 ```
 
@@ -87,11 +92,14 @@ Route::domain(config('app.erp_domain', 'app.bimabergawa.com'))->group(function (
 | **`/admin/sales-orders` (SO Lock)**| Akses Penuh | Buat & Lihat | Verifikasi Bayar | Lihat Item | Ditolak (403) |
 | **`/admin/delivery-orders` (DO)**| Akses Penuh | Lihat Status | Read-Only | Buat & Update Resi| Ditolak (403) |
 | **`/admin/products` (Master Spek)**| Akses Penuh | Read-Only (HPP) | Read-Only | Read-Only | Ditolak (403) |
+| **`/admin/suppliers` (Vendor Rekanan)**| Akses Penuh | Lihat & Kontak | Lihat & Tempo Bayar| Ditolak | Ditolak (403) |
+| **`/admin/reports` (Executive Reports)**| Akses Penuh (4 Tab)| Terbatas Tab 1 | Tab 2, 3, & 4 | Ditolak | Ditolak (403) |
 | **`/admin/invoices` (Faktur)** | Akses Penuh | Ditolak | Verifikasi Bank | Ditolak | Ditolak (403) |
 | **`/admin/system-settings`** | Akses Penuh | Terbatas CRM | Terbatas Pajak | Terbatas Gudang | Ditolak (403) |
 | **`/mitra` (Portal Mandiri Agen)** | Akses Audit | Ditolak | Ditolak | Ditolak | Akses Mandiri |
 | **`/mitra/inquiries` (Inkuiri Agen)**| Akses Audit | Ditolak | Ditolak | Ditolak | Milik Sendiri |
 | **`/mitra/payouts` (Komisi)** | Akses Audit | Ditolak | Ditolak | Ditolak | Ajukan Mandiri |
+| **`/verify-doc/{type}/{hash}`** | Akses Terbuka | Akses Terbuka | Akses Terbuka | Akses Terbuka | Akses Terbuka |
 
 ---
 

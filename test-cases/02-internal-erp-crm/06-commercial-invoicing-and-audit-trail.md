@@ -7,8 +7,8 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-TC-ERP-06` |
-| **Versi Dokumen** | 1.3.0 |
-| **Tanggal Efektif** | September 2026 |
+| **Versi Dokumen** | 1.4.0 |
+| **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & QA/Engineering Reference |
 
 ### Riwayat Revisi Dokumen (Document Version Control)
@@ -19,6 +19,7 @@
 | `1.1.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario pembayaran parsial `paid_amount` (TC-ERP-INV-011) dan mitigasi benturan slug soft delete (TC-ERP-INV-012) |
 | `1.2.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan skenario relasi produk discontinue withTrashed (TC-ERP-INV-013), resolusi inkuiri latestOfMany (TC-ERP-INV-014), dan siklus hidup restoring slug (TC-ERP-INV-015) |
 | `1.3.0` | 08 Sep 2026 | Principal QA Architect | Disetujui | Penambahan 5 skenario mitigasi celah: isolasi CommissionPayout (TC-ERP-INV-016), perlindungan catatan internal (TC-ERP-INV-017), loop deterministik restoring slug (TC-ERP-INV-018), full-chain withTrashed transaksi induk (TC-ERP-INV-019), dan bypass staf internal AgentTenantScope (TC-ERP-INV-020) |
+| `1.4.0` | 03 Okt 2026 | Principal QA Architect | Disetujui | Penambahan 4 skenario uji Executive Reports Hub 4-Tab, AR Aging report, serta verifikasi QR Code & One-Click WhatsApp Dispatch (`TC-ERP-REP-001` s.d. `004`) |
 
 ---
 
@@ -57,6 +58,10 @@
 | **`TC-ERP-INV-018`** | Siklus Hidup | Mitigasi Tabrakan Deterministik Slug Restoring via Candidate While Loop | Produk A dihapus, Produk B mengambil slug original, dan Produk C mengambil slug `-2` | Pulihkan (*Restore*) Produk A | `ProductObserver::restoring` menjalankan loop pengecekan kandidat slug berulang hingga menemukan kandidat bebas (`-3`), mencegah benturan duplicate key error MySQL. | Not Executed |
 | **`TC-ERP-INV-019`** | Integritas | Akses Rantai Induk Transaksi Historis yang Di-Soft-Delete (Full-Chain withTrashed) | Sales Order atau Quotation induk telah di-soft delete / diarsipkan | Buka faktur (`Invoice`) atau surat jalan (`DeliveryOrder`) lama | Seluruh relasi induk (`$invoice->salesOrder`, `$deliveryOrder->salesOrder`, `$salesOrder->quotation`, `$inquiry->freelanceSales`) tetap me-load objek aslinya tanpa error null reference. | Not Executed |
 | **`TC-ERP-INV-020`** | Otoritas | Bypass Eksplisit Otoritas Staf Internal pada `AgentTenantScope` | Staf internal (Super Admin / Finance) memiliki akun dengan `freelance_sales_id` untuk testing | Staf internal login dan membuka menu Inquiries atau Quotations | Sistem mendeteksi role internal dan membypass tenant scope secara total, sehingga staf tetap dapat melihat seluruh data korporat perusahaan tanpa terkunci. | Not Executed |
+| **`TC-ERP-REP-001`** | Pelaporan | Tampilan 4-Tab Pusat Laporan Bisnis & Keuangan (`/admin/reports`) | Login sebagai Super Admin atau Finance | Buka menu `/admin/reports` | Halaman memuat 4 tab terstruktur: Performa Penjualan, Analisis Margin HPP, Umur Piutang AR, dan Komisi Agen. Seluruh stat card menampilkan angka agregasi real-time. | Not Executed |
+| **`TC-ERP-REP-002`** | Keamanan | Pembatasan Hak Akses Tab Margin HPP pada Reports Hub (Zero HPP Leak) | Login sebagai Sales PIC atau Staf Gudang | Akses rute `/admin/reports` | Sales PIC hanya dapat melihat Tab 1 (Performa Penjualan); Tab 2 (Analisis Margin HPP) disembunyikan total atau menghasilkan 403 Forbidden. | Not Executed |
+| **`TC-ERP-REP-003`** | Finansial | Akurasi Analisis Umur Piutang Komersial (AR Aging Buckets) | Database memuat invoice jatuh tempo 15 hari, 45 hari, dan 75 hari | Buka Tab 3 (Umur Piutang AR) pada Reports Hub | Faktur terkelompokkan akurat ke bucket: Piutang Lancar, 31-60 Hari, dan >60 Hari. Tombol "Kirim Pengingat WA" menghasilkan draft reminder penagihan resmi. | Not Executed |
+| **`TC-ERP-REP-004`** | Integrasi | Verifikasi QR Code Dokumen Transaksi & One-Click WhatsApp Dispatch | Penawaran/SO/DO resmi diterbitkan | Pindai QR Code di dokumen cetak PDF atau klik tombol "Kirim via WhatsApp" | QR Code mengarah ke `/verify-doc/{type}/{hash}` dan menampilkan segel dokumen resmi PBB; tombol WhatsApp membuka tautan chat dengan pesan ter-prefill. | Not Executed |
 
 ---
 
@@ -73,3 +78,12 @@
    - Status invoice berganti menjadi `[Paid]`.
    - Kolom `paid_at` pada database terisi waktu server saat ini.
    - Tabel `activity_logs` mencatat entri baru dengan deskripsi: *"Invoice INV-YYYYMM-XXXX ditandai lunas oleh Finance"*.
+
+### 3.2 Prosedur Uji TC-ERP-REP-001 (Akses Reports Hub & Verifikasi 4 Tab)
+
+1. **Langkah 1:** Login ke panel internal ERP `https://app.bimabergawa.com` sebagai Super Admin atau Finance.
+2. **Langkah 2:** Buka menu **Menu Utama > Pusat Laporan** (`/admin/reports`).
+3. **Langkah 3:** Verifikasi keberadaan 4 tab navigasi di bagian atas: `[1. Performa Penjualan]`, `[2. Analisis Margin HPP]`, `[3. Umur Piutang AR]`, dan `[4. Komisi Agen]`.
+4. **Langkah 4:** Klik Tab 2 (Analisis Margin HPP) dan periksa kartu metrik laba kotor serta distribusi margin (<8%, 8-15%, >=15%).
+5. **Langkah 5:** Klik Tab 3 (Umur Piutang AR) dan verifikasi bahwa faktur yang telah jatuh tempo terdistribusi dengan benar sesuai umur tunggakan.
+6. **Langkah 6:** Klik tombol **"Ekspor Excel"** untuk memastikan berkas spreadsheet dapat diunduh tanpa error memori PHP.

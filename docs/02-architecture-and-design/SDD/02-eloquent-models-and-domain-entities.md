@@ -7,7 +7,7 @@
 | **Entitas Perusahaan** | **PT. Panca Bima Bergawa** (Disingkat: **PBB**) |
 | **Alamat Kantor Pusat** | Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920 |
 | **Nomor Dokumen** | `DOC-PBB-SDD-02` |
-| **Versi Dokumen** | 1.14.0 |
+| **Versi Dokumen** | 1.15.0 |
 | **Tanggal Efektif** | Oktober 2026 |
 | **Klasifikasi Akses** | Internal Confidential & Engineering Reference |
 
@@ -31,6 +31,7 @@
 | `1.12.0` | 23 Sep 2026 | Principal System Architect | Disetujui | Penyelarasan standar SKU internal 12 karakter [TIPE(1)][DIVISI(2)][BRAND(3)][URUTAN(6)] tanpa tanda hubung (contoh: SEL001000001), penyeragaman kode brand numerik 3 digit, dan divisi 2 huruf |
 | `1.13.0` | 01 Okt 2026 | Principal Security Architect | Disetujui | Penegakan proteksi serialisasi model Eloquent (array $hidden) pada Product, Quotation, QuotationItem, dan FreelanceSales untuk perlindungan HPP, margin laba, dan data pribadi UU PDP No. 27/2022 |
 | `1.14.0` | 02 Okt 2026 | Principal Security Architect | Disetujui | Penguatan keamanan Zero-Trust pada AgentTenantScope (pemblokiran penuh kueri non-staf tanpa profil agen dengan `1 = 0`) dan penegakan global scope `agent_comment_visibility` pada InternalComment (isolasi 0% bocor catatan internal untuk seluruh pengguna non-staf internal) |
+| `1.15.0` | 03 Okt 2026 | Principal System Architect | Disetujui | Penambahan Model `Supplier` (Model ke-29 domain ERP) untuk manajemen rekanan vendor & distributor tingkat 1, relasi `primarySupplier` pada `Product`, dan registrasi alias morph map 'supplier' |
 
 ---
 
@@ -50,7 +51,7 @@ Seluruh model domain ditempatkan di direktori `app/Models/`, mewarisi `Illuminat
 
 ---
 
-## 2. Definisi 28 Model Domain & Relasi Bisnis
+## 2. Definisi 29 Model Domain & Relasi Bisnis
 
 ### 2.1 Model `Product` (Master SKU Multi-Brand)
 ```php
@@ -67,7 +68,7 @@ class Product extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'brand_id', 'category_id', 'successor_product_id', 'name', 'slug',
+        'brand_id', 'category_id', 'primary_supplier_id', 'successor_product_id', 'name', 'slug',
         'model_number', 'sku', 'cost_price', 'currency', 'description', 'datasheet_path',
         'availability_status', 'is_featured', 'is_published', 'meta_description'
     ];
@@ -93,6 +94,11 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function primarySupplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'primary_supplier_id')->withTrashed();
     }
 
     public function successor(): BelongsTo
@@ -1260,6 +1266,58 @@ class User extends Authenticatable
 }
 ```
 
+### 2.29 Model `Supplier` (Rekanan Vendor & Distributor Resmi Prinsipal)
+```php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Builder;
+
+class Supplier extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = [
+        'name',
+        'code',
+        'brand_id',
+        'contact_person',
+        'phone',
+        'email',
+        'address',
+        'payment_terms',
+        'discount_structure',
+        'notes',
+        'is_active',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
+
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class)->withTrashed();
+    }
+
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class, 'primary_supplier_id');
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+}
+```
+
 ---
 
 ## 3. Global Scopes: Penegakan Isolasi Multi-Tenant Agen
@@ -1405,6 +1463,7 @@ class AppServiceProvider extends ServiceProvider
             'invoice'           => \App\Models\Invoice::class,
             'commission_payout' => \App\Models\CommissionPayout::class,
             'freelance_sales'   => \App\Models\FreelanceSales::class,
+            'supplier'          => \App\Models\Supplier::class,
             'article'           => \App\Models\Article::class,
         ]);
 

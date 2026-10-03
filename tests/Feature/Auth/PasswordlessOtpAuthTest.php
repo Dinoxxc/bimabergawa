@@ -232,7 +232,7 @@ class PasswordlessOtpAuthTest extends TestCase
 
         $response->assertOk();
         $this->assertEquals('sent', $response->json('status'));
-        $this->assertStringContainsString('Jika email terdaftar', $response->json('message'));
+        $this->assertStringContainsString('If this email is registered', $response->json('message'));
 
         // Tidak ada job atau email keluar
         Queue::assertNothingPushed();

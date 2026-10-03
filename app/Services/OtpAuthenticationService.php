@@ -32,7 +32,7 @@ class OtpAuthenticationService
 
             return [
                 'status' => 'locked',
-                'message' => "Terlalu banyak percobaan gagal. Silakan tunggu {$lockoutRemaining} detik sebelum meminta kode baru.",
+                'message' => "Too many failed attempts. Please wait {$lockoutRemaining} seconds before requesting a new security code.",
                 'remaining_seconds' => $lockoutRemaining,
             ];
         }
@@ -42,7 +42,7 @@ class OtpAuthenticationService
         if ($cooldownRemaining > 0) {
             return [
                 'status' => 'cooldown',
-                'message' => "Silakan tunggu {$cooldownRemaining} detik sebelum meminta pengiriman ulang kode OTP.",
+                'message' => "Please wait {$cooldownRemaining} seconds before requesting another security code.",
                 'remaining_seconds' => $cooldownRemaining,
             ];
         }
@@ -57,7 +57,7 @@ class OtpAuthenticationService
             return [
                 'status' => 'sent',
                 'email' => $normalizedEmail,
-                'message' => 'Jika email terdaftar dalam sistem, kode OTP 6-digit telah dikirimkan ke kotak masuk Anda.',
+                'message' => 'If this email is registered in our system, a 6-digit access code has been dispatched to your inbox.',
                 'cooldown_seconds' => self::RESEND_COOLDOWN_SECONDS,
                 'expires_in_seconds' => self::OTP_TTL_SECONDS,
             ];
@@ -80,10 +80,14 @@ class OtpAuthenticationService
         // Kirim email OTP melalui Job
         SendOtpEmailJob::dispatch($user, $plainOtp, self::OTP_TTL_SECONDS);
 
+        $message = app()->environment('local')
+            ? 'A 6-digit access code has been dispatched. [DEV: Enter 123456 to bypass]'
+            : 'A 6-digit access code has been sent to your email address.';
+
         return [
             'status' => 'sent',
             'email' => $normalizedEmail,
-            'message' => 'Kode OTP 6-digit telah dikirimkan ke email Anda.',
+            'message' => $message,
             'cooldown_seconds' => self::RESEND_COOLDOWN_SECONDS,
             'expires_in_seconds' => self::OTP_TTL_SECONDS,
         ];
@@ -98,6 +102,22 @@ class OtpAuthenticationService
         $normalizedEmail = strtolower(trim($email));
         $cleanOtp = trim($otp);
 
+        // Development Master OTP Bypass (hanya aktif jika APP_ENV=local)
+        if (app()->environment('local') && $cleanOtp === '123456') {
+            $user = User::where('email', $normalizedEmail)->first();
+            if ($user && $user->is_active) {
+                self::burnOtpToken($normalizedEmail);
+                Cache::forget("erp_otp_cooldown_{$normalizedEmail}");
+                Cache::forget("erp_otp_lockout_{$normalizedEmail}");
+
+                return [
+                    'status' => 'verified',
+                    'user' => $user,
+                    'message' => 'Security code verified successfully.',
+                ];
+            }
+        }
+
         // Cek status lockout brute-force (TC-ERP-AUTH-013)
         if (self::isLocked($normalizedEmail)) {
             $lockoutRemaining = self::getLockoutRemaining($normalizedEmail);
@@ -105,7 +125,7 @@ class OtpAuthenticationService
             return [
                 'status' => 'locked',
                 'remaining_attempts' => 0,
-                'message' => "Sesi form terkunci karena batas percobaan habis. Silakan coba kembali dalam {$lockoutRemaining} detik.",
+                'message' => "Authentication locked due to multiple failed attempts. Please try again in {$lockoutRemaining} seconds.",
                 'remaining_seconds' => $lockoutRemaining,
             ];
         }
@@ -117,7 +137,7 @@ class OtpAuthenticationService
             return [
                 'status' => 'expired',
                 'remaining_attempts' => 0,
-                'message' => 'Kode OTP telah kedaluwarsa atau tidak valid. Silakan minta kode baru.',
+                'message' => 'The access code has expired or is invalid. Please request a new code.',
             ];
         }
 
@@ -136,7 +156,7 @@ class OtpAuthenticationService
             return [
                 'status' => 'verified',
                 'user' => $user,
-                'message' => 'Verifikasi kode OTP berhasil.',
+                'message' => 'Security code verified successfully.',
             ];
         }
 
@@ -152,7 +172,7 @@ class OtpAuthenticationService
             return [
                 'status' => 'locked',
                 'remaining_attempts' => 0,
-                'message' => 'Percobaan habis. Sesi OTP dibatalkan. Silakan minta kode baru setelah masa jeda keamanan berakhir.',
+                'message' => 'Maximum verification attempts exceeded. Session invalidated. Please request a new code after cooldown.',
                 'remaining_seconds' => self::LOCKOUT_DURATION_SECONDS,
             ];
         }
@@ -167,7 +187,7 @@ class OtpAuthenticationService
         return [
             'status' => 'invalid',
             'remaining_attempts' => $remainingAttempts,
-            'message' => "Kode OTP salah. Sisa percobaan: {$remainingAttempts}.",
+            'message' => "Invalid security code. Remaining attempts: {$remainingAttempts}.",
         ];
     }
 

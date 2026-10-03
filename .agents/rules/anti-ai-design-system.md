@@ -28,7 +28,10 @@ Sistem visual PT. Panca Bima Bergawa (PBB) dirancang untuk memancarkan wibawa, k
 - **Standar Ikon Grafis:** Wajib 100% menggunakan SVG Icons resmi:
   - Web Publik: Blade Lucide Icons (`<x-lucide-... />`)
   - Panel ERP: Filament Heroicons (`heroicon-o-...` untuk navigasi tabel, `heroicon-m-...` untuk tombol mini)
-  - Teks Status: Gunakan text badge formal (contoh: `[Tersedia]`, `[Indent]`, `[Disetujui]`, `[Peringatan]`, `[Dalam Pengiriman]`).
+  - Teks Status: Gunakan text badge formal (contoh: `[Available]`, `[Indent]`, `[Approved]`, `[Warning]`, `[Dispatched]`).
+
+### 1.3 Penegakan Bahasa Default Sistem (Mandatory Global English Standard)
+- **Bahasa Default Global:** Seluruh teks pada web publik (`bimabergawa.com`), ERP internal (`app.bimabergawa.com`), portal agen freelance (`/mitra`), notifikasi email, formulir autentikasi, tombol aksi, dan pesan validasi/flash wajib menggunakan bahasa Inggris (US English) secara default.
 
 ---
 

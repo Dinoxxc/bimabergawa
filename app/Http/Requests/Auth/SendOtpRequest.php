@@ -37,9 +37,9 @@ class SendOtpRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => 'Alamat email wajib diisi.',
-            'email.email' => 'Format alamat email tidak valid.',
-            'email.max' => 'Alamat email maksimal 255 karakter.',
+            'email.required' => 'The email address field is required.',
+            'email.email' => 'The email address format is invalid.',
+            'email.max' => 'The email address must not exceed 255 characters.',
         ];
     }
 }

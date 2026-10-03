@@ -38,10 +38,10 @@ class VerifyOtpRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => 'Alamat email wajib diisi.',
-            'email.email' => 'Format alamat email tidak valid.',
-            'otp.required' => 'Kode OTP 6-digit wajib diisi.',
-            'otp.digits' => 'Kode OTP harus tepat 6 digit angka.',
+            'email.required' => 'The email address field is required.',
+            'email.email' => 'The email address format is invalid.',
+            'otp.required' => 'The 6-digit security code is required.',
+            'otp.digits' => 'The security code must be exactly 6 digits.',
         ];
     }
 }

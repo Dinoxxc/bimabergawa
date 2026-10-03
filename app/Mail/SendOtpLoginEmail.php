@@ -29,7 +29,7 @@ class SendOtpLoginEmail extends Mailable
                 config('mail.from.address', 'noreply@bimabergawa.com'),
                 'PT. Panca Bima Bergawa - ERP Security'
             ),
-            subject: 'Kode Verifikasi OTP Masuk Sistem ERP [PT. Panca Bima Bergawa]',
+            subject: 'ERP Security Access Code [PT. Panca Bima Bergawa]',
         );
     }
 

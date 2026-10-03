@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kode Verifikasi OTP - PT. Panca Bima Bergawa</title>
+    <title>Security Access Code - PT. Panca Bima Bergawa</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -77,26 +77,26 @@
     <div class="container">
         <div class="header">
             <h1 class="company-title">PT. Panca Bima Bergawa</h1>
-            <div class="sub-title">Sistem Otentikasi Terpadu Internal Commercial ERP</div>
+            <div class="sub-title">Unified Authentication System &bull; Internal Commercial ERP</div>
         </div>
         <div class="content">
-            <p>Halo <strong>{{ $user->name }}</strong>,</p>
-            <p>Berikut adalah 6-digit kode verifikasi (OTP) untuk masuk ke panel internal ERP PT. Panca Bima Bergawa:</p>
+            <p>Dear <strong>{{ $user->name }}</strong>,</p>
+            <p>Here is your 6-digit security access code (OTP) to sign in to the PT. Panca Bima Bergawa Internal ERP Portal:</p>
             
             <div class="otp-box">
                 <div class="otp-code">{{ $otp }}</div>
             </div>
 
             <div class="warning-box">
-                <p><strong>Perhatian Keamanan:</strong></p>
-                <p>Kode ini hanya berlaku selama <strong>{{ $validityMinutes }} menit</strong> (300 detik). Jangan pernah memberikan kode ini kepada pihak mana pun, termasuk staf yang mengatasnamakan manajemen atau tim IT PT. Panca Bima Bergawa.</p>
-                <p>Jika Anda tidak merasa melakukan permintaan masuk ini, harap segera hubungi tim Security IT atau ubah status akun Anda.</p>
+                <p><strong>Security Notice:</strong></p>
+                <p>This code expires in <strong>{{ $validityMinutes }} minutes</strong> (300 seconds). Never disclose this code to anyone, including personnel claiming to represent PT. Panca Bima Bergawa management or IT support.</p>
+                <p>If you did not initiate this sign-in request, please notify your IT Security team immediately.</p>
             </div>
         </div>
         <div class="footer">
             <p>PT. Panca Bima Bergawa - One-Stop Industrial General Supplier & Procurement Partner</p>
             <p>Gd. Wirausaha lt.1 Unit 104, Jl. H.R. Rasuna Said Kav. C5, Setiabudi, Jakarta Selatan 12920</p>
-            <p>Pesan otomatis dikirim oleh server keamanan ERP. Jangan membalas email ini.</p>
+            <p>Automated message dispatched by ERP Security Server. Please do not reply to this email.</p>
         </div>
     </div>
 </body>

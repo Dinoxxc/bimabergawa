@@ -72,9 +72,9 @@ Sistem digital PBB beroperasi di bawah arsitektur basis data tunggal (*Single Da
 
 ---
 
-## 3. Dua Belas Batasan Mutlak & Aturan Arsitektur (Hard Constraints)
+## 3. Tiga Belas Batasan Mutlak & Aturan Arsitektur (Hard Constraints)
 
-Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontribusi pada repositori ini **DILARANG KERAS** melanggar 12 aturan mutlak berikut:
+Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontribusi pada repositori ini **DILARANG KERAS** melanggar 13 aturan mutlak berikut:
 
 ### 3.1 Larangan Penggunaan Karakter Emoji (Zero Emoji Constraint)
 - **0% Emoji Unicode:** Dilarang keras menggunakan karakter emoji Unicode (seperti tanda centang hijau, roket, api, jempol, dll.) pada seluruh kode Blade, PHP, controller, mailer, log, komentar kode, dokumen markdown, commit message, maupun tampilan UI antarmuka pengguna.
@@ -156,6 +156,9 @@ Setiap AI Agent, sistem otomatis, atau perekayasa perangkat lunak yang berkontri
   3. *Perubahan:* Modifikasi pada konfigurasi, kode, atau skema eksisting.
   4. *Hasil Verifikasi / Testing:* Bukti uji coba/linting lokal yang membuktikan kode berfungsi 100%.
 - **Penghapusan Working Branch Pasca-Merge:** Setelah pengguna memberikan konfirmasi untuk push dan merge ke `staging`, working branch yang bersangkutan wajib segera dihapus baik di lokal (`git branch -d <nama_branch>`) maupun di remote jika ada (`git push origin --delete <nama_branch>`), guna menjaga repositori selalu bersih dan terbebas dari *stale branches*.
+
+### 3.13 Standarisasi Bahasa Inggris Mutlak (Mandatory English Default Language)
+- **100% Bahasa Inggris Standar:** Seluruh antarmuka publik website (`bimabergawa.com`), panel internal ERP (`app.bimabergawa.com`), portal agen freelance (`/mitra`), notifikasi email sistem, pesan kesalahan/validasi, flash message, komentar kode baru, dan komponen UI **WAJIB MENGGUNAKAN BAHASA INGGRIS (English)** secara default. Dilarang mencampurkan teks antarmuka bahasa Indonesia kecuali pada entitas legal lokal yang tidak boleh diubah (seperti nama legal perseroan *PT. Panca Bima Bergawa*, alamat fisik kantor pusat Rasuna Said, atau nomor izin/rekening perbankan lokal jika disyaratkan secara hukum).
 
 ---
 

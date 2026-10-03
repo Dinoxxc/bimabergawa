@@ -109,98 +109,71 @@
             max-width: 560px;
         }
 
-        .status-badge-live {
+        .system-category-pill {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 4px 12px;
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 5px 14px;
+            background-color: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 9999px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
-            color: #e4e4e7;
+            color: #a1a1aa;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             margin-bottom: 24px;
         }
 
-        .status-dot-pulse {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: #22c55e;
-            box-shadow: 0 0 8px #22c55e;
-        }
-
         .showcase-headline {
             font-family: 'Outfit', sans-serif;
-            font-size: 40px;
+            font-size: 46px;
             font-weight: 800;
-            line-height: 1.15;
-            letter-spacing: -0.03em;
+            line-height: 1.12;
+            letter-spacing: -0.035em;
             color: #ffffff;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .showcase-subtext {
             font-size: 15px;
-            line-height: 1.6;
+            line-height: 1.65;
             color: #a1a1aa;
-            margin-bottom: 36px;
-        }
-
-        .bento-specs-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
             margin-bottom: 32px;
         }
 
-        .bento-card {
-            background-color: rgba(24, 24, 27, 0.6);
-            border: 1px solid rgba(39, 39, 42, 0.8);
+        .discreet-notice-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            background-color: rgba(24, 24, 27, 0.5);
+            border: 1px solid rgba(39, 39, 42, 0.7);
             border-radius: 8px;
-            padding: 18px 20px;
+            padding: 16px 20px;
             backdrop-filter: blur(8px);
         }
 
-        .bento-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            font-weight: 600;
+        .notice-svg-icon {
             color: #71717a;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 6px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            margin-top: 2px;
+            flex-shrink: 0;
         }
 
-        .bento-value {
+        .notice-heading {
             font-family: 'Outfit', sans-serif;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 700;
-            color: #f4f4f5;
+            color: #e4e4e7;
+            margin-bottom: 4px;
         }
 
-        .partners-strip {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .partner-pill {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            font-weight: 500;
-            background-color: #18181b;
-            border: 1px solid #27272a;
-            color: #d4d4d8;
-            padding: 3px 10px;
-            border-radius: 4px;
+        .notice-body {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #71717a;
         }
 
         .showcase-footer {
@@ -437,54 +410,6 @@
             color: #09090b;
         }
 
-        /* Test Account Quick Switcher (Developer Friendly) */
-        .quick-accounts-section {
-            margin-top: 32px;
-            padding-top: 24px;
-            border-top: 1px solid var(--border-light);
-        }
-
-        .quick-accounts-title {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            font-weight: 600;
-            color: #a1a1aa;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .accounts-pills-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .account-pill {
-            font-size: 12px;
-            font-weight: 500;
-            background-color: var(--bg-subtle);
-            border: 1px solid var(--border-light);
-            color: #3f3f46;
-            padding: 4px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .account-pill:hover {
-            background-color: #ffffff;
-            border-color: #18181b;
-            color: #09090b;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
         .security-footer-compact {
             margin-top: 28px;
             text-align: center;
@@ -507,10 +432,7 @@
                 flex: none;
             }
             .showcase-headline {
-                font-size: 28px;
-            }
-            .bento-specs-grid {
-                grid-template-columns: 1fr;
+                font-size: 32px;
             }
         }
     </style>
@@ -533,64 +455,33 @@
                     </div>
                     <div>
                         <div class="brand-meta-title">PT. Panca Bima Bergawa</div>
-                        <div class="brand-meta-sub">Enterprise Procurement System</div>
+                        <div class="brand-meta-sub">Internal System Portal</div>
                     </div>
                 </div>
 
                 <!-- Showcase Main Pitch -->
                 <div class="showcase-center">
-                    <div class="status-badge-live">
-                        <span class="status-dot-pulse"></span>
-                        <span>Gateway Active &bull; Rasuna Said Node</span>
+                    <div class="system-category-pill">
+                        <span>PORTAL AKSES INTERNAL</span>
                     </div>
 
                     <h1 class="showcase-headline">
-                        One-Stop Industrial B2B Procurement ERP.
+                        Panca Bima Bergawa Enterprise Resource Planning.
                     </h1>
                     <p class="showcase-subtext">
-                        Sistem integrasi rantai pasok multi-brand, otomasi pembuatan Surat Penawaran Harga (*Quotation Builder*), pemantauan margin HPP seketika, dan portal mandiri agen freelance.
+                        Sistem tata kelola operasional terpadu dan manajemen proses internal PT. Panca Bima Bergawa. Akses ke dalam platform ini dibatasi secara ketat hanya bagi pengguna yang memiliki otorisasi resmi perusahaan.
                     </p>
 
-                    <!-- Bento Specifications Grid -->
-                    <div class="bento-specs-grid">
-                        <div class="bento-card">
-                            <div class="bento-label">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                    <circle cx="12" cy="10" r="3"></circle>
-                                </svg>
-                                Kantor Pusat
-                            </div>
-                            <div class="bento-value">Gd. Wirausaha Rasuna Said</div>
-                            <div style="font-size: 11px; color: #71717a; margin-top: 4px;">Setiabudi, Jakarta Selatan 12920</div>
+                    <div class="discreet-notice-card">
+                        <div class="notice-svg-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
                         </div>
-
-                        <div class="bento-card">
-                            <div class="bento-label">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                </svg>
-                                Standar Keamanan
-                            </div>
-                            <div class="bento-value">Passwordless OTP 300s</div>
-                            <div style="font-size: 11px; color: #71717a; margin-top: 4px;">CSPRNG SHA-256 &bull; Anti-IDOR</div>
+                        <div>
+                            <div class="notice-heading">Akses Khusus Terotorisasi</div>
+                            <div class="notice-body">Seluruh aktivitas dan riwayat akses dalam lingkungan sistem ini dicatat dan diawasi oleh administrator keamanan perusahaan.</div>
                         </div>
-                    </div>
-
-                    <!-- Partner Ecosystem Strip -->
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-                        Mitra Pabrikan & Distributor Resmi:
-                    </div>
-                    <div class="partners-strip">
-                        <span class="partner-pill">Schneider Electric</span>
-                        <span class="partner-pill">ABB</span>
-                        <span class="partner-pill">Legrand</span>
-                        <span class="partner-pill">Kitz Valve</span>
-                        <span class="partner-pill">Grundfos</span>
-                        <span class="partner-pill">Philips Lighting</span>
-                        <span class="partner-pill">3M Safety</span>
-                        <span class="partner-pill">Bosch MRO</span>
                     </div>
                 </div>
             </div>
@@ -824,52 +715,12 @@
                         </button>
                     </form>
 
-                    <!-- Quick Testing Switcher for Local Environment -->
-                    @if(app()->environment('local'))
-                        <div class="quick-accounts-section">
-                            <div class="quick-accounts-title">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12 6 12 12 14 14"></polyline>
-                                </svg>
-                                <span>Akun Percobaan Cepat (Local Dev):</span>
-                            </div>
-                            <div class="accounts-pills-row">
-                                <button type="button" class="account-pill" onclick="selectQuickEmail('sales@bimabergawa.com')">
-                                    <strong>Sales PIC:</strong> sales@bimabergawa.com
-                                </button>
-                                <button type="button" class="account-pill" onclick="selectQuickEmail('admin@bimabergawa.com')">
-                                    <strong>Super Admin:</strong> admin@bimabergawa.com
-                                </button>
-                                <button type="button" class="account-pill" onclick="selectQuickEmail('finance@bimabergawa.com')">
-                                    <strong>Finance:</strong> finance@bimabergawa.com
-                                </button>
-                                <button type="button" class="account-pill" onclick="selectQuickEmail('logistics@bimabergawa.com')">
-                                    <strong>Logistik:</strong> logistics@bimabergawa.com
-                                </button>
-                                <button type="button" class="account-pill" onclick="selectQuickEmail('agen@bimabergawa.com')">
-                                    <strong>Mitra Agen:</strong> agen@bimabergawa.com
-                                </button>
-                            </div>
-                        </div>
-
-                        <script>
-                            function selectQuickEmail(addr) {
-                                const input = document.getElementById('email');
-                                if (input) {
-                                    input.value = addr;
-                                    input.focus();
-                                }
-                            }
-                        </script>
-                    @endif
-
                 @endif
 
                 <!-- Security Note Footnote -->
                 <div class="security-footer-compact">
-                    Dilindungi oleh Enkripsi CSPRNG SHA-256 (300 Detik).<br>
-                    Akses terbatas bagi staf internal dan mitra agen PT. Panca Bima Bergawa.
+                    Dilindungi oleh Sistem Otentikasi Terpadu.<br>
+                    Akses terbatas bagi personel terotorisasi PT. Panca Bima Bergawa.
                 </div>
 
             </div>

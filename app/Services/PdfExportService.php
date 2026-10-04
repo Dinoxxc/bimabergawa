@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Quotation;
+use App\Models\SalesOrder;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Barryvdh\DomPDF\PDF as DomPdfInstance;
 use Illuminate\Support\Facades\Storage;
@@ -38,6 +39,33 @@ class PdfExportService
                 $quotation->pdf_path = $relativePath;
                 $quotation->saveQuietly();
             }
+        }
+
+        return $pdf;
+    }
+
+    /**
+     * Generate official Sales Order PDF compliant with corporate standards.
+     */
+    public static function generateSalesOrderPdf(SalesOrder $salesOrder, bool $saveToStorage = true): DomPdfInstance
+    {
+        $salesOrder->loadMissing(['quotation.items.product', 'quotation.inquiry', 'approver']);
+
+        $pdf = Pdf::loadView('pdf.sales-order', [
+            'salesOrder' => $salesOrder,
+            'quotation' => $salesOrder->quotation,
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('isRemoteEnabled', false);
+        $pdf->setOption('isHtml5ParserEnabled', true);
+
+        if ($saveToStorage) {
+            $safeNumber = str_replace(['/', '\\'], '-', $salesOrder->order_number);
+            $filename = sprintf('sales_order_%s.pdf', $safeNumber);
+            $relativePath = 'sales_orders/pdf/'.$filename;
+
+            Storage::disk('local_private')->put($relativePath, $pdf->output());
         }
 
         return $pdf;

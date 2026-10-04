@@ -24,12 +24,14 @@ class SalesOrder extends Model
         'customer_po_file_path',
         'project_name',
         'status',
+        'cancellation_reason',
         'vat_rate_applied',
         'total_amount',
         'currency',
         'is_approved_by_director',
         'approved_by',
         'approved_at',
+        'director_notes',
         'idempotency_key',
     ];
 

@@ -30,6 +30,11 @@ class InternalCommentsTimeline extends Component
     public function mount(Inquiry $inquiry): void
     {
         $this->inquiry = $inquiry;
+
+        $user = auth()->user();
+        if ($user && ! $user->hasAnyRole(['super_admin', 'sales_pic', 'finance', 'logistics'])) {
+            $this->type = 'agent_visible';
+        }
     }
 
     public function getCommentsProperty(): Collection
@@ -42,6 +47,17 @@ class InternalCommentsTimeline extends Component
 
     public function getAvailableStaffProperty(): Collection
     {
+        $user = auth()->user();
+
+        // Jika user adalah agen freelance, batasi mention eksklusif ke Sales PIC yang ditugaskan (TC-AGN-INQ-019)
+        if ($user && ! $user->hasAnyRole(['super_admin', 'sales_pic', 'finance', 'logistics'])) {
+            if ($this->inquiry->assigned_user_id && $this->inquiry->assignedUser) {
+                return collect([$this->inquiry->assignedUser]);
+            }
+
+            return collect([]);
+        }
+
         return User::where('is_active', true)
             ->role(['super_admin', 'sales_pic', 'finance', 'logistics'])
             ->get(['id', 'name', 'email']);
@@ -49,6 +65,11 @@ class InternalCommentsTimeline extends Component
 
     public function submitComment(InquiryAssignmentService $service): void
     {
+        $user = auth()->user();
+        if ($user && ! $user->hasAnyRole(['super_admin', 'sales_pic', 'finance', 'logistics'])) {
+            $this->type = 'agent_visible';
+        }
+
         $this->validate();
 
         $service->postComment(

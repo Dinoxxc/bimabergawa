@@ -27,15 +27,21 @@
 
             <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
                 <div class="flex items-center gap-4 text-xs">
-                    <span class="font-medium text-zinc-600 dark:text-zinc-400">Visibility:</span>
-                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
-                        <input type="radio" wire:model="type" value="internal" class="text-zinc-900 focus:ring-zinc-900 dark:text-zinc-100">
-                        <span class="text-zinc-700 dark:text-zinc-300">Internal Staff Only</span>
-                    </label>
-                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
-                        <input type="radio" wire:model="type" value="agent_visible" class="text-zinc-900 focus:ring-zinc-900 dark:text-zinc-100">
-                        <span class="text-zinc-700 dark:text-zinc-300">Visible to Freelance Agent</span>
-                    </label>
+                    @if(auth()->user()?->hasAnyRole(['super_admin', 'sales_pic', 'finance', 'logistics']))
+                        <span class="font-medium text-zinc-600 dark:text-zinc-400">Visibility:</span>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" wire:model="type" value="internal" class="text-zinc-900 focus:ring-zinc-900 dark:text-zinc-100">
+                            <span class="text-zinc-700 dark:text-zinc-300">Internal Staff Only</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" wire:model="type" value="agent_visible" class="text-zinc-900 focus:ring-zinc-900 dark:text-zinc-100">
+                            <span class="text-zinc-700 dark:text-zinc-300">Visible to Freelance Agent</span>
+                        </label>
+                    @else
+                        <span class="inline-flex items-center rounded-sm bg-blue-50 px-2 py-1 text-[11px] font-medium text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                            Communication with Assigned Sales PIC
+                        </span>
+                    @endif
                 </div>
 
                 <button

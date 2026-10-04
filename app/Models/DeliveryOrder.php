@@ -32,7 +32,9 @@ class DeliveryOrder extends Model
         'proof_of_delivery_path',
         'discrepancy_notes',
         'return_proof_path',
+        'notes',
         'shipped_at',
+        'delivered_at',
     ];
 
     protected function casts(): array
@@ -41,6 +43,7 @@ class DeliveryOrder extends Model
             'total_packages' => 'integer',
             'total_weight_kg' => 'decimal:2',
             'shipped_at' => 'datetime',
+            'delivered_at' => 'datetime',
         ];
     }
 

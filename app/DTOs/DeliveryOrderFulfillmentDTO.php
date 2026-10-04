@@ -12,7 +12,7 @@ readonly class DeliveryOrderFulfillmentDTO
     public function __construct(
         public int $salesOrderId,
         public array $items,
-        public string $shippingMethod,
+        public string $shippingMethod = 'Internal Fleet',
         public ?string $driverNotes = null,
         public ?string $driverName = null,
         public ?string $vehiclePlateNumber = null,

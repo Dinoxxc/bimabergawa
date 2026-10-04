@@ -371,6 +371,7 @@ class DeliveryOrderFulfillmentService
         return DB::transaction(function () use ($deliveryOrder, $podPath) {
             $updateData = [
                 'status' => 'delivered',
+                'delivered_at' => now(),
             ];
 
             if ($podPath !== null && trim($podPath) !== '') {
@@ -491,6 +492,7 @@ class DeliveryOrderFulfillmentService
 
             $updateData = [
                 'status' => $hasDiscrepancy ? 'partially_delivered' : 'delivered',
+                'delivered_at' => now(),
             ];
 
             if ($podPath !== null && trim($podPath) !== '') {

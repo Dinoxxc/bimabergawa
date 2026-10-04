@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\PasswordlessLogin;
+use App\Filament\Pages\Dashboard;
+use App\Filament\Resources\InquiryResource\Pages\ListInquiries;
 use App\Http\Middleware\ErpSecurityHeadersMiddleware;
 use App\Http\Middleware\FilamentOtpAuthenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -31,20 +32,50 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(PasswordlessLogin::class)
+            ->brandName('PT. Panca Bima Bergawa')
+            ->brandLogo(fn () => view('filament.components.brand-logo'))
+            ->brandLogoHeight('2.25rem')
             ->colors([
-                'primary' => Color::Zinc,
+                'primary' => [
+                    50 => '#f0f9ff',
+                    100 => '#e0f2fe',
+                    200 => '#bae6fd',
+                    300 => '#7dd3fc',
+                    400 => '#38bdf8',
+                    500 => '#46a2da',
+                    600 => '#2b8ac4',
+                    700 => '#1d6f9f',
+                    800 => '#1b5b82',
+                    900 => '#1b4d6d',
+                    950 => '#0b2333',
+                ],
+                'gray' => Color::Zinc,
             ])
             ->font('Inter')
-            ->sidebarCollapsibleOnDesktop()
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => view('filament.hooks.head-styles'),
+            )
+            ->renderHook(
+                PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE,
+                fn () => view('filament.components.inquiry-view-switcher'),
+                scopes: ListInquiries::class,
+            )
+            ->sidebarWidth('16rem')
+            ->navigationGroups([
+                'CRM & Sales',
+                'Logistics & Delivery',
+                'Finance & Commercial',
+                'Catalog & Inventory',
+                'System Administration',
+            ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                AccountWidget::class,
-            ])
+            ->widgets([])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

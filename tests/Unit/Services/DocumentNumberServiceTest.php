@@ -184,4 +184,29 @@ class DocumentNumberServiceTest extends TestCase
         $afterSeq = $this->service->getCurrentSequence(DocumentNumberRequestDTO::TYPE_INVOICE, $date);
         $this->assertSame(1, $afterSeq);
     }
+
+    public function test_preview_next_does_not_increment_sequence(): void
+    {
+        $date = Carbon::parse('2026-10-10 10:00:00');
+
+        $preview1 = DocumentNumberService::previewNext('INQ', $date);
+        $preview2 = DocumentNumberService::previewNext('INQ', $date);
+
+        $this->assertSame($preview1, $preview2);
+        $this->assertStringStartsWith('PBB/INQ/2026/10/', $preview1);
+
+        $currentSeq = $this->service->getCurrentSequence('INQ', $date);
+        $this->assertSame(0, $currentSeq);
+    }
+
+    public function test_generate_next_static_helper_generates_and_increments(): void
+    {
+        $date = Carbon::parse('2026-10-10 10:00:00');
+
+        $num = DocumentNumberService::generateNext('INQ', $date);
+        $this->assertStringStartsWith('PBB/INQ/2026/10/', $num);
+
+        $currentSeq = $this->service->getCurrentSequence('INQ', $date);
+        $this->assertSame(1, $currentSeq);
+    }
 }

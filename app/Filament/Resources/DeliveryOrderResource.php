@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\DeliveryOrderResource\Pages;
+use App\Models\ActivityLog;
 use App\Models\DeliveryOrder;
 use App\Models\SalesOrder;
 use App\Services\DeliveryOrderFulfillmentService;
+use App\Services\DocumentVerificationService;
 use App\Services\PdfExportService;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -306,6 +308,31 @@ class DeliveryOrderResource extends Resource
 
                 EditAction::make()
                     ->visible(fn (DeliveryOrder $record): bool => ! in_array($record->status, ['delivered', 'partially_delivered', 'cancelled'], true)),
+
+                Action::make('dispatch_whatsapp')
+                    ->label('WhatsApp')
+                    ->icon('heroicon-m-chat-bubble-left-ellipsis')
+                    ->color('success')
+                    ->url(function (DeliveryOrder $record): string {
+                        $phone = preg_replace('/[^0-9]/', '', (string) ($record->recipient_phone ?? $record->salesOrder?->phone_wa ?? '08123456789'));
+                        if (str_starts_with($phone, '0')) {
+                            $phone = '62'.substr($phone, 1);
+                        }
+                        $verifyUrl = DocumentVerificationService::getVerificationUrl('delivery-order', $record->delivery_number, (string) $record->created_at);
+                        $msg = rawurlencode("Halo {$record->recipient_name}, Surat Jalan No. {$record->delivery_number} telah diberangkatkan melalui kurir {$record->courier_name} (Resi: {$record->tracking_number}). Tautan verifikasi fisik: {$verifyUrl}");
+
+                        ActivityLog::create([
+                            'log_name' => 'whatsapp_dispatch_executed',
+                            'description' => "WhatsApp delivery order dispatch executed for {$record->delivery_number} to {$phone}.",
+                            'causer_type' => auth()->user()?->getMorphClass(),
+                            'causer_id' => auth()->id(),
+                            'subject_type' => $record->getMorphClass(),
+                            'subject_id' => $record->id,
+                            'properties' => ['phone' => $phone, 'document' => $record->delivery_number],
+                        ]);
+
+                        return "https://api.whatsapp.com/send?phone={$phone}&text={$msg}";
+                    }, shouldOpenInNewTab: true),
 
                 Action::make('download_pdf')
                     ->label('PDF')

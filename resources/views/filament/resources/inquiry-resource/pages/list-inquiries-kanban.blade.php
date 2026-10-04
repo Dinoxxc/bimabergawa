@@ -1,4 +1,41 @@
 <x-filament-panels::page>
+    <!-- View Switcher & SLA Legend Toolbar matching Login Precision Blueprint Aesthetic -->
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+        <div class="flex items-center gap-2.5">
+            <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider font-mono">View:</span>
+            <div class="crm-view-switcher">
+                <a href="{{ \App\Filament\Resources\InquiryResource::getUrl('index') }}" class="crm-view-switcher-btn">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                    </svg>
+                    <span>Table View</span>
+                </a>
+                <span class="crm-view-switcher-btn active">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="18" rx="1"></rect>
+                        <rect x="14" y="3" width="7" height="18" rx="1"></rect>
+                    </svg>
+                    <span>Kanban Board</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs text-zinc-500">
+            <span class="inline-flex items-center gap-1.5 font-medium">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span>Warning SLA: &gt; 24h</span>
+            </span>
+            <span>&bull;</span>
+            <span class="inline-flex items-center gap-1.5 font-medium">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span>Danger SLA: &gt; 48h</span>
+            </span>
+        </div>
+    </div>
+
     <div class="overflow-x-auto pb-4">
         <div class="flex items-start gap-4 min-w-[1240px]">
             @php

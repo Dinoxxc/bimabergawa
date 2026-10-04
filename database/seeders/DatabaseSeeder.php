@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             ArticleCategorySeeder::class,
             ProductAndSkuSampleSeeder::class,
             SupplierSeeder::class,
+            InquirySampleSeeder::class,
         ]);
     }
 }

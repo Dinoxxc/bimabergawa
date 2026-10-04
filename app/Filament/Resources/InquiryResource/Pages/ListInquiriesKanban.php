@@ -22,6 +22,19 @@ class ListInquiriesKanban extends Page
 
     protected static ?string $title = 'CRM Inquiries Kanban Board';
 
+    public static function shouldRegisterNavigation(array $parameters = []): bool
+    {
+        return true;
+    }
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-view-columns';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'CRM & Sales';
+
+    protected static ?string $navigationLabel = 'Kanban Board';
+
+    protected static ?int $navigationSort = 2;
+
     public ?int $lostInquiryId = null;
 
     public string $lostReason = '';
@@ -41,6 +54,7 @@ class ListInquiriesKanban extends Page
             Actions\Action::make('create_inquiry')
                 ->label('New Inquiry')
                 ->icon('heroicon-o-plus')
+                ->color('primary')
                 ->url(fn (): string => static::getResource()::getUrl('create')),
         ];
     }

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\QuotationResource\Pages;
+use App\Models\ActivityLog;
 use App\Models\Inquiry;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Services\DocumentNumberService;
+use App\Services\DocumentVerificationService;
 use App\Services\PdfExportService;
 use App\Services\SalesOrderWorkflowService;
 use App\Services\SystemSettingService;
@@ -475,6 +477,32 @@ class QuotationResource extends Resource
 
                 EditAction::make()
                     ->visible(fn (Quotation $record): bool => ! in_array($record->status, ['approved', 'accepted', 'won', 'converted_to_so', 'superseded'], true)),
+
+                Action::make('dispatch_whatsapp')
+                    ->label('WhatsApp')
+                    ->icon('heroicon-m-chat-bubble-left-ellipsis')
+                    ->color('success')
+                    ->url(function (Quotation $record): string {
+                        $phone = preg_replace('/[^0-9]/', '', (string) ($record->phone_wa ?? $record->inquiry?->phone_wa ?? '08123456789'));
+                        if (str_starts_with($phone, '0')) {
+                            $phone = '62'.substr($phone, 1);
+                        }
+                        $verifyUrl = DocumentVerificationService::getVerificationUrl('quotation', $record->quotation_number, (string) $record->created_at);
+                        $formattedTotal = number_format((float) $record->grand_total, 0, ',', '.');
+                        $msg = rawurlencode("Halo {$record->customer_name} ({$record->company_name}), berikut ringkasan Penawaran Resmi PT. Panca Bima Bergawa No. {$record->quotation_number} dengan nilai Rp {$formattedTotal}. Dokumen ini dapat diverifikasi digital di: {$verifyUrl}");
+
+                        ActivityLog::create([
+                            'log_name' => 'whatsapp_dispatch_executed',
+                            'description' => "WhatsApp quotation dispatch executed for {$record->quotation_number} to {$phone}.",
+                            'causer_type' => auth()->user()?->getMorphClass(),
+                            'causer_id' => auth()->id(),
+                            'subject_type' => $record->getMorphClass(),
+                            'subject_id' => $record->id,
+                            'properties' => ['phone' => $phone, 'document' => $record->quotation_number],
+                        ]);
+
+                        return "https://api.whatsapp.com/send?phone={$phone}&text={$msg}";
+                    }, shouldOpenInNewTab: true),
 
                 Action::make('download_pdf')
                     ->label('PDF')

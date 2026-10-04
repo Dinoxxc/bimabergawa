@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\AgentRegistrationController;
 use App\Http\Controllers\AuthOtpController;
 use App\Http\Controllers\CatalogBulkImportController;
+use App\Http\Controllers\DocumentVerificationController;
 use App\Http\Controllers\PanelRedirectionController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,3 +43,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/bulk-import', [CatalogBulkImportController::class, 'import'])->name('catalog.bulk.import');
     });
 });
+
+// 4. Digital QR Code Document Verification Portal (Public, Zero-Auth)
+Route::get('/verify-doc/{type}/{hash}', [DocumentVerificationController::class, 'verify'])
+    ->name('document.verify');

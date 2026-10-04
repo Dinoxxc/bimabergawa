@@ -119,6 +119,14 @@ class InquiryResourceTest extends TestCase
         $response->assertSee('PBB/INQ/2026/09/0002');
     }
 
+    public function test_inquiry_resource_registers_both_table_and_kanban_navigation_items(): void
+    {
+        $navItems = InquiryResource::getNavigationItems();
+        $this->assertCount(2, $navItems);
+        $this->assertEquals('Inquiries', $navItems[0]->getLabel());
+        $this->assertEquals('Kanban Board', $navItems[1]->getLabel());
+    }
+
     /**
      * TC-ERP-CRM-003: Transisi Status Inkuiri via Action / Kanban
      */

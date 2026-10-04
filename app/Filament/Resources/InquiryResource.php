@@ -17,6 +17,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
+use Filament\Navigation\NavigationItem;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -274,6 +275,23 @@ class InquiryResource extends Resource
         return [
             RelationManagers\ItemsRelationManager::class,
         ];
+    }
+
+    public static function getNavigationItems(): array
+    {
+        $items = parent::getNavigationItems();
+
+        if (static::hasPage('kanban')) {
+            $items[] = NavigationItem::make('Kanban Board')
+                ->group(static::getNavigationGroup())
+                ->icon('heroicon-o-view-columns')
+                ->activeIcon('heroicon-s-view-columns')
+                ->isActiveWhen(fn (): bool => request()->routeIs(static::getRouteBaseName().'.kanban'))
+                ->sort((static::getNavigationSort() ?? 1) + 1)
+                ->url(static::getUrl('kanban'));
+        }
+
+        return $items;
     }
 
     public static function getPages(): array

@@ -31,6 +31,43 @@
         pointer-events: none;
     }
 
+    /* 2. STRICT BRAND LOGO SIZING: Prevents any visual overflow or giant image rendering */
+    .fi-logo,
+    .fi-sidebar-header .fi-logo {
+        display: flex !important;
+        align-items: center !important;
+        height: 36px !important;
+        max-height: 36px !important;
+        max-width: 220px !important;
+        overflow: hidden !important;
+    }
+
+    .fi-logo img,
+    .fi-sidebar-header img,
+    .fi-topbar img {
+        height: 28px !important;
+        max-height: 28px !important;
+        width: auto !important;
+        max-width: 200px !important;
+        object-fit: contain !important;
+        display: block !important;
+    }
+
+    html.dark .fi-logo img.logo-light,
+    .dark .fi-logo img.logo-light {
+        display: none !important;
+    }
+
+    html.dark .fi-logo img.logo-dark,
+    .dark .fi-logo img.logo-dark {
+        display: block !important;
+    }
+
+    html:not(.dark) .fi-logo img.logo-dark,
+    body:not(.dark) .fi-logo img.logo-dark {
+        display: none !important;
+    }
+
     /* Headings hierarchy using Outfit */
     h1, h2, h3, h4, h5, h6,
     .fi-header-heading,
@@ -45,14 +82,9 @@
     .fi-header-heading {
         font-weight: 800 !important;
         font-size: 1.5rem !important;
-        color: #09090b;
     }
 
-    .dark .fi-header-heading {
-        color: #f4f4f5 !important;
-    }
-
-    /* 2. Primary Buttons using exact #46a2da from Login Screen */
+    /* 3. Primary Buttons using exact #46a2da from Login Screen */
     .fi-btn-primary,
     button.fi-btn.fi-color-primary,
     a.fi-btn.fi-color-primary {
@@ -82,11 +114,11 @@
         transform: translateY(0);
     }
 
-    /* 3. Sidebar Brand Header & Active Items */
+    /* 4. Sidebar Brand Header & Active Items */
     .fi-sidebar-header {
         border-bottom: 1px solid rgba(228, 228, 231, 0.8) !important;
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
     }
 
     .dark .fi-sidebar-header {
@@ -107,13 +139,6 @@
 
     .fi-sidebar-item-active .fi-sidebar-item-icon {
         color: var(--brand-blue) !important;
-    }
-
-    /* 4. Tabs & Active Badges */
-    .fi-tabs-item-active {
-        color: var(--brand-blue) !important;
-        border-color: var(--brand-blue) !important;
-        font-weight: 600 !important;
     }
 
     /* 5. Custom View Switcher Toolbar */

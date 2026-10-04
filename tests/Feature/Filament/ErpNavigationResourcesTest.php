@@ -48,6 +48,7 @@ class ErpNavigationResourcesTest extends TestCase
             'http://app.bimabergawa.test/admin/products',
             'http://app.bimabergawa.test/admin/brands',
             'http://app.bimabergawa.test/admin/categories',
+            'http://app.bimabergawa.test/admin/suppliers',
             'http://app.bimabergawa.test/admin/system-settings',
             'http://app.bimabergawa.test/admin/users',
         ];

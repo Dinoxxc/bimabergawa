@@ -251,6 +251,15 @@ class SalesOrderResource extends Resource
                 EditAction::make()
                     ->visible(fn (SalesOrder $record): bool => ! in_array($record->status, ['completed', 'shipped', 'cancelled'], true)),
 
+                Action::make('create_delivery_order')
+                    ->label('Create DO')
+                    ->icon('heroicon-o-truck')
+                    ->color('primary')
+                    ->visible(fn (SalesOrder $record): bool => in_array($record->status, ['approved', 'processing', 'partially_fulfilled', 'ready_to_ship'], true)
+                        && ((float) $record->total_amount < 100000000.00 || $record->is_approved_by_director)
+                    )
+                    ->url(fn (SalesOrder $record): string => DeliveryOrderResource::getUrl('create', ['sales_order_id' => $record->id])),
+
                 Action::make('download_pdf')
                     ->label('PDF')
                     ->icon('heroicon-o-arrow-down-tray')

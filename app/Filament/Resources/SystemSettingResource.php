@@ -22,9 +22,11 @@ class SystemSettingResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'System Administration';
 
-    protected static ?string $navigationLabel = 'Commercial & System Settings';
+    protected static ?string $navigationLabel = 'Setting Key Records';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?string $slug = 'system-settings/records';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

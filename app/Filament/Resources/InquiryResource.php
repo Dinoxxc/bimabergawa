@@ -146,38 +146,60 @@ class InquiryResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->fontFamily('mono')
-                    ->weight('bold'),
-                Tables\Columns\TextColumn::make('company_name')
-                    ->label('Company')
-                    ->searchable()
-                    ->sortable()
-                    ->limit(28),
-                Tables\Columns\TextColumn::make('customer_name')
-                    ->label('Contact')
-                    ->searchable()
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('phone_wa')
-                    ->label('WhatsApp')
+                    ->weight('bold')
                     ->copyable()
-                    ->copyMessage('Phone number copied')
-                    ->icon('heroicon-m-phone'),
+                    ->copyMessage('Inquiry number copied to clipboard'),
+                Tables\Columns\TextColumn::make('company_name')
+                    ->label('Client & Contact')
+                    ->description(fn (Inquiry $record): string => ($record->customer_name ?: 'Unknown Contact').' • '.$record->phone_wa)
+                    ->searchable(['company_name', 'customer_name', 'phone_wa'])
+                    ->sortable()
+                    ->weight('bold'),
+                Tables\Columns\TextColumn::make('items_count')
+                    ->counts('items')
+                    ->label('Items')
+                    ->badge()
+                    ->color('gray')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('source')
+                    ->label('Source')
+                    ->badge()
+                    ->color('gray')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'website_rfq' => 'Website RFQ',
+                        'direct_whatsapp' => 'WhatsApp',
+                        'walk_in_phone' => 'Phone',
+                        'exhibition' => 'Exhibition',
+                        'referral' => 'Referral',
+                        default => ucfirst(str_replace('_', ' ', $state)),
+                    })
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('assignedUser.name')
                     ->label('Sales PIC')
                     ->placeholder('Unassigned')
                     ->badge()
                     ->color(fn ($state) => $state ? 'gray' : 'warning'),
                 Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
+                    ->label('Stage')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'new' => 'info',
                         'contacted' => 'warning',
-                        'quote_draft', 'quote_sent' => 'primary',
+                        'quote_draft' => 'primary',
+                        'quote_sent' => 'primary',
                         'deal' => 'success',
                         'lost' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => ucfirst(str_replace('_', ' ', $state))),
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'new' => 'New Lead',
+                        'contacted' => 'Contacted',
+                        'quote_draft' => 'Quote Draft',
+                        'quote_sent' => 'Negotiation',
+                        'deal' => 'Won',
+                        'lost' => 'Lost',
+                        default => ucfirst(str_replace('_', ' ', $state)),
+                    }),
                 Tables\Columns\TextColumn::make('sla_aging')
                     ->label('SLA Aging')
                     ->state(fn (Inquiry $record): string => app(InquiryAssignmentService::class)->calculateSlaAging($record)['badge_short'])

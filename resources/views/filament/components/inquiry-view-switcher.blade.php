@@ -20,4 +20,16 @@
             </a>
         </div>
     </div>
+
+    <div class="pbb-kanban-toolbar-right">
+        <span class="pbb-kanban-legend-item">
+            <span class="pbb-kanban-legend-dot warning"></span>
+            <span>Warning SLA: &gt; 24h</span>
+        </span>
+        <span class="pbb-kanban-legend-sep">&bull;</span>
+        <span class="pbb-kanban-legend-item">
+            <span class="pbb-kanban-legend-dot danger"></span>
+            <span>Danger SLA: &gt; 48h</span>
+        </span>
+    </div>
 </div>

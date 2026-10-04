@@ -141,6 +141,117 @@
         color: var(--brand-blue) !important;
     }
 
+    /* 4b. Elegant Topbar & Breadcrumbs */
+    .fi-topbar {
+        border-bottom: 1px solid #e4e4e7 !important;
+        background-color: #ffffff !important;
+    }
+
+    .dark .fi-topbar {
+        border-bottom-color: #27272a !important;
+        background-color: #121214 !important;
+    }
+
+    .fi-breadcrumbs-item-label {
+        font-family: var(--font-heading) !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+    }
+
+    /* 4c. Elegant Data Tables (Engineering Blueprint Precision) */
+    .fi-ta-ctn {
+        border: 1px solid #e4e4e7 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        background-color: #ffffff !important;
+    }
+
+    .dark .fi-ta-ctn {
+        border-color: #27272a !important;
+        background-color: #121214 !important;
+    }
+
+    .fi-ta-header-ctn {
+        padding: 14px 18px !important;
+        border-bottom: 1px solid #e4e4e7 !important;
+    }
+
+    .dark .fi-ta-header-ctn {
+        border-bottom-color: #27272a !important;
+    }
+
+    /* Table Header Row */
+    .fi-ta-header-cell {
+        background-color: #fafafa !important;
+        font-family: var(--font-heading) !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.06em !important;
+        color: #52525b !important;
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+        border-bottom: 1px solid #e4e4e7 !important;
+    }
+
+    .dark .fi-ta-header-cell {
+        background-color: #18181b !important;
+        border-bottom-color: #27272a !important;
+        color: #a1a1aa !important;
+    }
+
+    /* Table Data Rows */
+    .fi-ta-row {
+        transition: background-color 0.12s ease-in-out !important;
+    }
+
+    .fi-ta-row:hover {
+        background-color: #f8fafc !important;
+    }
+
+    .dark .fi-ta-row:hover {
+        background-color: #1c1c20 !important;
+    }
+
+    .fi-ta-cell {
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+        font-size: 13px !important;
+        border-bottom: 1px solid #f4f4f5 !important;
+    }
+
+    .dark .fi-ta-cell {
+        border-bottom-color: #27272a !important;
+    }
+
+    /* Form Inputs and Filters */
+    .fi-input-wrp {
+        border-radius: 8px !important;
+        border-color: #d4d4d8 !important;
+        transition: all 0.15s ease !important;
+    }
+
+    .dark .fi-input-wrp {
+        border-color: #3f3f46 !important;
+    }
+
+    .fi-input-wrp:focus-within {
+        border-color: var(--brand-blue) !important;
+        box-shadow: 0 0 0 2px rgba(70, 162, 218, 0.2) !important;
+    }
+
+    /* Sidebar Group Label */
+    .fi-sidebar-group-label {
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.08em !important;
+        color: #71717a !important;
+        padding: 10px 16px 4px !important;
+    }
+
     /* 5. Custom View Switcher Toolbar */
     .crm-view-switcher {
         display: inline-flex;

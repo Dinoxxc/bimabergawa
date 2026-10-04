@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\InquiryResource\Pages;
 
 use App\Filament\Resources\InquiryResource;
+use App\Filament\Resources\InquiryResource\Widgets\InquiryOverviewWidget;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -21,6 +22,13 @@ class ListInquiries extends ListRecords
                 ->label('New Inquiry')
                 ->icon('heroicon-o-plus')
                 ->color('primary'),
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            InquiryOverviewWidget::class,
         ];
     }
 }

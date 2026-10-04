@@ -47,6 +47,9 @@ class RoleAndPermissionSeeder extends Seeder
             'manage_products',
             'import_products',
             'view_cost_price',
+            // Suppliers & Sourcing
+            'view_suppliers',
+            'manage_suppliers',
             // Financials & Commissions
             'view_financial_reports',
             'process_payouts',
@@ -82,6 +85,8 @@ class RoleAndPermissionSeeder extends Seeder
             'manage_products',
             'import_products',
             'view_cost_price',
+            'view_suppliers',
+            'manage_suppliers',
         ]);
 
         $roleFinance = Role::firstOrCreate(['name' => 'finance', 'guard_name' => 'web']);
@@ -97,6 +102,8 @@ class RoleAndPermissionSeeder extends Seeder
             'view_financial_reports',
             'process_payouts',
             'manage_commercial_tax',
+            'view_suppliers',
+            'manage_suppliers',
         ]);
 
         $roleLogistics = Role::firstOrCreate(['name' => 'logistics', 'guard_name' => 'web']);

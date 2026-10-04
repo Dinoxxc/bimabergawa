@@ -20,7 +20,7 @@ class ExecutiveStatsOverviewWidget extends BaseWidget
         $dealsCount = Inquiry::where('status', 'deal')->count();
         $lostCount = Inquiry::where('status', 'lost')->count();
         $activeQuotesCount = Quotation::whereIn('status', ['draft', 'pending_director_approval', 'approved', 'sent'])->count();
-        $totalPipelineValue = (float) Quotation::sum('grand_total') + (float) Inquiry::sum('estimated_value');
+        $totalPipelineValue = (float) Quotation::whereIn('status', ['draft', 'pending_director_approval', 'approved', 'sent'])->sum('grand_total');
 
         $winRate = ($dealsCount + $lostCount) > 0
             ? round(($dealsCount / ($dealsCount + $lostCount)) * 100, 1)

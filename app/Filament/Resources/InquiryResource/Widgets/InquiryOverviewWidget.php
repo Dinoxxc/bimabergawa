@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\InquiryResource\Widgets;
 
 use App\Models\Inquiry;
+use App\Models\Quotation;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -13,11 +14,11 @@ class InquiryOverviewWidget extends BaseWidget
     protected function getStats(): array
     {
         $total = Inquiry::count();
-        $unassigned = Inquiry::whereNull('assigned_to')->count();
-        $slaAlerts = Inquiry::where('status', 'new_rfq')
+        $unassigned = Inquiry::whereNull('assigned_user_id')->count();
+        $slaAlerts = Inquiry::where('status', 'new')
             ->where('created_at', '<=', now()->subHours(24))
             ->count();
-        $totalEstValue = (float) Inquiry::sum('estimated_value');
+        $totalEstValue = (float) Quotation::whereIn('status', ['draft', 'approved', 'sent'])->sum('grand_total');
 
         return [
             Stat::make('Total Inquiries', (string) $total)

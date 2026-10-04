@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\CommissionPayout;
 use App\Models\DeliveryOrder;
 use App\Models\Quotation;
 use App\Models\SalesOrder;
@@ -95,6 +96,35 @@ class PdfExportService
             $safeNumber = str_replace(['/', '\\'], '-', $deliveryOrder->delivery_number);
             $filename = sprintf('delivery_order_%s.pdf', $safeNumber);
             $relativePath = 'delivery_orders/pdf/'.$filename;
+
+            Storage::disk('local_private')->put($relativePath, $pdf->output());
+        }
+
+        return $pdf;
+    }
+
+    /**
+     * Generate official Commission Voucher PDF compliant with corporate standards.
+     */
+    public static function generateCommissionVoucherPdf(CommissionPayout $payout, bool $saveToStorage = true): DomPdfInstance
+    {
+        $payout->loadMissing([
+            'freelanceSales',
+            'salesOrder.quotation.inquiry',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.commission-voucher', [
+            'payout' => $payout,
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('isRemoteEnabled', false);
+        $pdf->setOption('isHtml5ParserEnabled', true);
+
+        if ($saveToStorage) {
+            $safeNumber = str_replace(['/', '\\'], '-', $payout->payout_number ?? 'COM-'.$payout->id);
+            $filename = sprintf('commission_voucher_%s.pdf', $safeNumber);
+            $relativePath = 'commissions/pdf/'.$filename;
 
             Storage::disk('local_private')->put($relativePath, $pdf->output());
         }

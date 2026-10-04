@@ -55,6 +55,11 @@ class FreelanceSales extends Model
         'ktp_file_path',
     ];
 
+    public function getFullNameAttribute(): string
+    {
+        return $this->name;
+    }
+
     public function tier(): BelongsTo
     {
         return $this->belongsTo(CommissionTier::class, 'commission_tier_id');

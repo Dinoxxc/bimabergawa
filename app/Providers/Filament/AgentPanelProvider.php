@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers\Filament;
 
+use App\Filament\Agent\Widgets\AgentCommissionOverviewWidget;
 use App\Filament\Pages\Auth\PasswordlessLogin;
 use App\Http\Middleware\ErpSecurityHeadersMiddleware;
 use App\Http\Middleware\FilamentOtpAuthenticate;
@@ -15,7 +16,6 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -63,7 +63,7 @@ class AgentPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Agent/Widgets'), for: 'App\\Filament\\Agent\\Widgets')
             ->widgets([
-                AccountWidget::class,
+                AgentCommissionOverviewWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

@@ -67,6 +67,10 @@ class SystemSettingService
     {
         $value = self::get($key, $default);
 
+        if (is_array($value)) {
+            return implode(', ', $value);
+        }
+
         return $value !== null ? (string) $value : $default;
     }
 

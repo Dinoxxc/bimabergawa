@@ -6,6 +6,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\InvoiceResource\Pages;
 use App\Models\Invoice;
+use App\Services\PdfExportService;
+use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -105,6 +107,19 @@ class InvoiceResource extends Resource
             ])
             ->recordActions([
                 ViewAction::make(),
+                Action::make('download_pdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->action(function (Invoice $record) {
+                        $pdf = PdfExportService::generateInvoicePdf($record);
+                        $safeNumber = str_replace(['/', '\\'], '-', $record->invoice_number);
+
+                        return response()->streamDownload(
+                            fn () => print ($pdf->output()),
+                            "Invoice-{$safeNumber}.pdf"
+                        );
+                    }),
             ]);
     }
 

@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\CommissionPayout;
 use App\Models\DeliveryOrder;
+use App\Models\Invoice;
 use App\Models\Quotation;
 use App\Models\SalesOrder;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -127,6 +128,41 @@ class PdfExportService
             $relativePath = 'commissions/pdf/'.$filename;
 
             Storage::disk('local_private')->put($relativePath, $pdf->output());
+        }
+
+        return $pdf;
+    }
+
+    /**
+     * Generate official Commercial Invoice PDF compliant with corporate standards.
+     */
+    public static function generateInvoicePdf(Invoice $invoice, bool $saveToStorage = true): DomPdfInstance
+    {
+        $invoice->loadMissing([
+            'items.product',
+            'salesOrder.quotation.inquiry',
+            'paymentTerm',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.invoice', [
+            'invoice' => $invoice,
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOption('isRemoteEnabled', false);
+        $pdf->setOption('isHtml5ParserEnabled', true);
+
+        if ($saveToStorage) {
+            $safeNumber = str_replace(['/', '\\'], '-', $invoice->invoice_number);
+            $filename = sprintf('invoice_%s.pdf', $safeNumber);
+            $relativePath = 'invoices/pdf/'.$filename;
+
+            Storage::disk('local_private')->put($relativePath, $pdf->output());
+
+            if ($invoice->pdf_path !== $relativePath) {
+                $invoice->pdf_path = $relativePath;
+                $invoice->saveQuietly();
+            }
         }
 
         return $pdf;

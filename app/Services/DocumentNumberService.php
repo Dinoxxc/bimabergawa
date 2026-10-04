@@ -234,4 +234,49 @@ class DocumentNumberService
 
         return $record ? (int) $record->current_sequence : 0;
     }
+
+    /**
+     * Preview nomor dokumen berikutnya tanpa mengonsumsi atau menginkrementasi sequence database.
+     */
+    public static function previewNext(string $targetType, ?DateTimeInterface $date = null): string
+    {
+        $normalizedType = trim($targetType);
+        $lookupKey = strtolower($normalizedType);
+
+        if (! isset(self::PREFIX_MAP[$lookupKey]) && ! isset(self::PREFIX_MAP[$normalizedType])) {
+            throw new InvalidArgumentException(sprintf(
+                'Tipe dokumen tidak valid: [%s]. Harus salah satu dari tipe terdaftar.',
+                $targetType
+            ));
+        }
+
+        $prefix = self::PREFIX_MAP[$lookupKey] ?? self::PREFIX_MAP[$normalizedType];
+        $targetDate = $date ?? now();
+        $year = $targetDate->format('Y');
+        $month = $targetDate->format('m');
+        $yearMonth = $year.$month;
+
+        $record = DocumentSequence::where('document_type', $prefix)
+            ->where('year_month', $yearMonth)
+            ->first();
+
+        $nextSequence = ($record ? (int) $record->current_sequence : 0) + 1;
+
+        if ($nextSequence > 9999) {
+            return sprintf('PBB/%s/%s/%s/%d', $prefix, $year, $month, $nextSequence);
+        }
+
+        return sprintf('PBB/%s/%s/%s/%04d', $prefix, $year, $month, $nextSequence);
+    }
+
+    /**
+     * Helper statis untuk generate nomor dokumen berikutnya secara atomik.
+     */
+    public static function generateNext(
+        DocumentNumberRequestDTO|string $request,
+        ?DateTimeInterface $date = null,
+        ?int $userId = null
+    ): string {
+        return app(self::class)->generateNextNumber($request, $date, $userId);
+    }
 }

@@ -35,7 +35,7 @@ return new class extends Migration
             $table->decimal('total_cost', 15, 2)->default(0.00); // Modal HPP Internal
             $table->decimal('gross_profit_margin', 5, 2)->default(0.00); // Persentase Margin Laba Kotor
             $table->boolean('is_approved_by_director')->default(false);
-            $table->enum('status', ['draft', 'pending_director_approval', 'approved', 'sent', 'expired', 'rejected'])
+            $table->enum('status', ['draft', 'pending_director_approval', 'approved', 'sent', 'expired', 'rejected', 'superseded'])
                 ->default('draft')
                 ->index();
             $table->string('pdf_path', 255)->nullable();

@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Quotation;
 use App\Services\DocumentNumberService;
 use App\Services\PdfExportService;
+use App\Services\SalesOrderWorkflowService;
 use App\Services\SystemSettingService;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -557,6 +558,41 @@ class QuotationResource extends Resource
                         return redirect(QuotationResource::getUrl('edit', ['record' => $newQuotation]));
                     })
                     ->visible(fn (Quotation $record) => in_array($record->status, ['approved', 'sent', 'sent_to_client', 'rejected', 'expired'])),
+
+                Action::make('convert_to_so')
+                    ->label('Convert to SO')
+                    ->icon('heroicon-o-shopping-bag')
+                    ->color('primary')
+                    ->visible(fn (Quotation $record): bool => in_array($record->status, ['approved', 'won', 'accepted'], true) && ! $record->salesOrder)
+                    ->form([
+                        Forms\Components\TextInput::make('customer_po_number')
+                            ->label('Client PO Number')
+                            ->placeholder('e.g. PO-KTR-2026-098')
+                            ->required(),
+                        Forms\Components\DatePicker::make('customer_po_date')
+                            ->label('Client PO Date')
+                            ->default(now())
+                            ->required(),
+                        Forms\Components\FileUpload::make('customer_po_file_path')
+                            ->label('Customer PO Document (PDF / Image)')
+                            ->disk('local_private')
+                            ->directory('sales_orders/po')
+                            ->visibility('private')
+                            ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                            ->maxSize(5120),
+                    ])
+                    ->action(function (Quotation $record, array $data) {
+                        $workflowService = app(SalesOrderWorkflowService::class);
+                        $salesOrder = $workflowService->convertFromQuotation($record, $data);
+
+                        Notification::make()
+                            ->title('Converted to Sales Order')
+                            ->body("Sales Order {$salesOrder->order_number} has been generated.")
+                            ->success()
+                            ->send();
+
+                        return redirect(SalesOrderResource::getUrl('view', ['record' => $salesOrder]));
+                    }),
             ]);
     }
 

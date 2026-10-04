@@ -21,6 +21,8 @@ return new class extends Migration
             $table->date('customer_po_date')->nullable();
             $table->string('customer_po_file_path', 255)->nullable();
             $table->enum('status', [
+                'pending_director_approval',
+                'approved',
                 'processing',
                 'indent_principal',
                 'ready_to_ship',

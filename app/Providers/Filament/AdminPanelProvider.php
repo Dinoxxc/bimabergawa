@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\PasswordlessLogin;
+use App\Filament\Resources\InquiryResource\Pages\ListInquiries;
 use App\Http\Middleware\ErpSecurityHeadersMiddleware;
 use App\Http\Middleware\FilamentOtpAuthenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -55,6 +56,11 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn () => view('filament.hooks.head-styles'),
+            )
+            ->renderHook(
+                PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE,
+                fn () => view('filament.components.inquiry-view-switcher'),
+                scopes: ListInquiries::class,
             )
             ->sidebarWidth('16rem')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')

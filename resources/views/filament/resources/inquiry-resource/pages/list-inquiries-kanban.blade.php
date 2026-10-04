@@ -1,8 +1,8 @@
 <x-filament-panels::page>
     <!-- View Switcher & SLA Legend Toolbar matching Login Precision Blueprint Aesthetic -->
-    <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
-        <div class="flex items-center gap-2.5">
-            <span class="text-xs font-bold text-zinc-500 uppercase tracking-wider font-mono">View:</span>
+    <div class="pbb-kanban-toolbar">
+        <div class="pbb-kanban-toolbar-left">
+            <span class="pbb-kanban-toolbar-label">View:</span>
             <div class="crm-view-switcher">
                 <a href="{{ \App\Filament\Resources\InquiryResource::getUrl('index') }}" class="crm-view-switcher-btn">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -23,21 +23,22 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-3 text-xs text-zinc-500">
-            <span class="inline-flex items-center gap-1.5 font-medium">
-                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+        <div class="pbb-kanban-toolbar-right">
+            <span class="pbb-kanban-legend-item">
+                <span class="pbb-kanban-legend-dot warning"></span>
                 <span>Warning SLA: &gt; 24h</span>
             </span>
-            <span>&bull;</span>
-            <span class="inline-flex items-center gap-1.5 font-medium">
-                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            <span class="pbb-kanban-legend-sep">&bull;</span>
+            <span class="pbb-kanban-legend-item">
+                <span class="pbb-kanban-legend-dot danger"></span>
                 <span>Danger SLA: &gt; 48h</span>
             </span>
         </div>
     </div>
 
-    <div class="overflow-x-auto pb-4">
-        <div class="flex items-start gap-4 min-w-[1240px]">
+    <!-- Kanban Board Container -->
+    <div class="pbb-kanban-container">
+        <div class="pbb-kanban-board">
             @php
                 $grouped = $this->inquiriesGrouped;
                 $statuses = $this->getStatuses();
@@ -48,42 +49,40 @@
                 @php
                     $cards = $grouped->get($statusKey, collect());
                 @endphp
-                <div class="flex-1 min-w-[280px] max-w-[340px] rounded-xl border border-zinc-200 bg-zinc-50/70 p-3 dark:border-zinc-800 dark:bg-zinc-900/60">
+                <div class="pbb-kanban-col">
                     <!-- Column Header -->
-                    <div class="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200">
-                                {{ $statusConfig['title'] }}
-                            </span>
-                            <span class="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-bold border {{ $statusConfig['badge_color'] }}">
-                                {{ $cards->count() }}
-                            </span>
-                        </div>
+                    <div class="pbb-kanban-col-header">
+                        <span class="pbb-kanban-col-title">
+                            {{ $statusConfig['title'] }}
+                        </span>
+                        <span class="pbb-kanban-col-badge {{ $statusConfig['badge_class'] }}">
+                            {{ $cards->count() }}
+                        </span>
                     </div>
 
                     <!-- Column Cards -->
-                    <div class="mt-3 space-y-3 min-h-[480px]">
+                    <div class="pbb-kanban-cards">
                         @forelse($cards as $inq)
                             @php
                                 $sla = $service->calculateSlaAging($inq);
                             @endphp
-                            <div class="rounded-lg border border-zinc-200 bg-white p-3.5 shadow-xs transition hover:border-zinc-400 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
+                            <div class="pbb-kanban-card">
                                 <!-- Card Header -->
-                                <div class="flex items-center justify-between gap-1 text-[11px]">
-                                    <span class="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                                <div class="pbb-card-top">
+                                    <span class="pbb-card-number">
                                         {{ $inq->inquiry_number }}
                                     </span>
-                                    <span class="text-zinc-400">
+                                    <span class="pbb-card-time">
                                         {{ $inq->created_at->diffForHumans() }}
                                     </span>
                                 </div>
 
                                 <!-- Company & Contact -->
-                                <div class="mt-2">
-                                    <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1">
+                                <div>
+                                    <h4 class="pbb-card-company" title="{{ $inq->company_name }}">
                                         {{ $inq->company_name }}
                                     </h4>
-                                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 flex items-center gap-1.5">
+                                    <p class="pbb-card-contact">
                                         <span>{{ $inq->customer_name }}</span>
                                         <span>&bull;</span>
                                         <span>{{ $inq->phone_wa }}</span>
@@ -91,12 +90,12 @@
                                 </div>
 
                                 <!-- Items Count & Project -->
-                                <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
-                                    <span class="inline-flex items-center rounded-sm bg-zinc-100 px-1.5 py-0.5 font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                                <div class="pbb-card-meta">
+                                    <span class="pbb-card-sku-badge">
                                         {{ $inq->items->count() }} SKU Items
                                     </span>
                                     @if($inq->project_name)
-                                        <span class="text-zinc-400 truncate max-w-[140px]" title="{{ $inq->project_name }}">
+                                        <span class="pbb-card-project" title="{{ $inq->project_name }}">
                                             {{ $inq->project_name }}
                                         </span>
                                     @endif
@@ -105,16 +104,16 @@
                                 <!-- SLA Stale Alert Badges (TC-ERP-CRM-004 & TC-ERP-CRM-005) -->
                                 @if($inq->status === 'new' && $sla['is_stale'])
                                     @if($sla['level'] === 'danger')
-                                        <div class="mt-2.5 flex items-center gap-1.5 rounded-md bg-rose-50 border border-rose-200 px-2 py-1 text-[11px] font-bold text-rose-700 dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-300">
+                                        <div class="pbb-card-sla-danger">
                                             <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
                                                 <line x1="12" y1="9" x2="12" y2="13"></line>
                                                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
                                             </svg>
-                                            <span>SLA Danger: > 48 Jam Belum Diproses</span>
+                                            <span>SLA Danger: &gt; 48 Jam Belum Diproses</span>
                                         </div>
                                     @elseif($sla['level'] === 'warning')
-                                        <div class="mt-2.5 flex items-center gap-1.5 rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-[11px] font-semibold text-amber-800 dark:bg-amber-950/50 dark:border-amber-900 dark:text-amber-300">
+                                        <div class="pbb-card-sla-warning">
                                             <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <circle cx="12" cy="12" r="10"></circle>
                                                 <polyline points="12 6 12 12 16 14"></polyline>
@@ -125,13 +124,13 @@
                                 @endif
 
                                 <!-- Assigned PIC Badge -->
-                                <div class="mt-2.5 flex items-center justify-between border-t border-zinc-100 pt-2 text-[11px] dark:border-zinc-800/80">
-                                    <div class="flex items-center gap-1 text-zinc-500">
+                                <div class="pbb-card-pic-row">
+                                    <div class="pbb-card-pic-info">
                                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                             <circle cx="12" cy="7" r="4"></circle>
                                         </svg>
-                                        <span class="font-medium text-zinc-700 dark:text-zinc-300">
+                                        <span class="pbb-card-pic-name">
                                             {{ $inq->assignedUser->name ?? 'Unassigned' }}
                                         </span>
                                     </div>
@@ -140,7 +139,7 @@
                                         <button
                                             type="button"
                                             wire:click="openAssignModal({{ $inq->id }})"
-                                            class="text-[10px] font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                                            class="pbb-card-btn-assign"
                                             title="Assign PIC"
                                         >
                                             Assign
@@ -149,10 +148,10 @@
                                 </div>
 
                                 <!-- Card Actions -->
-                                <div class="mt-2.5 flex flex-wrap items-center justify-between gap-1 pt-2 border-t border-zinc-100 dark:border-zinc-800/80 text-[10px]">
+                                <div class="pbb-card-actions">
                                     <a
                                         href="{{ \App\Filament\Resources\InquiryResource::getUrl('view', ['record' => $inq->id]) }}"
-                                        class="font-semibold text-zinc-700 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-100 inline-flex items-center gap-1"
+                                        class="pbb-card-link-view"
                                     >
                                         <span>View Details</span>
                                         <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -160,13 +159,13 @@
                                         </svg>
                                     </a>
 
-                                    <div class="flex items-center gap-1">
-                                        <!-- Quick Status Dropdown / Move Button -->
+                                    <div class="pbb-card-btns-group">
+                                        <!-- Quick Status Move Buttons -->
                                         @if($inq->status === 'new')
                                             <button
                                                 type="button"
                                                 wire:click="moveCard({{ $inq->id }}, 'contacted')"
-                                                class="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-medium text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+                                                class="pbb-btn-move"
                                                 title="Mark as Contacted"
                                             >
                                                 &rarr; Contacted
@@ -175,7 +174,7 @@
                                             <button
                                                 type="button"
                                                 wire:click="moveCard({{ $inq->id }}, 'quote_draft')"
-                                                class="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-medium text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+                                                class="pbb-btn-move"
                                                 title="Mark as Quote Draft"
                                             >
                                                 &rarr; Quoted
@@ -184,7 +183,7 @@
                                             <button
                                                 type="button"
                                                 wire:click="moveCard({{ $inq->id }}, 'quote_sent')"
-                                                class="rounded-sm bg-zinc-100 px-1.5 py-0.5 font-medium text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
+                                                class="pbb-btn-move"
                                                 title="Mark as Negotiation"
                                             >
                                                 &rarr; Negotiate
@@ -193,7 +192,7 @@
                                             <button
                                                 type="button"
                                                 wire:click="moveCard({{ $inq->id }}, 'deal')"
-                                                class="rounded-sm bg-emerald-100 text-emerald-800 px-1.5 py-0.5 font-bold hover:bg-emerald-200 dark:bg-emerald-950 dark:text-emerald-300"
+                                                class="pbb-btn-won"
                                                 title="Mark as Won"
                                             >
                                                 &check; Won
@@ -204,7 +203,7 @@
                                             <button
                                                 type="button"
                                                 wire:click="openLostModal({{ $inq->id }})"
-                                                class="rounded-sm bg-rose-50 text-rose-700 px-1.5 py-0.5 font-medium hover:bg-rose-100 dark:bg-rose-950/60 dark:text-rose-300"
+                                                class="pbb-btn-lost"
                                                 title="Mark as Lost"
                                             >
                                                 Lost
@@ -214,7 +213,7 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="rounded-lg border border-dashed border-zinc-200 p-6 text-center text-xs text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
+                            <div class="pbb-kanban-empty">
                                 No inquiries in this stage
                             </div>
                         @endforelse
@@ -226,9 +225,9 @@
 
     <!-- Modal: Mark as Lost with Required Reason (TC-ERP-CRM-009, TC-ERP-CRM-010) -->
     @if($lostInquiryId)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-            <div class="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
-                <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+        <div class="pbb-modal-backdrop">
+            <div class="pbb-modal-dialog">
+                <h3 class="pbb-modal-title">
                     <svg class="w-5 h-5 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="15" y1="9" x2="9" y2="15"></line>
@@ -236,19 +235,19 @@
                     </svg>
                     Close Inquiry as Lost
                 </h3>
-                <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <p class="pbb-modal-desc">
                     A formal cancellation reason is strictly required to archive this inquiry into the lost pipeline.
                 </p>
 
-                <div class="mt-4">
-                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                <div>
+                    <label class="pbb-modal-label">
                         Lost / Cancellation Reason <span class="text-rose-500">*</span>
                     </label>
                     <textarea
                         wire:model="lostReason"
                         rows="3"
                         placeholder="e.g. Competitor offered lower price, client canceled project, or out of stock specifications..."
-                        class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 placeholder-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                        class="pbb-modal-input"
                         required
                     ></textarea>
                     @error('lostReason')
@@ -256,18 +255,18 @@
                     @enderror
                 </div>
 
-                <div class="mt-5 flex items-center justify-end gap-2.5">
+                <div class="pbb-modal-actions">
                     <button
                         type="button"
                         wire:click="cancelLost"
-                        class="rounded-lg border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        class="pbb-modal-btn-cancel"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
                         wire:click="confirmLost"
-                        class="rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700"
+                        class="pbb-modal-btn-lost"
                     >
                         Confirm Lost
                     </button>
@@ -278,26 +277,26 @@
 
     <!-- Modal: Assign Sales PIC (TC-ERP-CRM-006, TC-ERP-CRM-012) -->
     @if($assigningInquiryId)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-            <div class="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
-                <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+        <div class="pbb-modal-backdrop">
+            <div class="pbb-modal-dialog">
+                <h3 class="pbb-modal-title">
                     <svg class="w-5 h-5 text-zinc-700 dark:text-zinc-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     Assign Sales PIC
                 </h3>
-                <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <p class="pbb-modal-desc">
                     Select an active Sales PIC or Director to take ownership of this lead.
                 </p>
 
-                <div class="mt-4">
-                    <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                <div>
+                    <label class="pbb-modal-label">
                         Active Sales Personnel <span class="text-rose-500">*</span>
                     </label>
                     <select
                         wire:model="selectedSalesUserId"
-                        class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                        class="pbb-modal-input"
                     >
                         <option value="">-- Choose Sales PIC --</option>
                         @foreach($this->activeSalesStaff as $staff)
@@ -309,18 +308,18 @@
                     @enderror
                 </div>
 
-                <div class="mt-5 flex items-center justify-end gap-2.5">
+                <div class="pbb-modal-actions">
                     <button
                         type="button"
                         wire:click="cancelAssign"
-                        class="rounded-lg border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        class="pbb-modal-btn-cancel"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
                         wire:click="confirmAssign"
-                        class="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                        class="pbb-modal-btn-confirm"
                     >
                         Confirm Assignment
                     </button>

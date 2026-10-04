@@ -20,20 +20,12 @@ class ListInquiriesKanban extends Page
 
     protected string $view = 'filament.resources.inquiry-resource.pages.list-inquiries-kanban';
 
-    protected static ?string $title = 'CRM Inquiries Kanban Board';
+    protected static ?string $title = 'Inquiries';
 
     public static function shouldRegisterNavigation(array $parameters = []): bool
     {
-        return true;
+        return false;
     }
-
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-view-columns';
-
-    protected static string|\UnitEnum|null $navigationGroup = 'CRM & Sales';
-
-    protected static ?string $navigationLabel = 'Kanban Board';
-
-    protected static ?int $navigationSort = 2;
 
     public ?int $lostInquiryId = null;
 
@@ -46,11 +38,6 @@ class ListInquiriesKanban extends Page
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('table_view')
-                ->label('Table View')
-                ->icon('heroicon-o-table-cells')
-                ->color('gray')
-                ->url(fn (): string => static::getResource()::getUrl('index')),
             Actions\Action::make('create_inquiry')
                 ->label('New Inquiry')
                 ->icon('heroicon-o-plus')
@@ -64,27 +51,27 @@ class ListInquiriesKanban extends Page
         return [
             'new' => [
                 'title' => 'New Lead',
-                'badge_color' => 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900',
+                'badge_class' => 'pbb-badge-sky',
             ],
             'contacted' => [
                 'title' => 'Contacted',
-                'badge_color' => 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900',
+                'badge_class' => 'pbb-badge-amber',
             ],
             'quote_draft' => [
                 'title' => 'Quote Draft',
-                'badge_color' => 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900',
+                'badge_class' => 'pbb-badge-indigo',
             ],
             'quote_sent' => [
                 'title' => 'Negotiation',
-                'badge_color' => 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900',
+                'badge_class' => 'pbb-badge-purple',
             ],
             'deal' => [
                 'title' => 'Won',
-                'badge_color' => 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900',
+                'badge_class' => 'pbb-badge-emerald',
             ],
             'lost' => [
                 'title' => 'Lost',
-                'badge_color' => 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900',
+                'badge_class' => 'pbb-badge-rose',
             ],
         ];
     }
@@ -108,9 +95,9 @@ class ListInquiriesKanban extends Page
     }
 
     /**
-     * Memindahkan status kartu kanban inkuiri (TC-ERP-CRM-003).
+     * Move inquiry status on Kanban board (TC-ERP-CRM-003).
      */
-    public function moveCard(int $inquiryId, string $targetStatus, InquiryAssignmentService $service): void
+    public function moveCard(int $inquiryId, string $targetStatus): void
     {
         $inquiry = Inquiry::findOrFail($inquiryId);
 
@@ -125,6 +112,7 @@ class ListInquiriesKanban extends Page
             return;
         }
 
+        $service = app(InquiryAssignmentService::class);
         $service->changeStatus($inquiry, $targetStatus, null, auth()->user());
 
         Notification::make()
@@ -149,13 +137,13 @@ class ListInquiriesKanban extends Page
     /**
      * Konfirmasi pembatalan status lost dengan alasan wajib (TC-ERP-CRM-009, TC-ERP-CRM-010).
      */
-    public function confirmLost(InquiryAssignmentService $service): void
+    public function confirmLost(): void
     {
         $this->validate([
             'lostReason' => 'required|string|min:3|max:1000',
         ], [
-            'lostReason.required' => 'Alasan pembatalan/kegagalan inkuiri wajib diisi.',
-            'lostReason.min' => 'Alasan pembatalan/kegagalan inkuiri wajib diisi minimal 3 karakter.',
+            'lostReason.required' => 'Cancellation reason is required.',
+            'lostReason.min' => 'Cancellation reason must be at least 3 characters.',
         ]);
 
         if (! $this->lostInquiryId) {
@@ -165,6 +153,7 @@ class ListInquiriesKanban extends Page
         $inquiry = Inquiry::findOrFail($this->lostInquiryId);
         $this->authorize('update', $inquiry);
 
+        $service = app(InquiryAssignmentService::class);
         $service->changeStatus($inquiry, 'lost', $this->lostReason, auth()->user());
 
         $this->lostInquiryId = null;
@@ -194,7 +183,7 @@ class ListInquiriesKanban extends Page
     /**
      * Konfirmasi penugasan PIC sales (TC-ERP-CRM-006, TC-ERP-CRM-012).
      */
-    public function confirmAssign(InquiryAssignmentService $service): void
+    public function confirmAssign(): void
     {
         $this->validate([
             'selectedSalesUserId' => 'required|exists:users,id',
@@ -208,6 +197,7 @@ class ListInquiriesKanban extends Page
         $this->authorize('assignPic', $inquiry);
 
         $salesUser = User::findOrFail($this->selectedSalesUserId);
+        $service = app(InquiryAssignmentService::class);
         $service->assignSalesPic($inquiry, $salesUser, auth()->user());
 
         $this->assigningInquiryId = null;

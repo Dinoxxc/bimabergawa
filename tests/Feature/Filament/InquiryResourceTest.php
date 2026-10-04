@@ -119,12 +119,12 @@ class InquiryResourceTest extends TestCase
         $response->assertSee('PBB/INQ/2026/09/0002');
     }
 
-    public function test_inquiry_resource_registers_both_table_and_kanban_navigation_items(): void
+    public function test_inquiry_resource_registers_unified_inquiries_navigation_item(): void
     {
         $navItems = InquiryResource::getNavigationItems();
-        $this->assertCount(2, $navItems);
+        $this->assertCount(1, $navItems);
         $this->assertEquals('Inquiries', $navItems[0]->getLabel());
-        $this->assertEquals('Kanban Board', $navItems[1]->getLabel());
+        $this->assertFalse(ListInquiriesKanban::shouldRegisterNavigation());
     }
 
     /**
@@ -456,5 +456,49 @@ class InquiryResourceTest extends TestCase
         $agentComments = InternalComment::where('commentable_id', $inquiry->id)->get();
         $this->assertCount(1, $agentComments);
         $this->assertEquals('Barang ready stok di gudang Cikarang', $agentComments->first()->comment);
+    }
+
+    /**
+     * Test Kanban Board rendering, card movement, and modal actions (Livewire 3).
+     */
+    public function test_kanban_board_can_be_rendered_and_actions_work(): void
+    {
+        $this->actingAs($this->superAdmin);
+
+        $inquiry = Inquiry::create([
+            'inquiry_number' => 'PBB/INQ/2026/09/0099',
+            'company_name' => 'PT. Kanban Functional Test',
+            'customer_name' => 'Budi Setiawan',
+            'phone_wa' => '081234567890',
+            'status' => 'new',
+        ]);
+
+        Livewire::test(ListInquiriesKanban::class)
+            ->assertSuccessful()
+            ->assertSee('PT. Kanban Functional Test')
+            ->assertSee('PBB/INQ/2026/09/0099')
+            ->call('moveCard', $inquiry->id, 'contacted')
+            ->assertHasNoErrors();
+
+        $this->assertEquals('contacted', $inquiry->fresh()->status);
+
+        // Test assign PIC via Kanban
+        Livewire::test(ListInquiriesKanban::class)
+            ->call('openAssignModal', $inquiry->id)
+            ->set('selectedSalesUserId', $this->salesA->id)
+            ->call('confirmAssign')
+            ->assertHasNoErrors();
+
+        $this->assertEquals($this->salesA->id, $inquiry->fresh()->assigned_user_id);
+
+        // Test mark as lost via Kanban modal
+        Livewire::test(ListInquiriesKanban::class)
+            ->call('openLostModal', $inquiry->id)
+            ->set('lostReason', 'Client opted for domestic alternative.')
+            ->call('confirmLost')
+            ->assertHasNoErrors();
+
+        $this->assertEquals('lost', $inquiry->fresh()->status);
+        $this->assertStringContainsString('Client opted for domestic alternative.', $inquiry->fresh()->notes);
     }
 }
